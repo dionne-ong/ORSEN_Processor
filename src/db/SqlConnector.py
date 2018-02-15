@@ -13,12 +13,12 @@ class SqlConnector:
         self.schema     = schema
 
     @staticmethod
-    def getConnection():
+    def get_connection():
         return None
 
     @staticmethod
-    def close(dbConnection):
-        dbConnection.close()
+    def close(db_connection):
+        db_connection.close()
 
 # -------------------------------------------------
 
@@ -28,7 +28,7 @@ class SqlConnConcepts(SqlConnector):
     schema = "orsen_kb"
 
     @staticmethod
-    def getConnection():
+    def get_connection():
         return pymysql.connect(SqlConnConcepts.location,
                                SqlConnConcepts.username,
                                SqlConnConcepts.password,
