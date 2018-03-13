@@ -80,3 +80,46 @@ output = [nlp.annotate(sent, properties=props) for sent in sentences]
 print("------------------")
 print(output)
 
+#ie_categorizing
+def categorizing(sentences):
+    commands = []
+    sent = []
+    for x in range(0, len(sentences)):
+      check = sentences[x]
+      if 'orsen' not in check:
+        sent.append(check)
+      else:
+        commands.append(check)
+
+    return commands
+
+#ie_semantic_role_label
+
+#setting_detail_extraction
+def settingExtract(sentences):
+    setting = []
+    for x in range(0, len(sentences)):
+        #preposition checking
+        if 'in' in sentences[x]:
+            a,c = sentences[x].split('in')
+        elif 'on' in sentences[x]:
+            a,c = sentences[x].split('on')
+        elif 'at' in sentences[x]:
+            a,c = sentences[x].split('at')
+        elif 'by' in sentences[x]:
+            a,c = sentences[x].split('by')
+        elif 'to' in sentences[x]:
+            a,c = sentences[x].split('to')
+
+        #punctuation checking
+        if '.' in c:
+            c = c.replace('.', '')
+        if ',' in c:
+            c = c.replace(',', '')
+        if '?' in c:
+            c = c.replace('?', '')
+        if '!' in c:
+            c = c.replace('!', '')
+
+        setting.append(c)
+    return setting
