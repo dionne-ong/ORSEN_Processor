@@ -6,7 +6,7 @@
       <excludeFolder url="file://$MODULE_DIR$/venv1" />
     </content>
     <content url="file://$MODULE_DIR$/../orsen_resources" />
-    <orderEntry type="jdk" jdkName="Python 3.6" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.6 (ORSEN_Processor)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">
