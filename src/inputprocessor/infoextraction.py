@@ -31,10 +31,46 @@ dep_root = []
 dep_root_head = []
 
 counter = 0
+
+
+def part_of_speech(sentence):
+
+    for token in sentence:
+        print("---POS----");
+        print(token.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+        text_token[counter].append(token.text)
+        lemma[counter].append(token.lemma_)
+        pos[counter].append(token.pos_)
+        tag[counter].append(token.tag_)
+        dep[counter].append(token.dep_)
+
+
+def named_entity(sentence):
+
+    for ent in sentence.ents:
+        print("---NER----");
+        print(ent.text, ent.start_char, ent.end_char, ent.label_)
+
+        text_ent[counter].append(ent.text)
+        label[counter].append(ent.label_)
+
+
+def noun_chunks(sentence):
+
+    for chunk in sentence.noun_chunks:
+        print("----NC---");
+        print(chunk.text, chunk.root.text, chunk.root.dep_,
+              chunk.root.head.text)
+        text_chunk[counter].append(chunk.text)
+        dep_root[counter].append(chunk.root.dep_)
+        dep_root_head[counter].append(chunk.root.head.text)
+
+
 for sent in sentences:
 
     print(sent)
     sent = nlp(sent)
+
     text_token.append([])
     lemma.append([])
     pos.append([])
@@ -48,30 +84,9 @@ for sent in sentences:
     dep_root.append([])
     dep_root_head.append([])
 
-    for token in sent:
-        print("---POS----");
-        print(token.text, token.lemma_, token.pos_, token.tag_, token.dep_)
-        text_token[counter].append(token.text)
-        lemma[counter].append(token.lemma_)
-        pos[counter].append(token.pos_)
-        tag[counter].append(token.tag_)
-        dep[counter].append(token.dep_)
-
-    for ent in sent.ents:
-        print("---NER----");
-        print(ent.text, ent.start_char, ent.end_char, ent.label_)
-
-        text_ent[counter].append(ent.text)
-        label[counter].append(ent.label_)
-
-    for chunk in sent.noun_chunks:
-        print("----NC---");
-        print(chunk.text, chunk.root.text, chunk.root.dep_,
-              chunk.root.head.text)
-        text_chunk[counter].append(chunk.text)
-        dep_root[counter].append(chunk.root.dep_)
-        dep_root_head[counter].append(chunk.root.head.text)
-
+    part_of_speech(sent)
+    named_entity(sent)
+    noun_chunks(sent)
     counter += 1
 
 nlp = StanfordCoreNLP(r'C:\stanford-corenlp-full-2018-01-31', memory='8g')
