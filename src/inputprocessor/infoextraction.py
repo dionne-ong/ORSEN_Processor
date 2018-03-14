@@ -50,6 +50,7 @@ def named_entity(sentence):
     for ent in sentence.ents:
         print("---NER----");
         print(ent.text, ent.start_char, ent.end_char, ent.label_)
+
         text_ent[counter].append(ent.text)
         label[counter].append(ent.label_)
 
@@ -94,23 +95,63 @@ output = [nlp.annotate(sent, properties=props) for sent in sentences]
 print("------------------")
 print(output)
 
-
 #ie_categorizing
-count = len(sentences)
-print("HAYYYYY")
-commands = []
-story_text = []
-for x in range(0, count):
-    check = sentences[x]
+def categorizing(sentences):
+    commands = []
+    sent = []
+    #checks if entry has "orsen"
+    for x in range(0, len(sentences)):
+      check = sentences[x]
+      if 'orsen' not in check:
+        sent.append(check)
+      else:
+        commands.append(check)
 
-    if 'orsen' not in check:
-        story_text.append(sentences[x])
-    else:
-        commands.append(sentences[x])
+    return commands
 
-#ie_semantic_role_labelling
-srl_entity_list = {"person", "place", "object"}
-result_entity = "Unknown"
+#ie_semantic_role_label
+def semanticRoleLabel(sentences):
+    label = []
 
-for entity in srl_entity_list:
-        result_entity = entity;
+    #TO DO: check with database if it has relationship
+
+    return label
+
+#setting_detail_extraction
+def settingExtract(sentences):
+    setting = []
+    for x in range(0, len(sentences)):
+        #preposition checking
+        if 'in' in sentences[x]:
+            a,c = sentences[x].split('in')
+        elif 'on' in sentences[x]:
+            a,c = sentences[x].split('on')
+        elif 'at' in sentences[x]:
+            a,c = sentences[x].split('at')
+        elif 'by' in sentences[x]:
+            a,c = sentences[x].split('by')
+        elif 'to' in sentences[x]:
+            a,c = sentences[x].split('to')
+
+        #punctuation checking
+        if '.' in c:
+            c = c.replace('.', '')
+        if ',' in c:
+            c = c.replace(',', '')
+        if '?' in c:
+            c = c.replace('?', '')
+        if '!' in c:
+            c = c.replace('!', '')
+
+        setting.append(c)
+
+        #TO DO: check with NER and SRL for nouns
+
+        #return object
+    return setting
+
+#ie_event_detail_extract
+def eventExtract(sentences):
+    event = []
+    #TO DO: use dependency parsing to identify position of the event
+    return event
