@@ -84,6 +84,7 @@ print(output)
 def categorizing(sentences):
     commands = []
     sent = []
+    #checks if entry has "orsen"
     for x in range(0, len(sentences)):
       check = sentences[x]
       if 'orsen' not in check:
@@ -94,6 +95,12 @@ def categorizing(sentences):
     return commands
 
 #ie_semantic_role_label
+def semanticRoleLabel(sentences):
+    label = []
+
+    #TO DO: check with database if it has relationship
+
+    return label
 
 #setting_detail_extraction
 def settingExtract(sentences):
@@ -122,4 +129,14 @@ def settingExtract(sentences):
             c = c.replace('!', '')
 
         setting.append(c)
+
+        #TO DO: check with NER and SRL for nouns
+
+        #return object
     return setting
+
+#ie_event_detail_extract
+def eventExtract(sentences):
+    event = []
+    #TO DO: use dependency parsing to identify position of the event
+    return event
