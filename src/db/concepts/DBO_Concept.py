@@ -149,6 +149,40 @@ def get_concept(word, relation):
     return resulting
 
 
+def get_concept_specified(first, relation, second):
+    sql = "SELECT idconcepts, " \
+          "relation," \
+          "first," \
+          "second " \
+          "FROM concepts " \
+          "WHERE first = %s AND second = %s AND relation = %s "
+    print(sql)
+    conn = SqlConnConcepts.getConnection()
+    cursor = conn.cursor()
+
+    resulting = []
+
+    try:
+        # Execute the SQL command
+        cursor.execute(sql, (first, second, relation,))
+        # Fetch all the rows in a list of lists.
+        result = cursor.fetchall()
+
+        for row in result:
+            id          = row[0]
+            relation    = row[1]
+            first       = row[2]
+            second      = row[3]
+
+            resulting.append(Concept(id, relation, first, second))
+
+    except:
+        print("Error Concept: unable to fetch data for word "+first+" and "+second)
+
+    conn.close()
+    return resulting
+
+
 def add_concept(concept):
     sql = "INSERT INTO concepts " \
           "(relation, " \

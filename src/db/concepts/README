@@ -2,7 +2,7 @@ How to access database of concepts:
 
 Add import statement:
 
-    from src.db.concept import DBO_Concept
+    from src.db.concepts import DBO_Concept
 
 Getting concepts:
 
@@ -33,3 +33,13 @@ Getting concepts:
         returns a Concept[]
 
         ie. get_concept("animal", DBO_Concept.IS_A)
+
+    > Get if specified concept exists
+
+        get_concept_specified(first,relation,second)
+            , first and second are strings
+            , relation is from the list of relations in DBO_Concept
+
+        returns a Concept[]
+
+        ie. if looking for "character CapableOf eat" > get_concept_specified("character", DBO_Concept.CAPABLE_OF, "eat")
