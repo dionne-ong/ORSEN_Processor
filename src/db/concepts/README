@@ -1,0 +1,35 @@
+How to access database of concepts:
+
+Add import statement:
+
+    from src.db.concept import DBO_Concept
+
+Getting concepts:
+
+    > Specified Concept using an idConcept
+
+        get_specified_concept(id)
+            , where id is an integer
+
+        returns a Concept object
+
+        ie. get_specified_concept(3256)
+
+    > Get all concepts of a word
+
+        get_word_concept(word)
+            , where word is a string
+
+        returns a Concept[]
+
+        ie. get_word_concept("animal")
+
+    > Get concept via word and relation
+
+        get_concept(word, relation)
+            , word is a string
+            , relation is from the list of relations in DBO_Concept
+
+        returns a Concept[]
+
+        ie. get_concept("animal", DBO_Concept.IS_A)
