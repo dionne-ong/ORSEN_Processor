@@ -99,11 +99,24 @@ for sent in sentences:
     noun_chunks(sent)
     counter += 1
 
+
+def character_extraction(ner_text, ner_label):
+    for i in range(0, len(ner_label)):
+        for j in range(0, len(ner_label[i])):
+
+            print(ner_label[i][j], "====")
+            print(ner_text[i][j], "====")
+
+
+character_extraction(text_ent, label)
+
 nlp = StanfordCoreNLP(r'C:\stanford-corenlp-full-2018-01-31', memory='8g')
 props = {'annotators': 'dcoref', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
 output = [nlp.annotate(sent, properties=props) for sent in sentences]
 print("------------------")
 print(output)
+
+
 
 # ---------- rachel
 
@@ -115,10 +128,10 @@ def categorizing(sentence):
       else:
         commands.append(sentence)
 
-#ie_semantic_role_label
+# ie_semantic_role_label
 def semanticRoleLabel(sentence):
-
-    #TO DO: check with database if it has relationship
+    print("SRL PLACE")
+    # TO DO: check with database if it has relationship
 
 
 
