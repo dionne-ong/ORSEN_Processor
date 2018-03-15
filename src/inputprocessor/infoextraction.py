@@ -30,6 +30,16 @@ text_chunk = []
 dep_root = []
 dep_root_head = []
 
+#For Categorizing
+commands = []
+story = []
+
+#For Semantic Role Labeling
+sem_role = []
+
+#For Setting Detail Extraction
+setting = []
+setting_detail = []
 counter = 0
 
 
@@ -95,31 +105,25 @@ output = [nlp.annotate(sent, properties=props) for sent in sentences]
 print("------------------")
 print(output)
 
-#ie_categorizing
-def categorizing(sentences):
-    commands = []
-    sent = []
-    #checks if entry has "orsen"
-    for x in range(0, len(sentences)):
-      check = sentences[x]
-      if 'orsen' not in check:
-        sent.append(check)
-      else:
-        commands.append(check)
+# ---------- rachel
 
-    return commands
+#ie_categorizing
+def categorizing(sentence):
+    #checks if entry has "orsen"
+      if 'orsen' not in sentence:
+        story.append(sentence)
+      else:
+        commands.append(sentence)
 
 #ie_semantic_role_label
-def semanticRoleLabel(sentences):
-    label = []
+def semanticRoleLabel(sentence):
 
     #TO DO: check with database if it has relationship
 
-    return label
+
 
 #setting_detail_extraction
 def settingExtract(sentences):
-    setting = []
     for x in range(0, len(sentences)):
         #preposition checking
         if 'in' in sentences[x]:
@@ -143,12 +147,15 @@ def settingExtract(sentences):
         if '!' in c:
             c = c.replace('!', '')
 
-        setting.append(c)
 
-        #TO DO: check with NER and SRL for nouns
+        count = len(label)+1
+        named_entity(c)
+        if label[count] is not None:
+            setting_detail.append(label[count])
+        # TO DO: check with SRL for nouns
 
         #return object
-    return setting
+        setting.append(c)
 
 #ie_event_detail_extract
 def eventExtract(sentences):
