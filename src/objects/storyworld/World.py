@@ -12,33 +12,32 @@ class World:
         self.id = id
 
     def add_character(self, char):
-        print(self.objects)
-        print(self.characters)
-        if self.objects[char.name] is None and self.characters[char.name] is None:
-            self.characters[char.name] = char
+        if char.id not in self.objects and char.id not in self.characters:
+            self.characters[char.id] = char
             return True
-        elif self.objects[char.name] is not None and self.characters[char.name] is None:
-            self.objects.pop(char.name)
-            self.characters[char.name] = char
+        elif char.id in self.objects and char.id not in self.characters:
+            self.objects.pop(char.id)
+            self.characters[char.id] = char
+            return True
         else:
             return False
 
     def add_object(self, obj):
-        if self.objects[obj.name] is None:
-            self.objects[obj.name] = obj
+        if obj.id not in self.objects:
+            self.objects[obj.id] = obj
             return True
         else:
             return False
 
     def add_relationship(self, relationship):
-        if self.relationships[relationship.id] is None:
+        if relationship.id not in self.relationships:
             self.relationships[relationship.id] = relationship
             return True
         else:
             return False
 
     def add_setting(self, setting):
-        if self.settings[setting.id] is None:
+        if setting.id not in self.settings:
             self.settings[setting.id] = setting
             return True
         else:
