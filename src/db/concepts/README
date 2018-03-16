@@ -40,6 +40,7 @@ Getting concepts:
             , first and second are strings
             , relation is from the list of relations in DBO_Concept
 
-        returns a Concept[]
+        returns a Concept
+         # if returned == None ; then no concept exists
 
         ie. if looking for "character CapableOf eat" > get_concept_specified("character", DBO_Concept.CAPABLE_OF, "eat")

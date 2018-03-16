@@ -1,5 +1,6 @@
 import spacy
 from stanfordcorenlp import StanfordCoreNLP
+from src.db.concepts import DBO_Concept
 # ----- luisa
 
 
@@ -7,40 +8,6 @@ def reading(filename):
     with open(filename, 'r') as f:
         userinput = f.read()
     return userinput
-
-
-nlp = spacy.load('en')
-document = nlp(reading("document.txt"))
-
-sentences = [sent.string.strip() for sent in document.sents]
-
-#For POS
-text_token = []
-lemma = []
-pos = []
-tag = []
-dep = []
-
-#For NER
-text_ent = []
-label = []
-
-#For Noun Chunks
-text_chunk = []
-dep_root = []
-dep_root_head = []
-
-#For Categorizing
-commands = []
-story = []
-
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting = []
-setting_detail = []
-counter = 0
 
 
 def part_of_speech(sentence):
@@ -76,6 +43,60 @@ def noun_chunks(sentence):
         dep_root_head[counter].append(chunk.root.head.text)
 
 
+def remove_duplicate(alist):
+    return list(set(alist))
+
+
+def add_character(count, nc_text):
+    for i in range(0, len(nc_text[count])):
+        characters.append(nc_text[count][i])
+
+
+def character_extraction(nc_text, pos_lemma, pos_dep):
+    for i in range(0, len(pos_dep)):
+        for j in range(0, len(pos_dep[i])):
+            if pos_dep[i][j] == "ROOT":
+                if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
+                        add_character(i, nc_text)
+
+
+nlp = spacy.load('en')
+document = nlp(reading("document.txt"))
+
+sentences = [sent.string.strip() for sent in document.sents]
+
+#For POS
+text_token = []
+lemma = []
+pos = []
+tag = []
+dep = []
+
+#For NER
+text_ent = []
+label = []
+
+#For Noun Chunks
+text_chunk = []
+dep_root = []
+dep_root_head = []
+
+#For Categorizing
+commands = []
+story = []
+
+#For Semantic Role Labeling
+sem_role = []
+
+#For Setting Detail Extraction
+setting = []
+setting_detail = []
+
+counter = 0
+
+#Character
+characters = []
+
 for sent in sentences:
 
     print(sent)
@@ -99,24 +120,15 @@ for sent in sentences:
     noun_chunks(sent)
     counter += 1
 
-
-def character_extraction(ner_text, ner_label):
-    for i in range(0, len(ner_label)):
-        for j in range(0, len(ner_label[i])):
-
-            print(ner_label[i][j], "====")
-            print(ner_text[i][j], "====")
-
-
-character_extraction(text_ent, label)
+character_extraction(text_chunk, lemma, dep)
+remove_duplicate(characters)
+print(characters, "====")
 
 nlp = StanfordCoreNLP(r'C:\stanford-corenlp-full-2018-01-31', memory='8g')
 props = {'annotators': 'dcoref', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
 output = [nlp.annotate(sent, properties=props) for sent in sentences]
 print("------------------")
 print(output)
-
-
 
 # ---------- rachel
 
@@ -128,16 +140,12 @@ def categorizing(sentence):
       else:
         commands.append(sentence)
 
-# ie_semantic_role_label
-def semanticRoleLabel(sentence):
-    print("SRL PLACE")
-    # TO DO: check with database if it has relationship
-
-
-
-#setting_detail_extraction
+#ie_setting_detail_extraction
 def settingExtract(sentences):
     for x in range(0, len(sentences)):
+        rows  = []
+        isLocation = False
+
         #preposition checking
         if 'in' in sentences[x]:
             a,c = sentences[x].split('in')
@@ -165,9 +173,20 @@ def settingExtract(sentences):
         named_entity(c)
         if label[count] is not None:
             setting_detail.append(label[count])
-        # TO DO: check with SRL for nouns
-
-        #return object
+        else:
+            db = MySQLdb.connect("localhost", "root", "root", "orsen_kb")
+            c = db.cursor()
+            c.execute("SELECT second"
+                      + " FROM concepts"
+                      + " WHERE relation = 'isA'"
+                      + " AND first = " + c)
+            rows = c.fetchall()
+            for x in range(0, len(rows)):
+                if 'location' in rows[x]:
+                    isLocation = True
+            db.close()
+            if isLocation is True:
+                setting_detail.append("location")
         setting.append(c)
 
 #ie_event_detail_extract
