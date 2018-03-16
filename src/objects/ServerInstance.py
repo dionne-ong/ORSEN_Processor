@@ -1,14 +1,10 @@
 from .storyworld.World import World
+
+
 class ServerInstance:
 
     instance = None
     worlds = {}
-
-    def get_instance(self):
-        if self.instance is None:
-            self.instance = ServerInstance()
-
-        return self.instance
 
     def new_world(self, new_id):
         if self.worlds.get(new_id) is None:
