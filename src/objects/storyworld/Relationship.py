@@ -1,12 +1,12 @@
 class Relationship:
 
     id = -1
-    idObjectA = -1
-    idObjectB = -1
+    idObjectA = ""
+    idObjectB = ""
     relation = ""
     score = 0
 
-    def __init__(self, id, idObjA, idObjB, relName, score):
+    def __init__(self, id=-1, idObjA="", idObjB="", relName="", score=0):
         self.id = id
         self.idObjectA = idObjA
         self.idObjectB = idObjB

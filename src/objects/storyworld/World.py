@@ -7,7 +7,7 @@ class World:
     relationships = {}
     settings = {}
 
-    def __init__(self, id):
+    def __init__(self, id=-1):
         self.id = id
 
     def add_character(self, char):
