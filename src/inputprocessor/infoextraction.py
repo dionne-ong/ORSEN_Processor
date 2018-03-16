@@ -1,5 +1,6 @@
 import spacy
 from stanfordcorenlp import StanfordCoreNLP
+from src.db.concepts import DBO_Concept
 # ----- luisa
 
 
@@ -41,6 +42,9 @@ sem_role = []
 setting = []
 setting_detail = []
 counter = 0
+
+#Character
+characters = []
 
 
 def part_of_speech(sentence):
@@ -100,12 +104,19 @@ for sent in sentences:
     counter += 1
 
 
-def character_extraction(ner_text, ner_label):
-    for i in range(0, len(ner_label)):
-        for j in range(0, len(ner_label[i])):
 
-            print(ner_label[i][j], "====")
-            print(ner_text[i][j], "====")
+#def character_extraction(nc_text, nc_root, nc_root_head):
+#    for i in range(0, len(ner_label)):
+#        for j in range(0, len(ner_label[i])):
+#            if ner_label[i][j] == "PERSON":
+#                characters.append(ner_text[i][j])
+
+
+
+
+
+
+
 
 
 character_extraction(text_ent, label)
