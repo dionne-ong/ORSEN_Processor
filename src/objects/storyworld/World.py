@@ -11,18 +11,20 @@ class World:
         self.id = id
 
     def add_character(self, char):
-        if self.objects[char.id] is None and self.characters[char.id] is None:
-            self.characters[char.id] = char
+        print(self.objects)
+        print(self.characters)
+        if self.objects[char.name] is None and self.characters[char.name] is None:
+            self.characters[char.name] = char
             return True
-        elif self.objects[char.id] is not None and self.characters[char.id] is None:
-            self.objects.pop(char.id)
-            self.characters[char.id] = char
+        elif self.objects[char.name] is not None and self.characters[char.name] is None:
+            self.objects.pop(char.name)
+            self.characters[char.name] = char
         else:
             return False
 
     def add_object(self, obj):
-        if self.objects[obj.id] is None:
-            self.objects[obj.id] = obj
+        if self.objects[obj.name] is None:
+            self.objects[obj.name] = obj
             return True
         else:
             return False

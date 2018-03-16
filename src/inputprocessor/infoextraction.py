@@ -1,5 +1,3 @@
-import spacy
-from stanfordcorenlp import StanfordCoreNLP
 from src.db.concepts import DBO_Concept
 from src.objects.storyworld.Character import Character
 # ----- luisa
@@ -10,7 +8,7 @@ def reading(filename):
     return userinput
 
 
-def part_of_speech(sentence):
+def part_of_speech(sentence, text_token, lemma, pos, tag, dep, counter):
 
     for token in sentence:
         print("---POS----");
@@ -22,7 +20,7 @@ def part_of_speech(sentence):
         dep[counter].append(token.dep_)
 
 
-def named_entity(sentence):
+def named_entity(sentence, text_ent, label, counter):
 
     for ent in sentence.ents:
         print("---NER----");
@@ -32,7 +30,7 @@ def named_entity(sentence):
         label[counter].append(ent.label_)
 
 
-def noun_chunks(sentence):
+def noun_chunks(sentence, text_chunk, dep_root, dep_root_head, counter):
 
     for chunk in sentence.noun_chunks:
         print("----NC---");
@@ -48,13 +46,35 @@ def remove_duplicate(alist):
 
 
 def add_character_attribute(count, nc_text, pos_dep, pos_text):
+    characters_attributes = {}
     for i in range(0, len(nc_text[count])):
-        new_character = Character()
-        new_character.name = nc_text[count][i]
+        #print("---", nc_text[count][i])
+        if nc_text[count][i] not in characters_attributes:
+            #print("CHARS---", nc_text[count][i])
+            #characters_attributes.fromkeys(nc_text[count][i])
+            characters_attributes.update({nc_text[count][i]: None})
 
     for i in range(0, len(pos_dep[count])):
         if pos_dep[count][i] == "acomp":
-            new_character.attributes.append(pos_text[count][i])
+            for j in range(0, len(nc_text[count])):
+                characters_attributes[nc_text[count][j]].append(pos_text[count][i])
+
+    return characters_attributes
+
+
+def add_object_attribute(count, nc_text, pos_dep, pos_text):
+    objects_attributes = {}
+    for i in range(0, len(nc_text[count])):
+        if nc_text[count][i] not in objects_attributes:
+            #objects_attributes.fromkeys(nc_text[count][i])
+            objects_attributes.update({nc_text[count][i]: None})
+
+    for i in range(0, len(pos_dep[count])):
+        if pos_dep[count][i] == "acomp":
+            for j in range(0, len(nc_text[count])):
+                objects_attributes[nc_text[count][j]].append(pos_text[count][i])
+
+    return objects_attributes
 
 
 def character_attribute_extraction(nc_text, pos_lemma, pos_dep, pos_text):
@@ -62,78 +82,12 @@ def character_attribute_extraction(nc_text, pos_lemma, pos_dep, pos_text):
         for j in range(0, len(pos_dep[i])):
             if pos_dep[i][j] == "ROOT":
                 if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
-                        add_character_attribute(i, nc_text, pos_dep, pos_text)
+                        characters = add_character_attribute(i, nc_text, pos_dep, pos_text)
+                else:
+                        objects = add_object_attribute(i, nc_text, pos_dep, pos_text)
 
+    return characters, objects
 
-
-
-nlp = spacy.load('en')
-document = nlp(reading("document.txt"))
-
-sentences = [sent.string.strip() for sent in document.sents]
-
-#For POS
-text_token = []
-lemma = []
-pos = []
-tag = []
-dep = []
-
-#For NER
-text_ent = []
-label = []
-
-#For Noun Chunks
-text_chunk = []
-dep_root = []
-dep_root_head = []
-
-#For Categorizing
-commands = []
-story = []
-
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting = []
-setting_detail = []
-
-counter = 0
-
-#Character
-characters = []
-
-for sent in sentences:
-
-    print(sent)
-    sent = nlp(sent)
-
-    text_token.append([])
-    lemma.append([])
-    pos.append([])
-    tag.append([])
-    dep.append([])
-
-    text_ent.append([])
-    label.append([])
-
-    text_chunk.append([])
-    dep_root.append([])
-    dep_root_head.append([])
-
-    part_of_speech(sent)
-    named_entity(sent)
-    noun_chunks(sent)
-    counter += 1
-
-character_attribute_extraction(text_chunk, lemma, dep, text_token)
-
-nlp = StanfordCoreNLP(r'C:\stanford-corenlp-full-2018-01-31', memory='8g')
-props = {'annotators': 'dcoref', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
-output = [nlp.annotate(sent, properties=props) for sent in sentences]
-print("------------------")
-print(output)
 
 # ---------- rachel
 
