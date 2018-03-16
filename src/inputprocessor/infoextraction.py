@@ -1,6 +1,5 @@
 from src.db.concepts import DBO_Concept
 from src.objects.nlp.Sentence import Sentence
-from spacy import symbols
 # ----- luisa
 
 def reading(filename):
@@ -156,52 +155,28 @@ def add_attributes(sent, count1, count2, subject):
 
 # ---------- rachel
 
-#For Categorizing
-commands = []
-story = []
 
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting_name = []
-setting_type= []
-setting_frame = [setting_name, setting_type]
-
-#For Event Detail Extraction
-seq_no = []
-event_type = []
-doer = []
-doer_act = []
-receiver = []
-receiver_act = []
-location = []
-event_frame = [seq_no, event_type, doer, doer_act, receiver, receiver_act, location]
 #ie_categorizing
-def categorizing(sentence):
+def isStoryText(sentence):
     #checks if entry has "orsen"
-      if 'orsen' not in sentence:
-        story.append(sentence)
-      else:
-        commands.append(sentence)
+    if 'orsen' not in sentence:
+        return True
+    else:
+        return False
 
 #ie_setting_detail_extraction
-def settingExtract(sentences):
-    for x in range(0, len(sentences)):
-        rows  = []
-        isLocation = False
-
+def settingExtract(sentence):
         #preposition checking
-        if 'in' in sentences[x]:
-            a,c = sentences[x].split('in')
-        elif 'on' in sentences[x]:
-            a,c = sentences[x].split('on')
-        elif 'at' in sentences[x]:
-            a,c = sentences[x].split('at')
-        elif 'by' in sentences[x]:
-            a,c = sentences[x].split('by')
-        elif 'to' in sentences[x]:
-            a,c = sentences[x].split('to')
+        if 'in' in sentence:
+            a,c = sentence.split('in')
+        elif 'on' in sentence:
+            a,c = sentence.split('on')
+        elif 'at' in sentence:
+            a,c = sentence.split('at')
+        elif 'by' in sentence:
+            a,c = sentence.split('by')
+        elif 'to' in sentence:
+            a,c = sentence.split('to')
 
         #punctuation checking
         if '.' in c:
@@ -213,26 +188,57 @@ def settingExtract(sentences):
         if '!' in c:
             c = c.replace('!', '')
 
-
-        count = len(label)
+        count = len(sentence.label)
         named_entity(c)
-        if label[count] is not None:
-            setting_type.append(label[count])
+        if sentence.label[count] is not None:
+            sentence.setting_type.append(sentence.label[count])
         else:
-            db = mysqldbhelper.DatabaseConnection("localhost",
-                                                  user="root",
-                                                  passwd="root",
-                                                  db="orsen_kb")
-            row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           db = mysqldbhelper.DatabaseConnection("localhost",
+                                                user="root",
+                                                passwd="root",
+                                                db="orsen_kb")
+           row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           if row is not None:
+               sentence.setting_type.append('location')
+               sentence.setting_name.append(c)
+           db.close()
 
-            if row is not None:
-                setting_type.append('location')
-            db.close()
+        print(sentence.setting_frame)
 
-        setting_name.append(c)
+    #TO DO: make setting an object to add sa World.py
 
-#ie_event_detail_extract
-def eventExtract(sentences):
-    #TO DO: use dependency parsing to identify position of the event
-    for x in range(0, len(sentences)):
-        seq_no.append[x]
+#ie_event_extract
+def eventExtract(sentence, sentences):
+       sent_pos = len(sentences)-1
+       root_count = len(sentences[sent_pos].dep_root)
+       be_forms = ['be', 'am', 'is', 'are', 'was', 'were', 'been', 'being']
+       type = "Action"
+
+       for x in range(0, root_count):
+            # Assign sequence number
+            if len(sentences.seq_no) == 0:
+                sentences.seq_no.append(0)
+            else:
+                sentences.seq_no.append(len(sentences.seq_no))
+
+            sentence.doer.append(sentences[sent_pos].dep_root[x])
+            sentence.doer_act.append(sentences[sent_pos].dep_root[x].dep_root_head)
+            sentence.rec.append(sentences[sent_pos].dep[x])
+
+            #Add Event Type
+            for i in range(0, len(be_forms)):
+                if be_forms[i] in sentence:
+                    type = "Descriptive"
+
+
+            sentence.event_type.append(type)
+            type = "Action" #reset
+
+            #Check for Location
+            if sentence.setting_label is 'location':
+                locate = sentence.setting_name
+
+            if locate is not None:
+                sentence.location.append(locate)
+
+            print(sentence.event_frame)

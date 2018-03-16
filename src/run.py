@@ -17,17 +17,6 @@ document = nlp(infoextraction.reading("document.txt"))
 sentences = [sent.string.strip() for sent in document.sents]
 list_of_sentences = []
 
-#For Categorizing
-commands = []
-story = []
-
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting = []
-setting_detail = []
-
 #Character
 characters = []
 
@@ -73,5 +62,25 @@ infoextraction.character_attribute_extraction(list_of_sentences)
 #print("------------------")
 #print(output)
 
+#For Categorizing
+
+
+#For Semantic Role Labeling
+sem_role = []
+
+#For Setting Detail Extraction
+setting_name = []
+setting_type= []
+setting_frame = [setting_name, setting_type]
+
+#For Event Extraction
+seq_no = []
+event_type = []
+doer = []
+doer_act = []
+rec = []
+rec_act = []
+location = []
+event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
 
