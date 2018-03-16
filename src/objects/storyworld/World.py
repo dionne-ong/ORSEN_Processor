@@ -6,6 +6,7 @@ class World:
     objects = {}
     relationships = {}
     settings = {}
+    event_chain = []
 
     def __init__(self, id=-1):
         self.id = id
