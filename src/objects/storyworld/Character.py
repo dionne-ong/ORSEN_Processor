@@ -7,7 +7,7 @@ class Character(Object):
     desire = ""
     feeling = ""
 
-    def __init__(self, idChar, name, typeChar, inSetting, times, attr, gender, desire, feeling):
+    def __init__(self, idChar=-1, name="", typeChar="", inSetting=0, times=1, attr=[], gender="", desire="", feeling=""):
         super().__init__(idChar, name, typeChar, inSetting, times, attr)
         self.gender = gender
         self.desire = desire

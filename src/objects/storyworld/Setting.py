@@ -4,7 +4,7 @@ class Setting:
     type = ""
     time = 0
 
-    def __init__(self, id, name, type, time):
+    def __init__(self, id=-1, name="", type="", time=1):
         self.id   = id
         self.name = name
         self.type = type
