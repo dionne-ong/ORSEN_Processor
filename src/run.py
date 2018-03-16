@@ -32,17 +32,6 @@ text_chunk = []
 dep_root = []
 dep_root_head = []
 
-#For Categorizing
-commands = []
-story = []
-
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting = []
-setting_detail = []
-
 #Character
 characters = []
 
@@ -104,5 +93,25 @@ for key, values in object_attributes.items():
 #print("------------------")
 #print(output)
 
+#For Categorizing
+
+
+#For Semantic Role Labeling
+sem_role = []
+
+#For Setting Detail Extraction
+setting_name = []
+setting_type= []
+setting_frame = [setting_name, setting_type]
+
+#For Event Extraction
+seq_no = []
+event_type = []
+doer = []
+doer_act = []
+rec = []
+rec_act = []
+location = []
+event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
 

@@ -1,4 +1,5 @@
 from src.db.concepts import DBO_Concept
+import mysqldbhelper
 # ----- luisa
 
 def reading(filename):
@@ -86,35 +87,14 @@ def character_attribute_extraction(nc_text, pos_lemma, pos_dep, pos_text):
 
 # ---------- rachel
 
-#For Categorizing
-commands = []
-story = []
-
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting_name = []
-setting_type= []
-setting_frame = [setting_name, setting_type]
-
-#For Event Extraction
-seq_no = []
-event_type = []
-doer = []
-doer_act = []
-rec = []
-rec_act = []
-location = []
-event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
 #ie_categorizing
-def categorizing(sentence):
+def isStoryText(sentence):
     #checks if entry has "orsen"
-      if 'orsen' not in sentence:
-        story.append(sentence)
-      else:
-        commands.append(sentence)
+    if 'orsen' not in sentence:
+        return True
+    else:
+        return False
 
 #ie_setting_detail_extraction
 def settingExtract(sentence):
@@ -140,11 +120,10 @@ def settingExtract(sentence):
         if '!' in c:
             c = c.replace('!', '')
 
-
-        count = len(label)
+        count = len(sentence.label)
         named_entity(c)
-        if label[count] is not None:
-            setting_type.append(label[count])
+        if sentence.label[count] is not None:
+            sentence.setting_type.append(sentence.label[count])
         else:
            db = mysqldbhelper.DatabaseConnection("localhost",
                                                 user="root",
@@ -152,33 +131,46 @@ def settingExtract(sentence):
                                                 db="orsen_kb")
            row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
            if row is not None:
-               setting_type.append('location')
-
+               sentence.setting_type.append('location')
+               sentence.setting_name.append(c)
            db.close()
 
-        setting_name.append(c)
+        print(sentence.setting_frame)
+
     #TO DO: make setting an object to add sa World.py
 
 #ie_event_extract
-def eventExtract(sentence):
-        seq_count = len(seq_no)
-        if seq_count == 0:
-            seq_no.append(0)
-        else:
-            seq_no.append(seq_count-1)
+def eventExtract(sentence, sentences):
+       sent_pos = len(sentences)-1
+       root_count = len(sentences[sent_pos].dep_root)
+       be_forms = ['be', 'am', 'is', 'are', 'was', 'were', 'been', 'being']
+       type = "Action"
 
-        noun_chunks(sentence)
-        sent_pos = sentences[len(sentences)-1]
-        chunk_count = len(sentences[sent_pos].dep_root)
-        for y in range(0, chunk_count):
-            doer.append(sentences[sent_pos].dep_root[y])
-            doer_act.append(sentences[sent_pos].dep_root_head[y])
-            y +=1
-            rec.append(sentences[sent_pos].dep_root[y])
-            if sentences[sent_pos].dep_root_head[y] is not None:
-                rec_act.append(sentences[sent_pos].dep_root_head[y])
+       for x in range(0, root_count):
+            # Assign sequence number
+            if len(sentences.seq_no) == 0:
+                sentences.seq_no.append(0)
+            else:
+                sentences.seq_no.append(len(sentences.seq_no))
 
-        if rec_act[len(doer)-1] is None:
-            event_type.append("Descriptive")
-        else:
-            event_type.append("Action")
+            sentence.doer.append(sentences[sent_pos].dep_root[x])
+            sentence.doer_act.append(sentences[sent_pos].dep_root[x].dep_root_head)
+            sentence.rec.append(sentences[sent_pos].dep[x])
+
+            #Add Event Type
+            for i in range(0, len(be_forms)):
+                if be_forms[i] in sentence:
+                    type = "Descriptive"
+
+
+            sentence.event_type.append(type)
+            type = "Action" #reset
+
+            #Check for Location
+            if sentence.setting_label is 'location':
+                locate = sentence.setting_name
+
+            if locate is not None:
+                sentence.location.append(locate)
+
+            print(sentence.event_frame)
