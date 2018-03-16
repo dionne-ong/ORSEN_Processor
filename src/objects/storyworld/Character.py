@@ -1,5 +1,6 @@
 from .Object import Object
 
+
 class Character(Object):
 
     gender = ""
@@ -14,5 +15,5 @@ class Character(Object):
 
     def __str__(self):
         return "CHARACTER #%d: \nName: %s \nGender: %s \ndesire: %s \nType: %s \ninSetting: %s \nmentioned: %d \nfeeling: %s\n" \
-               % (self.idObjects, self.name, self.gender, self.desire, self.type, self.inSetting, self.timesMentioned, self.feeling)\
+               % (self.id, self.name, self.gender, self.desire, self.type, self.inSetting, self.timesMentioned, self.feeling)\
                + "attributes: " + str(self.attributes)

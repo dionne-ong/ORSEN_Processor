@@ -1,6 +1,6 @@
 class Object:
 
-    idObjects = -1
+    id = -1
     name = ""
     type = ""
     inSetting = 0
@@ -8,7 +8,7 @@ class Object:
     attributes = None
 
     def __init__(self, id, name, type, inSetting, times, attr):
-        self.idObjects  = id
+        self.id   = id
         self.name       = name
         self.type       = type
         self.inSetting  = inSetting
@@ -17,5 +17,5 @@ class Object:
 
     def __str__(self):
         return "OBJECT #%d: \nName: %s \nType: %s \ninSetting: %s \nmentioned: %d\n" \
-               % (self.idObjects, self.name, self.type, self.inSetting, self.timesMentioned)\
+               % (self.id, self.name, self.type, self.inSetting, self.timesMentioned)\
                + "attributes: " + str(self.attributes)
