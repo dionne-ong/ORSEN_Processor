@@ -160,21 +160,21 @@ def get_concept_specified(first, relation, second):
     conn = SqlConnConcepts.getConnection()
     cursor = conn.cursor()
 
-    resulting = []
+    resulting = None
 
     try:
         # Execute the SQL command
         cursor.execute(sql, (first, second, relation,))
         # Fetch all the rows in a list of lists.
-        result = cursor.fetchall()
+        result = cursor.fetchone()
 
-        for row in result:
-            id          = row[0]
-            relation    = row[1]
-            first       = row[2]
-            second      = row[3]
+        if result != None:
+            id          = result[0]
+            relation    = result[1]
+            first       = result[2]
+            second      = result[3]
 
-            resulting.append(Concept(id, relation, first, second))
+            resulting = (Concept(id, relation, first, second))
 
     except:
         print("Error Concept: unable to fetch data for word "+first+" and "+second)
