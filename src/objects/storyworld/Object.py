@@ -13,7 +13,7 @@ class Object:
         self.type       = type
         self.inSetting  = inSetting
         self.timesMentioned = times
-        self.attributes = attr
+        self.attributes.extend(attr)
 
     def __str__(self):
         return "OBJECT #%d: \nName: %s \nType: %s \ninSetting: %s \nmentioned: %d\n" \
