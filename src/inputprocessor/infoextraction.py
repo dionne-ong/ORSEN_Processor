@@ -1,4 +1,5 @@
 import spacy
+import MySQLdb
 from stanfordcorenlp import StanfordCoreNLP
 from src.db.concepts import DBO_Concept
 # ----- luisa
@@ -41,6 +42,7 @@ sem_role = []
 #For Setting Detail Extraction
 setting = []
 setting_detail = []
+
 counter = 0
 
 #Character
@@ -139,16 +141,12 @@ def categorizing(sentence):
       else:
         commands.append(sentence)
 
-# ie_semantic_role_label
-def semanticRoleLabel(sentence):
-    print("SRL PLACE")
-    # TO DO: check with database if it has relationship
-
-
-
-#setting_detail_extraction
+#ie_setting_detail_extraction
 def settingExtract(sentences):
     for x in range(0, len(sentences)):
+        rows  = []
+        isLocation = False
+
         #preposition checking
         if 'in' in sentences[x]:
             a,c = sentences[x].split('in')
@@ -176,9 +174,20 @@ def settingExtract(sentences):
         named_entity(c)
         if label[count] is not None:
             setting_detail.append(label[count])
-        # TO DO: check with SRL for nouns
-
-        #return object
+        else:
+            db = MySQLdb.connect("localhost", "root", "root", "orsen_kb")
+            c = db.cursor()
+            c.execute("SELECT second"
+                      + " FROM concepts"
+                      + " WHERE relation = 'isA'"
+                      + " AND first = " + c)
+            rows = c.fetchall()
+            for x in range(0, len(rows)):
+                if 'location' in rows[x]:
+                    isLocation = True
+            db.close()
+            if isLocation is True:
+                setting_detail.append("location")
         setting.append(c)
 
 #ie_event_detail_extract
