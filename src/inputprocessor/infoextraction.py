@@ -1,4 +1,5 @@
 import spacy
+import mysqldbhelper
 from stanfordcorenlp import StanfordCoreNLP
 from src.db.concepts import DBO_Concept
 from src.objects.storyworld.Character import Character
@@ -88,17 +89,6 @@ text_chunk = []
 dep_root = []
 dep_root_head = []
 
-#For Categorizing
-commands = []
-story = []
-
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting = []
-setting_detail = []
-
 counter = 0
 
 #Character
@@ -137,6 +127,27 @@ print(output)
 
 # ---------- rachel
 
+#For Categorizing
+commands = []
+story = []
+
+#For Semantic Role Labeling
+sem_role = []
+
+#For Setting Detail Extraction
+setting_name = []
+setting_type= []
+setting_frame = [setting_name, setting_type]
+
+#For Event Detail Extraction
+seq_no = []
+event_type = []
+doer = []
+doer_act = []
+receiver = []
+receiver_act = []
+location = []
+event_frame = [seq_no, event_type, doer, doer_act, receiver, receiver_act, location]
 #ie_categorizing
 def categorizing(sentence):
     #checks if entry has "orsen"
@@ -174,28 +185,25 @@ def settingExtract(sentences):
             c = c.replace('!', '')
 
 
-        count = len(label)+1
+        count = len(label)
         named_entity(c)
         if label[count] is not None:
-            setting_detail.append(label[count])
+            setting_type.append(label[count])
         else:
-            db = MySQLdb.connect("localhost", "root", "root", "orsen_kb")
-            c = db.cursor()
-            c.execute("SELECT second"
-                      + " FROM concepts"
-                      + " WHERE relation = 'isA'"
-                      + " AND first = " + c)
-            rows = c.fetchall()
-            for x in range(0, len(rows)):
-                if 'location' in rows[x]:
-                    isLocation = True
+            db = mysqldbhelper.DatabaseConnection("localhost",
+                                                  user="root",
+                                                  passwd="root",
+                                                  db="orsen_kb")
+            row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+
+            if row is not None:
+                setting_type.append('location')
             db.close()
-            if isLocation is True:
-                setting_detail.append("location")
-        setting.append(c)
+
+        setting_name.append(c)
 
 #ie_event_detail_extract
 def eventExtract(sentences):
-    event = []
     #TO DO: use dependency parsing to identify position of the event
-    return event
+    for x in range(0, len(sentences)):
+        seq_no.append[x]
