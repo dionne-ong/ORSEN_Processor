@@ -80,20 +80,22 @@ characters_attributes, object_attributes = infoextraction.character_attribute_ex
 print("AAAAA")
 for key, values in characters_attributes.items():
     new_character = Character()
-    new_character.name(key)
+    new_character.name = key
     print("CHAR", key)
-    for value in values:
-        print("CHAR ATTR" , value)
-        new_character.attributes.append(value)
+    if values is not None:
+        for value in values:
+            print("CHAR ATTR" , value)
+            new_character.attributes.append(value)
     world.add_character(new_character)
 
 for key, values in object_attributes.items():
     new_obj = Object()
-    new_obj.name(key)
+    new_obj.name = key
     print("OBJ", key)
-    for value in values:
-        print("OBJ ATTR", value)
-        new_obj.attributes.append(value)
+    if values is not None:
+        for value in values:
+            print("OBJ ATTR", value)
+            new_obj.attributes.append(value)
     world.add_object(new_obj)
 
 #nlp = StanfordCoreNLP(r'C:\stanford-corenlp-full-2018-01-31', memory='8g')

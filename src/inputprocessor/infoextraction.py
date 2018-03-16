@@ -85,7 +85,6 @@ def character_attribute_extraction(nc_text, pos_lemma, pos_dep, pos_text):
 
     return characters, objects
 
-
 # ---------- rachel
 
 #For Categorizing
