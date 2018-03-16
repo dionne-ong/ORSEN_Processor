@@ -1,8 +1,8 @@
 import spacy
 from stanfordcorenlp import StanfordCoreNLP
 from src.db.concepts import DBO_Concept
+from src.objects.storyworld.Character import Character
 # ----- luisa
-
 
 def reading(filename):
     with open(filename, 'r') as f:
@@ -47,17 +47,24 @@ def remove_duplicate(alist):
     return list(set(alist))
 
 
-def add_character(count, nc_text):
+def add_character_attribute(count, nc_text, pos_dep, pos_text):
     for i in range(0, len(nc_text[count])):
-        characters.append(nc_text[count][i])
+        new_character = Character()
+        new_character.name = nc_text[count][i]
+
+    for i in range(0, len(pos_dep[count])):
+        if pos_dep[count][i] == "acomp":
+            new_character.attributes.append(pos_text[count][i])
 
 
-def character_extraction(nc_text, pos_lemma, pos_dep):
+def character_attribute_extraction(nc_text, pos_lemma, pos_dep, pos_text):
     for i in range(0, len(pos_dep)):
         for j in range(0, len(pos_dep[i])):
             if pos_dep[i][j] == "ROOT":
                 if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
-                        add_character(i, nc_text)
+                        add_character_attribute(i, nc_text, pos_dep, pos_text)
+
+
 
 
 nlp = spacy.load('en')
@@ -120,9 +127,7 @@ for sent in sentences:
     noun_chunks(sent)
     counter += 1
 
-character_extraction(text_chunk, lemma, dep)
-remove_duplicate(characters)
-print(characters, "====")
+character_attribute_extraction(text_chunk, lemma, dep, text_token)
 
 nlp = StanfordCoreNLP(r'C:\stanford-corenlp-full-2018-01-31', memory='8g')
 props = {'annotators': 'dcoref', 'pipelineLanguage': 'en', 'outputFormat': 'json'}

@@ -5,7 +5,7 @@ class Object:
     type = ""
     inSetting = 0
     timesMentioned = 0
-    attributes = None
+    attributes = []
 
     def __init__(self, id, name, type, inSetting, times, attr):
         self.idObjects  = id
@@ -13,7 +13,7 @@ class Object:
         self.type       = type
         self.inSetting  = inSetting
         self.timesMentioned = times
-        self.attributes = attr
+        self.attributes.extend(attr)
 
     def __str__(self):
         return "OBJECT #%d: \nName: %s \nType: %s \ninSetting: %s \nmentioned: %d\n" \
