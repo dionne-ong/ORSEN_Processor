@@ -34,7 +34,6 @@ def named_entity(sentence):
 
 
 def noun_chunks(sentence):
-
     for chunk in sentence.noun_chunks:
         print("----NC---");
         print(chunk.text, chunk.root.text, chunk.root.dep_,
@@ -139,15 +138,16 @@ setting_name = []
 setting_type= []
 setting_frame = [setting_name, setting_type]
 
-#For Event Detail Extraction
+#For Event Extraction
 seq_no = []
 event_type = []
 doer = []
 doer_act = []
-receiver = []
-receiver_act = []
+rec = []
+rec_act = []
 location = []
-event_frame = [seq_no, event_type, doer, doer_act, receiver, receiver_act, location]
+event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
+
 #ie_categorizing
 def categorizing(sentence):
     #checks if entry has "orsen"
@@ -157,22 +157,18 @@ def categorizing(sentence):
         commands.append(sentence)
 
 #ie_setting_detail_extraction
-def settingExtract(sentences):
-    for x in range(0, len(sentences)):
-        rows  = []
-        isLocation = False
-
+def settingExtract(sentence):
         #preposition checking
-        if 'in' in sentences[x]:
-            a,c = sentences[x].split('in')
-        elif 'on' in sentences[x]:
-            a,c = sentences[x].split('on')
-        elif 'at' in sentences[x]:
-            a,c = sentences[x].split('at')
-        elif 'by' in sentences[x]:
-            a,c = sentences[x].split('by')
-        elif 'to' in sentences[x]:
-            a,c = sentences[x].split('to')
+        if 'in' in sentence:
+            a,c = sentence.split('in')
+        elif 'on' in sentence:
+            a,c = sentence.split('on')
+        elif 'at' in sentence:
+            a,c = sentence.split('at')
+        elif 'by' in sentence:
+            a,c = sentence.split('by')
+        elif 'to' in sentence:
+            a,c = sentence.split('to')
 
         #punctuation checking
         if '.' in c:
@@ -190,20 +186,39 @@ def settingExtract(sentences):
         if label[count] is not None:
             setting_type.append(label[count])
         else:
-            db = mysqldbhelper.DatabaseConnection("localhost",
-                                                  user="root",
-                                                  passwd="root",
-                                                  db="orsen_kb")
-            row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           db = mysqldbhelper.DatabaseConnection("localhost",
+                                                user="root",
+                                                passwd="root",
+                                                db="orsen_kb")
+           row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           if row is not None:
+               setting_type.append('location')
 
-            if row is not None:
-                setting_type.append('location')
-            db.close()
+           db.close()
 
         setting_name.append(c)
+    #TO DO: make setting an object to add sa World.py
 
-#ie_event_detail_extract
-def eventExtract(sentences):
-    #TO DO: use dependency parsing to identify position of the event
-    for x in range(0, len(sentences)):
-        seq_no.append[x]
+#ie_event_extract
+def eventExtract(sentence):
+        seq_count = len(seq_no)
+        if seq_count == 0:
+            seq_no.append(0)
+        else:
+            seq_no.append(seq_count-1)
+
+        noun_chunks(sentence)
+        sent_pos = sentences[len(sentences)-1]
+        chunk_count = len(sentences[sent_pos].dep_root)
+        for y in range(0, chunk_count):
+            doer.append(sentences[sent_pos].dep_root[y])
+            doer_act.append(sentences[sent_pos].dep_root_head[y])
+            y +=1
+            rec.append(sentences[sent_pos].dep_root[y])
+            if sentences[sent_pos].dep_root_head[y] is not None:
+                rec_act.append(sentences[sent_pos].dep_root_head[y])
+
+        if rec_act[len(doer)-1] is None:
+            event_type.append("Descriptive")
+        else:
+            event_type.append("Action")
