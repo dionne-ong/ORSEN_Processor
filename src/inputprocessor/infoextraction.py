@@ -26,6 +26,8 @@ def pos_ner_nc_processing(sentence):
         new_sentence.pos.append(token.pos_)
         new_sentence.tag.append(token.tag_)
         new_sentence.dep.append(token.dep_)
+
+        new_sentence.finished_nodes.append(0)
         for child in token.children:
             print("child", child)
             new_sentence.children[len(new_sentence.children)-1].append(child)
@@ -51,18 +53,24 @@ def pos_ner_nc_processing(sentence):
 def character_attribute_extraction(list_of_sentences, world):
     num = 0
     subject = ""
+    current_node = "ROOT"
     is_negated = False
     for sent in list_of_sentences:
         for i in range(0, len(sent.dep)):
-            if sent.dep[i] == "ROOT":
+            if sent.dep[i] == current_node:
+               # print("iii", i, sent.text_token[i])
                 for j in range(0, len(sent.children[i])):
                     for k in range(0, len(sent.text_token)):
-                        if str(sent.children[i][j]) == str(sent.text_token[k]):
+                        #print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
+                        #     sent.children[i][j])
+                        if (str(sent.children[i][j]) == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
                             num = k
+                            sent.finished_nodes[k] == 1
                             break
+                    # print("child", sent.children[i][j], "dep", sent.dep[num])
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
-                        add_objects(sent, str(sent.children[i][j]), sent.lemma[i], world)
+                        add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
 
                     elif sent.dep[num] == "acomp":
                         add_attributes(sent, sent.children[i][j], num, str(subject), world, is_negated)
@@ -71,12 +79,30 @@ def character_attribute_extraction(list_of_sentences, world):
                     elif sent.dep[num] == "neg":
                         is_negated = True
 
+                    elif sent.dep[num] == "nsubjpass":
+                        subject = sent.children[i][j]
+                        add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+
+                    elif sent.dep[num] == "dobj":
+                        add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+
+                    elif sent.dep[num] == "prep":
+                        print("add it to settings or add it to objects")
+
+                    elif sent.dep[num] == "agent":
+                        print("add it to settings or add it to objects")
+
+                    elif sent.dep[num] == "conj":
+                        print("aaaa", sent.text_token[num])
+                        current_node = "conj"
+                        i = num
+                        break
 
 
-
-def add_objects(sent, child, lemma, world):
+def add_objects(sent, child, dep, lemma, world):
     if (child not in world.characters) and (child not in world.objects):
-        if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None:
+        if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
+                and dep == "nsubj":
             new_character = Character()
             new_character.name = child
             new_character.id = child

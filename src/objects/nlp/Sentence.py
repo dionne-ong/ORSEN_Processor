@@ -15,6 +15,8 @@ class Sentence:
     dep_root = []
     dep_root_head = []
 
+    finished_nodes = []
+
 
     def __init__(self):
         self.words = ""
@@ -31,3 +33,5 @@ class Sentence:
         self.text_chunk = []
         self.dep_root = []
         self.dep_root_head = []
+
+        self.finished_nodes = []
