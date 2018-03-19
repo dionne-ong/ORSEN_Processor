@@ -8,7 +8,6 @@ class Sentence:
     dep = []
     children = []
 
-
     text_ent = []
     label = []
 
@@ -16,8 +15,6 @@ class Sentence:
     dep_root = []
     dep_root_head = []
 
-    characters_attributes = {}
-    objects_attributes = {}
 
     def __init__(self):
         self.words = ""
@@ -34,6 +31,3 @@ class Sentence:
         self.text_chunk = []
         self.dep_root = []
         self.dep_root_head = []
-
-        self.characters_attributes = {}
-        self.objects_attributes = {}
