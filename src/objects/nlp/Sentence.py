@@ -1,6 +1,7 @@
 class Sentence:
     words = ""
     text_token = []
+    head_text = []
     lemma = []
     pos = []
     tag = []

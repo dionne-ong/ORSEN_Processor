@@ -20,20 +20,15 @@ list_of_sentences = []
 #Character
 characters = []
 
-
 #Part-Of-Speech, NER, Dependency Parsing
 for sent in sentences:
     print(sent)
     sent = nlp(sent)
     list_of_sentences.append(infoextraction.pos_ner_nc_processing(sent))
 
-for sent in list_of_sentences:
-    print("HHHHH")
-    print(sent.words)
-    print(sent.text_token)
-
 #CharacterExtraction
-infoextraction.character_attribute_extraction(list_of_sentences)
+infoextraction.character_attribute_extraction(list_of_sentences, world)
+
 
 # print("AAAAA")
 # for key, values in characters_attributes.items():

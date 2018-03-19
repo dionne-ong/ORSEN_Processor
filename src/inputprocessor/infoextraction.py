@@ -2,6 +2,7 @@ from src.db.concepts import DBO_Concept
 from src.objects.nlp.Sentence import Sentence
 # ----- luisa
 
+
 def reading(filename):
     with open(filename, 'r') as f:
         userinput = f.read()
@@ -15,7 +16,9 @@ def pos_ner_nc_processing(sentence):
         new_sentence.children.append([])
         print("---POS----");
         print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+
         new_sentence.text_token.append(token.text)
+        new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
         new_sentence.pos.append(token.pos_)
         new_sentence.tag.append(token.tag_)
@@ -34,6 +37,7 @@ def pos_ner_nc_processing(sentence):
         print("---NC---")
         print(chunk.text, chunk.root.text, chunk.root.dep_,
               chunk.root.head.text)
+
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
         new_sentence.dep_root_head.append(chunk.root.head.text)
@@ -41,7 +45,7 @@ def pos_ner_nc_processing(sentence):
     return new_sentence
 
 
-def character_attribute_extraction(list_of_sentences):
+def character_attribute_extraction(list_of_sentences, world):
     num = 0
     subject = ""
     for sent in list_of_sentences:
@@ -54,58 +58,61 @@ def character_attribute_extraction(list_of_sentences):
                             break
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
-                        add_objects(sent, i, j)
-                        print("AAAA", sent.characters_attributes)
-
+                        add_objects(sent, sent.children[i][j], sent.lemma[i], world)
 
                     elif sent.dep[num] == "acomp":
-                        print("acom", sent.dep[num])
-                        print("CCCC", sent.objects_attributes)
-                        add_attributes(sent, i, j, subject)
-                        print("BBBB", sent.objects_attributes)
+                        add_attributes(sent, sent.children[i][j], subject, world)
 
 
-def add_objects(sent, count1, count2):
-    if (sent.children[count1][count2] not in sent.characters_attributes) and (sent.children[count1][count2] not in sent.characters_attributes):
-        if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, sent.lemma[count1]) is not None:
-            sent.characters_attributes.update({str(sent.children[count1][count2]): []})
-            print("CHAR", sent.children[count1][count2])
-            subj = sent.children[count1][count2]
+def add_objects(sent, child, lemma, world):
+    if (child not in sent.characters_attributes) and (child not in sent.objects_attributes):
+        if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None:
+            world.add_character(str(child))
+            world.characters[str(child)].timesMentioned += 1
+            print("CHAR", child)
+            subj = child
+            # update # of times
             for k in range(0, len(sent.dep_root_head)):
                 if (str(sent.dep_root_head[k]) == str(subj)) and (sent.text_chunk[k] not in sent.characters_attributes):
-                    sent.characters_attributes.update({sent.text_chunk[k]: []})
+                    world.add_character(str(sent.text_chunk[k]))
+                    world.characters[str(sent.text_chunk[k])].timesMentioned += 1
+                    # update # of times
                     subj = sent.text_chunk[k]
         else:
-            sent.objects_attributes.update({str(sent.children[count1][count2]): []})
-            print("CHAR", sent.children[count1][count2])
-            subj = sent.children[count1][count2]
+            world.add_object(str(child))
+            world.objects[str(child)].timesMentioned += 1
+            print("CHAR", child)
+            subj = child
+            # update # of times
             for k in range(0, len(sent.dep_root_head)):
                 if (str(sent.dep_root_head[k]) == str(subj)) and (sent.text_chunk[k] not in sent.objects_attributes):
-                    sent.objects_attributes.update({sent.text_chunk[k]: []})
+                    world.add_character(str(sent.text_chunk[k]))
+                    world.objects[str(sent.text_chunk[k])].timesMentioned += 1
                     subj = sent.text_chunk[k]
+                    # update # of times
+    elif child in sent.objects_attributes:
+        if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None:
+            world.add_character(str(child))
+            # transfer all attributes from object to character, delete the one in object
+        else:
+            world.objects[str(child)].timesMentioned += 1
+    elif child in sent.characters_attributes:
+        world.characters[str(child)].timesMentioned += 1
 
 
-def add_attributes(sent, count1, count2, subject):
+def add_attributes(sent, child, subject):
     if str(subject) in sent.characters_attributes:
-        sent.characters_attributes[subject].append(sent.children[count1][count2])
+        sent.characters_attributes[subject].append(child)
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == str(subject):
-                sent.characters_attributes[sent.dep_root_head[k]].append(sent.children[count1][count2])
+                sent.characters_attributes[sent.dep_root_head[k]].append(child)
                 subject = sent.text_chunk[k]
     elif str(subject) in sent.objects_attributes.keys():
-        sent.objects_attributes[str(subject)].append(sent.children[count1][count2])
+        sent.objects_attributes[str(subject)].append(child)
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == str(subject):
-                sent.objects_attributes[sent.text_chunk[k]].append(sent.children[count1][count2])
+                sent.objects_attributes[sent.text_chunk[k]].append(child)
                 subject = sent.text_chunk[k]
-
-
-
-
-
-
-
-
 
 
 # def add_character_attribute(count, nc_text, pos_dep, pos_text, nc_dep_root):
@@ -145,7 +152,7 @@ def add_attributes(sent, count1, count2, subject):
 #     for i in range(0, len(pos_dep)):
 #         for j in range(0, len(pos_dep[i])):
 #             if pos_dep[i][j] == "ROOT":
-#                 if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
+#                if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
 #                         characters = add_character_attribute(i, nc_text, pos_dep, pos_text, nc_dep_root)
 #                 else:
 #                         print("ELSE", pos_dep[i][j])
