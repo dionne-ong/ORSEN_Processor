@@ -4,6 +4,7 @@ from src.objects.nlp.Sentence import Sentence
 from src.objects.storyworld.Attribute import Attribute
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
+from neuralcoref import Coref
 # ----- luisa
 
 
