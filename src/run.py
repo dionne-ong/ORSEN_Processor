@@ -1,9 +1,6 @@
 import spacy
-from stanfordcorenlp import StanfordCoreNLP
 from src.objects.ServerInstance import ServerInstance
 from src.objects.storyworld.World import World
-from src.objects.storyworld.Character import Character
-from src.objects.storyworld.Object import Object
 from src.inputprocessor import infoextraction
 
 server = ServerInstance()
@@ -20,6 +17,8 @@ list_of_sentences = []
 #Character
 characters = []
 
+# Coreferencing
+infoextraction.corenference_resolution(sentences, world)
 
 #Part-Of-Speech, NER, Dependency Parsing
 for sent in sentences:
@@ -27,13 +26,10 @@ for sent in sentences:
     sent = nlp(sent)
     list_of_sentences.append(infoextraction.pos_ner_nc_processing(sent))
 
-for sent in list_of_sentences:
-    print("HHHHH")
-    print(sent.words)
-    print(sent.text_token)
+# DetailsExtraction
+infoextraction.details_extraction(list_of_sentences, world)
 
-#CharacterExtraction
-infoextraction.character_attribute_extraction(list_of_sentences)
+
 
 # print("AAAAA")
 # for key, values in characters_attributes.items():

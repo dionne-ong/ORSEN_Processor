@@ -1,6 +1,12 @@
 from src.db.concepts import DBO_Concept
+import pymysql
 from src.objects.nlp.Sentence import Sentence
+from src.objects.storyworld.Attribute import Attribute
+from src.objects.storyworld.Character import Character
+from src.objects.storyworld.Object import Object
+from neuralcoref import Coref
 # ----- luisa
+
 
 def reading(filename):
     with open(filename, 'r') as f:
@@ -11,15 +17,20 @@ def reading(filename):
 def pos_ner_nc_processing(sentence):
     new_sentence = Sentence()
     new_sentence.words = sentence
+    print(sentence)
     for token in sentence:
         new_sentence.children.append([])
         print("---POS----");
         print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+
         new_sentence.text_token.append(token.text)
+        new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
         new_sentence.pos.append(token.pos_)
         new_sentence.tag.append(token.tag_)
         new_sentence.dep.append(token.dep_)
+
+        new_sentence.finished_nodes.append(0)
         for child in token.children:
             print("child", child)
             new_sentence.children[len(new_sentence.children)-1].append(child)
@@ -34,6 +45,7 @@ def pos_ner_nc_processing(sentence):
         print("---NC---")
         print(chunk.text, chunk.root.text, chunk.root.dep_,
               chunk.root.head.text)
+
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
         new_sentence.dep_root_head.append(chunk.root.head.text)
@@ -41,71 +53,182 @@ def pos_ner_nc_processing(sentence):
     return new_sentence
 
 
-def character_attribute_extraction(list_of_sentences):
+def details_extraction(list_of_sentences, world):
     num = 0
     subject = ""
+    current_node = "ROOT"
+    is_negated = False
     for sent in list_of_sentences:
         for i in range(0, len(sent.dep)):
-            if sent.dep[i] == "ROOT":
+            if sent.dep[i] == current_node:
+               # print("iii", i, sent.text_token[i])
                 for j in range(0, len(sent.children[i])):
                     for k in range(0, len(sent.text_token)):
-                        if str(sent.children[i][j]) == str(sent.text_token[k]):
+                        #print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
+                        #     sent.children[i][j])
+                        if (str(sent.children[i][j]) == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
                             num = k
+                            sent.finished_nodes[k] == 1
                             break
+                    # print("child", sent.children[i][j], "dep", sent.dep[num])
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
-                        add_objects(sent, i, j)
-                        print("AAAA", sent.characters_attributes)
-
+                        add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
+                        add_capability(sent, str(sent.lemma[i]), str(subject), world, is_negated)
+                        is_negated = False
 
                     elif sent.dep[num] == "acomp":
-                        print("acom", sent.dep[num])
-                        print("CCCC", sent.objects_attributes)
-                        add_attributes(sent, i, j, subject)
-                        print("BBBB", sent.objects_attributes)
+                        add_attributes(sent, sent.children[i][j], num, str(subject), world, is_negated)
+                        is_negated = False
+
+                    elif sent.dep[num] == "neg":
+                        is_negated = True
+
+                    elif sent.dep[num] == "nsubjpass":
+                        subject = sent.children[i][j]
+                        add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+
+                    elif sent.dep[num] == "dobj":
+                        add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+
+                    elif sent.dep[num] == "prep":
+                        print("add it to settings or add it to objects")
+
+                    elif sent.dep[num] == "agent":
+                        print("add it to settings or add it to objects")
+
+                    elif sent.dep[num] == "conj":
+                        print("aaaa", sent.text_token[num])
+                        current_node = "conj"
+                        i = num
+                        break
 
 
-def add_objects(sent, count1, count2):
-    if (sent.children[count1][count2] not in sent.characters_attributes) and (sent.children[count1][count2] not in sent.characters_attributes):
-        if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, sent.lemma[count1]) is not None:
-            sent.characters_attributes.update({str(sent.children[count1][count2]): []})
-            print("CHAR", sent.children[count1][count2])
-            subj = sent.children[count1][count2]
+def add_capability(sent, attr, subj, world, negation):
+    if attr not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
+        new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
+        world.characters[subj].attributes.append(new_attribute)
+        for k in range(0, len(sent.dep_root_head)):
+            if str(sent.dep_root_head[k]) == subject:
+                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                subject = str(sent.text_chunk[k])
+                
+
+def add_objects(sent, child, dep, lemma, world):
+    if (child not in world.characters) and (child not in world.objects):
+        if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
+                and dep == "nsubj":
+            new_character = Character()
+            new_character.name = child
+            new_character.id = child
+            world.add_character(new_character)
+            world.characters[new_character.id].timesMentioned += 1
+            subj = child
             for k in range(0, len(sent.dep_root_head)):
-                if (str(sent.dep_root_head[k]) == str(subj)) and (sent.text_chunk[k] not in sent.characters_attributes):
-                    sent.characters_attributes.update({sent.text_chunk[k]: []})
+                if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.characters):
+                    new_character = Character()
+                    new_character.name = str(sent.text_chunk[k])
+                    new_character.id = str(sent.text_chunk[k])
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
                     subj = sent.text_chunk[k]
         else:
-            sent.objects_attributes.update({str(sent.children[count1][count2]): []})
-            print("CHAR", sent.children[count1][count2])
-            subj = sent.children[count1][count2]
+            new_object = Object()
+            new_object.name = child
+            new_object.id = child
+            world.add_object(new_object)
+            world.objects[new_object.id].timesMentioned += 1
+            subj = child
             for k in range(0, len(sent.dep_root_head)):
-                if (str(sent.dep_root_head[k]) == str(subj)) and (sent.text_chunk[k] not in sent.objects_attributes):
-                    sent.objects_attributes.update({sent.text_chunk[k]: []})
-                    subj = sent.text_chunk[k]
+                if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.objects):
+                    new_object = Object()
+                    new_object.name = str(sent.text_chunk[k])
+                    new_object.id = str(sent.text_chunk[k])
+                    world.add_object(new_object)
+                    world.objects[new_object.id].timesMentioned += 1
+                    subj = str(sent.text_chunk[k])
+    elif child in world.objects:
+        if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None:
+            new_character = Character.convert_from_object(child)
+            world.add_character(new_character)
+            world.characters[new_character.id].timesMentioned += 1
+        else:
+            world.objects[child].timesMentioned += 1
+    elif child in world.characters:
+        world.characters[child].timesMentioned += 1
 
 
-def add_attributes(sent, count1, count2, subject):
-    if str(subject) in sent.characters_attributes:
-        sent.characters_attributes[subject].append(sent.children[count1][count2])
+def add_attributes(sent, child, num, subject, world, negation):
+    list_of_attributes = []
+
+    for i in range(num, len(sent.words)):
+        if 'acomp' in sent.dep[i]:
+            subj = sent.text_token[i]
+            list_of_attributes.append(sent.text_token[i])
+        elif sent.dep[i] == 'conj' and sent.head_text[i] == subj:
+            list_of_attributes.append(sent.text_token[i])
+            subj = sent.text_token[i]
+
+    print(list_of_attributes)
+
+    if subject in world.characters:
+        for attr in list_of_attributes:
+            new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+            world.characters[subject].attributes.append(new_attribute)
         for k in range(0, len(sent.dep_root_head)):
-            if str(sent.dep_root_head[k]) == str(subject):
-                sent.characters_attributes[sent.dep_root_head[k]].append(sent.children[count1][count2])
-                subject = sent.text_chunk[k]
-    elif str(subject) in sent.objects_attributes.keys():
-        sent.objects_attributes[str(subject)].append(sent.children[count1][count2])
+            if str(sent.dep_root_head[k]) == subject:
+                for attr in list_of_attributes:
+                    new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                    world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                subject = str(sent.text_chunk[k])
+
+    elif subject in world.objects:
+        new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, str(child), negation)
+        world.objects[subject].attributes.append(new_attribute)
         for k in range(0, len(sent.dep_root_head)):
-            if str(sent.dep_root_head[k]) == str(subject):
-                sent.objects_attributes[sent.text_chunk[k]].append(sent.children[count1][count2])
-                subject = sent.text_chunk[k]
+            if str(sent.dep_root_head[k]) == subject:
+                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, str(child), negation)
+                world.objects[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                subject = str(sent.text_chunk[k])
 
 
+def corenference_resolution(sentences, world):
+    j = 1;
+    for i in range(0, len(sentences)-1):
+        coref = Coref()
+        clusters = coref.one_shot_coref(utterances=sentences[j], context=sentences[i])
+        print("clusters", clusters)
+        print("a", str(sentences[i]), "b", str(sentences[j]) )
+        mentions = coref.get_mentions()
+        print("mentions", mentions)
+        # score = coref.get_scores()
+        # print("score", score)
+        # utterances = coref.get_utterances()
+        # print("utterance", utterances)
 
+        rep = coref.get_most_representative(use_no_coref_list=True)
+        print("rep", rep)
 
+        for key, value in rep.items():
+            sentences[j] = sentences[j].replace(str(key), str(value))
+            if (str(value) not in world.characters) and (str(value) not in world.objects):
+                if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    new_character.gender = "M"
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    new_character.gender = "F"
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
 
-
-
-
+        j += 1
 
 
 # def add_character_attribute(count, nc_text, pos_dep, pos_text, nc_dep_root):
@@ -145,7 +268,7 @@ def add_attributes(sent, count1, count2, subject):
 #     for i in range(0, len(pos_dep)):
 #         for j in range(0, len(pos_dep[i])):
 #             if pos_dep[i][j] == "ROOT":
-#                 if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
+#                if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
 #                         characters = add_character_attribute(i, nc_text, pos_dep, pos_text, nc_dep_root)
 #                 else:
 #                         print("ELSE", pos_dep[i][j])
@@ -193,11 +316,13 @@ def settingExtract(sentence):
         if sentence.label[count] is not None:
             sentence.setting_type.append(sentence.label[count])
         else:
-           db = mysqldbhelper.DatabaseConnection("localhost",
-                                                user="root",
-                                                passwd="root",
-                                                db="orsen_kb")
-           row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           db = pymysql.connect("localhost",
+                                user="root",
+                                passwd="root",
+                                db="orsen_kb")
+           cursor = db.cursor()
+           cursor.execute("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           row = cursor.fetchone()
            if row is not None:
                sentence.setting_type.append('location')
                sentence.setting_name.append(c)
@@ -205,7 +330,15 @@ def settingExtract(sentence):
 
         print(sentence.setting_frame)
 
-    #TO DO: make setting an object to add sa World.py
+#add_setting_as_object
+def add_setting_attribute(setting_frame):
+    setting_attribute = {}
+
+    return setting_attribute
+
+def setting_attribute():
+    setting = {}
+    return setting
 
 #ie_event_extract
 def eventExtract(sentence, sentences):

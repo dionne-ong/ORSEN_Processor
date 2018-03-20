@@ -1,12 +1,12 @@
 class Sentence:
     words = ""
     text_token = []
+    head_text = []
     lemma = []
     pos = []
     tag = []
     dep = []
     children = []
-
 
     text_ent = []
     label = []
@@ -15,8 +15,8 @@ class Sentence:
     dep_root = []
     dep_root_head = []
 
-    characters_attributes = {}
-    objects_attributes = {}
+    finished_nodes = []
+
 
     def __init__(self):
         self.words = ""
@@ -34,5 +34,4 @@ class Sentence:
         self.dep_root = []
         self.dep_root_head = []
 
-        self.characters_attributes = {}
-        self.objects_attributes = {}
+        self.finished_nodes = []
