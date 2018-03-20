@@ -16,6 +16,7 @@ def reading(filename):
 def pos_ner_nc_processing(sentence):
     new_sentence = Sentence()
     new_sentence.words = sentence
+    print(sentence)
     for token in sentence:
         new_sentence.children.append([])
         print("---POS----");
@@ -51,7 +52,7 @@ def pos_ner_nc_processing(sentence):
     return new_sentence
 
 
-def character_attribute_extraction(list_of_sentences, world):
+def details_extraction(list_of_sentences, world):
     num = 0
     subject = ""
     current_node = "ROOT"
@@ -71,7 +72,9 @@ def character_attribute_extraction(list_of_sentences, world):
                     # print("child", sent.children[i][j], "dep", sent.dep[num])
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
-                        add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+                        add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
+                        add_capability(sent, str(sent.lemma[i]), str(subject), world, is_negated)
+                        is_negated = False
 
                     elif sent.dep[num] == "acomp":
                         add_attributes(sent, sent.children[i][j], num, str(subject), world, is_negated)
@@ -100,6 +103,17 @@ def character_attribute_extraction(list_of_sentences, world):
                         break
 
 
+def add_capability(sent, attr, subj, world, negation):
+    if attr not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
+        new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
+        world.characters[subj].attributes.append(new_attribute)
+        for k in range(0, len(sent.dep_root_head)):
+            if str(sent.dep_root_head[k]) == subject:
+                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                subject = str(sent.text_chunk[k])
+                
+
 def add_objects(sent, child, dep, lemma, world):
     if (child not in world.characters) and (child not in world.objects):
         if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
@@ -111,7 +125,7 @@ def add_objects(sent, child, dep, lemma, world):
             world.characters[new_character.id].timesMentioned += 1
             subj = child
             for k in range(0, len(sent.dep_root_head)):
-                if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in sent.characters_attributes):
+                if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.characters):
                     new_character = Character()
                     new_character.name = str(sent.text_chunk[k])
                     new_character.id = str(sent.text_chunk[k])
@@ -126,7 +140,7 @@ def add_objects(sent, child, dep, lemma, world):
             world.objects[new_object.id].timesMentioned += 1
             subj = child
             for k in range(0, len(sent.dep_root_head)):
-                if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in sent.objects_attributes):
+                if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.objects):
                     new_object = Object()
                     new_object.name = str(sent.text_chunk[k])
                     new_object.id = str(sent.text_chunk[k])
@@ -176,6 +190,44 @@ def add_attributes(sent, child, num, subject, world, negation):
                 new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, str(child), negation)
                 world.objects[str(sent.dep_root_head[k])].attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
+
+
+def corenference_resolution(sentences, world):
+    j = 1;
+    for i in range(0, len(sentences)-1):
+        coref = Coref()
+        clusters = coref.one_shot_coref(utterances=sentences[j], context=sentences[i])
+        print("clusters", clusters)
+        print("a", str(sentences[i]), "b", str(sentences[j]) )
+        mentions = coref.get_mentions()
+        print("mentions", mentions)
+        # score = coref.get_scores()
+        # print("score", score)
+        # utterances = coref.get_utterances()
+        # print("utterance", utterances)
+
+        rep = coref.get_most_representative(use_no_coref_list=True)
+        print("rep", rep)
+
+        for key, value in rep.items():
+            sentences[j] = sentences[j].replace(str(key), str(value))
+            if (str(value) not in world.characters) and (str(value) not in world.objects):
+                if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    new_character.gender = "M"
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    new_character.gender = "F"
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+
+        j += 1
 
 
 # def add_character_attribute(count, nc_text, pos_dep, pos_text, nc_dep_root):
