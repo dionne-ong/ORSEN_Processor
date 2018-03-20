@@ -1,5 +1,5 @@
 from src.db.concepts import DBO_Concept
-import mysqldbhelper
+import pymysql
 # ----- luisa
 
 def reading(filename):
@@ -125,11 +125,13 @@ def settingExtract(sentence):
         if sentence.label[count] is not None:
             sentence.setting_type.append(sentence.label[count])
         else:
-           db = mysqldbhelper.DatabaseConnection("localhost",
-                                                user="root",
-                                                passwd="root",
-                                                db="orsen_kb")
-           row = db.get_one("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           db = pymysql.connect("localhost",
+                                user="root",
+                                passwd="root",
+                                db="orsen_kb")
+           cursor = db.cursor()
+           cursor.execute("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
+           row = cursor.fetchone()
            if row is not None:
                sentence.setting_type.append('location')
                sentence.setting_name.append(c)
@@ -137,7 +139,15 @@ def settingExtract(sentence):
 
         print(sentence.setting_frame)
 
-    #TO DO: make setting an object to add sa World.py
+#add_setting_as_object
+def add_setting_attribute(setting_frame):
+    setting_attribute = {}
+
+    return setting_attribute
+
+def setting_attribute():
+    setting = {}
+    return setting
 
 #ie_event_extract
 def eventExtract(sentence, sentences):
