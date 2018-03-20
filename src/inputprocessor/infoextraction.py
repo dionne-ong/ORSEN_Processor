@@ -73,7 +73,9 @@ def details_extraction(list_of_sentences, world):
                     # print("child", sent.children[i][j], "dep", sent.dep[num])
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
-                        add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+                        add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
+                        add_capability(sent, str(sent.lemma[i]), str(subject), world, is_negated)
+                        is_negated = False
 
                     elif sent.dep[num] == "acomp":
                         add_attributes(sent, sent.children[i][j], num, str(subject), world, is_negated)
@@ -101,6 +103,17 @@ def details_extraction(list_of_sentences, world):
                         i = num
                         break
 
+
+def add_capability(sent, attr, subj, world, negation):
+    if attr not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
+        new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
+        world.characters[subj].attributes.append(new_attribute)
+        for k in range(0, len(sent.dep_root_head)):
+            if str(sent.dep_root_head[k]) == subject:
+                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                subject = str(sent.text_chunk[k])
+                
 
 def add_objects(sent, child, dep, lemma, world):
     if (child not in world.characters) and (child not in world.objects):
