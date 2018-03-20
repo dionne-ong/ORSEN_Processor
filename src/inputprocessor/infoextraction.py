@@ -1,12 +1,9 @@
 from src.db.concepts import DBO_Concept
-<<<<<<< HEAD
 import pymysql
-=======
 from src.objects.nlp.Sentence import Sentence
 from src.objects.storyworld.Attribute import Attribute
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
->>>>>>> 9dfa048050c681bdedfea431881c5a330bac5747
 # ----- luisa
 
 
@@ -238,20 +235,66 @@ def isStoryText(sentence):
         return False
 
 #ie_setting_detail_extraction
-def settingExtract(sentence):
-        #preposition checking
-        if 'in' in sentence:
-            a,c = sentence.split('in')
-        elif 'on' in sentence:
-            a,c = sentence.split('on')
-        elif 'at' in sentence:
-            a,c = sentence.split('at')
-        elif 'by' in sentence:
-            a,c = sentence.split('by')
-        elif 'to' in sentence:
-            a,c = sentence.split('to')
+def setting_attribute_extraction(list_of_sentences, world):
+    setting_name = []
+    setting_time = []
 
-        #punctuation checking
+    for i in range(0, len(list_of_sentences)):
+        isPROPN = False
+        isLocation = False
+        isDate = False
+
+        #Check in NER
+        for x in range(0, len(list_of_sentences[i].text_ent)):
+            text = list_of_sentences[i].text_ent[x]
+            label = list_of_sentences[i].label[x]
+
+            #Checking for Duplicate Entries
+            for k in range(0, len(setting_name)):
+                if text not in setting_name[k]:
+                    continue
+                else:
+                    break
+            #Check if GPE, Location, Date or Time
+            if label == 'GPE' or label == 'LOCATION':
+                setting_name.append(text)
+                isLocation = True
+                isPROPN = True
+
+            if label == 'DATE':
+                if isLocation is False:
+                    setting_name.append(text)
+                    isDate = True
+                elif isLocation is True:
+                    setting_time.append(text)
+                    isDate = True
+
+            if label == 'TIME':
+                if isDate is False:
+                   if isLocation is True:
+                       setting_time.append(text)
+                   elif isLocation is False:
+                       setting_name.append(text)
+                elif isDate is True:
+                    if isLocation is True:
+                        hold = setting_time[len(setting_time)-1]
+                        setting_time[len(setting_time)-1] = hold + "," + text
+                    elif isLocation is False:
+                        setting_time.append(text)
+
+        # preposition checking
+        if 'in' in list_of_sentences[i]:
+            a, c = list_of_sentences[i].split('in')
+        elif 'on' in list_of_sentences[i]:
+            a, c = list_of_sentences[i].split('on')
+        elif 'at' in list_of_sentences[i]:
+            a, c = list_of_sentences[i].split('at')
+        elif 'by' in list_of_sentences[i]:
+            a, c = list_of_sentences[i].split('by')
+        elif 'to' in list_of_sentences[i]:
+            a, c = list_of_sentences[i].split('to')
+
+        # punctuation checking
         if '.' in c:
             c = c.replace('.', '')
         if ',' in c:
@@ -261,34 +304,21 @@ def settingExtract(sentence):
         if '!' in c:
             c = c.replace('!', '')
 
-        count = len(sentence.label)
-        named_entity(c)
-        if sentence.label[count] is not None:
-            sentence.setting_type.append(sentence.label[count])
-        else:
-           db = pymysql.connect("localhost",
-                                user="root",
-                                passwd="root",
-                                db="orsen_kb")
-           cursor = db.cursor()
-           cursor.execute("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
-           row = cursor.fetchone()
-           if row is not None:
-               sentence.setting_type.append('location')
-               sentence.setting_name.append(c)
-           db.close()
-
-        print(sentence.setting_frame)
-
-#add_setting_as_object
-def add_setting_attribute(setting_frame):
-    setting_attribute = {}
-
-    return setting_attribute
-
-def setting_attribute():
-    setting = {}
-    return setting
+        #Check in DB if Location
+        if isPROPN is False:
+            db = pymysql.connect("localhost",
+                                 user="root",
+                                 passwd="root",
+                                 db="orsen_kb")
+            cursor = db.cursor()
+            cursor.execute("SELECT second" +
+                           " FROM concepts" +
+                           " WHERE relation = %s" +
+                           " AND first = %s " +
+                           " AND second = %s", ('isA', c, 'location'))
+            locate = cursor.fetchone()
+            if locate is not None:
+                setting_name.append(c)
 
 #ie_event_extract
 def eventExtract(sentence, sentences):
