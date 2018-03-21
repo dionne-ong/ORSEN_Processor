@@ -165,14 +165,15 @@ def add_objects(sent, child, dep, lemma, world):
 
 
 def add_attributes(sent, child, num, subject, world, negation):
-    list_of_attributes = []
+    list_of_attributes = [sent.text_token[num]]
 
     for i in range(num, len(sent.words)):
         if 'acomp' in sent.dep[i]:
-            print("BAAA")
+            print("BAAA", sent.text_token[i])
             subj = sent.text_token[i]
             list_of_attributes.append(sent.text_token[i])
-        elif sent.dep[i] == 'conj' and sent.head_text[i] == subj:
+        elif (sent.dep[i] == 'conj') and (sent.head_text[i] == subj):
+            print("BAAA2", sent.text_token[i])
             list_of_attributes.append(sent.text_token[i])
             subj = sent.text_token[i]
 
