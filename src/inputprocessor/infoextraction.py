@@ -19,11 +19,10 @@ def reading(filename):
 def pos_ner_nc_processing(sentence):
     new_sentence = Sentence()
     new_sentence.words = sentence
-    print(sentence)
     for token in sentence:
         new_sentence.children.append([])
-        print("---POS----");
-        print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+        # print("---POS----");
+        # print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
 
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
@@ -34,19 +33,18 @@ def pos_ner_nc_processing(sentence):
 
         new_sentence.finished_nodes.append(0)
         for child in token.children:
-            print("child", child)
+            # print("child", child)
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-        print("---NER---")
+        # print("---NER---")
         print(ent.text, ent.start_char, ent.end_char, ent.label_)
         new_sentence.text_ent.append(ent.text)
-        new_sentence.label.append(ent.text)
+        new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        print("---NC---")
-        print(chunk.text, chunk.root.text, chunk.root.dep_,
-              chunk.root.head.text)
+        # print("---NC---")
+        # print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
 
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
@@ -67,12 +65,11 @@ def details_extraction(list_of_sentences, world):
                 # print("iii", i, sent.text_token[i])
                 for j in range(0, len(sent.children[i])):
                     num = find_index(sent, str(sent.children[i][j]))
-                    print("child", sent.children[i][j], "dep", sent.dep[num])
-
+                    # print("child", sent.children[i][j], "dep", sent.dep[num])
                     # nominal subject
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
-                        print("SUBJECT",subject )
+                        # print("SUBJECT", subject)
                         add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
                         add_capability(sent, str(sent.lemma[i]), str(subject), world, is_negated)
                         is_negated = False
@@ -146,10 +143,11 @@ def add_capability(sent, attr, subj, world, negation):
 
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == subj:
-                if str(sent.dep_root_head[k]) in world.characters:
-                    world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                if str(sent.text_chunk[k]) in world.characters:
+                    world.characters[str(sent.text_chunk[k])].attributes.append(new_attribute)
                 else:
-                    world.objects[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                    world.objects[str(sent.text_chunk[k])].attributes.append(new_attribute)
+
                 subj = str(sent.text_chunk[k])
 
 
@@ -181,11 +179,11 @@ def add_objects(sent, child, dep, lemma, world):
                     new_character = Character()
                     new_character.name = str(sent.text_chunk[k])
                     new_character.id = str(sent.text_chunk[k])
+                    new_character.attributes = []
                     world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
+                    world.characters[new_character.id].timesMentioned = 1
                     subj = sent.text_chunk[k]
         else:
-            print("BBBB")
             new_object = Object()
             new_object.name = child
             new_object.id = child
@@ -199,7 +197,8 @@ def add_objects(sent, child, dep, lemma, world):
                     new_object.name = str(sent.text_chunk[k])
                     new_object.id = str(sent.text_chunk[k])
                     world.add_object(new_object)
-                    world.objects[new_object.id].timesMentioned += 1
+                    new_object.attributes = []
+                    world.objects[new_object.id].timesMentioned = 1
                     subj = str(sent.text_chunk[k])
     elif child in world.objects:
         if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None:
@@ -219,13 +218,9 @@ def add_attributes(sent, num, subject, world, negation):
         if (sent.dep[i] == 'conj') and (sent.head_text[i] == head):
             list_of_attributes.append(sent.text_token[i])
             head = sent.text_token[i]
-    print("SUBJ", subject)
-    print(world.objects)
     if subject in world.characters:
-        print("YAY")
         for attr in list_of_attributes:
             new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-            print("ATTRIBUTE ADDED:", attr, "To", subject)
             char = world.characters[subject]
             print(char)
             char.attributes.append(new_attribute)
@@ -233,25 +228,22 @@ def add_attributes(sent, num, subject, world, negation):
             if str(sent.dep_root_head[k]) == subject:
                 for attr in list_of_attributes:
                     new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-                    print("ATTRIBUTE ADDED:", attr, "To", subject)
-                    char = world.characters[subject]
-                    print(char)
+                    char = world.characters[sent.text_chunk[k]]
                     char.attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
 
     elif subject in world.objects:
         for attr in list_of_attributes:
             new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+            print("ADD", attr, "TO", subject)
             obj = world.objects[subject]
-            print(obj)
             obj.attributes.append(new_attribute)
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == subject:
                 for attr in list_of_attributes:
                     new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-                    print("ATTRIBUTE ADDED:", attr, "To", subject)
-                    obj = world.objects[subject]
-                    print(obj)
+                    print("ADD", attr, "TO", sent.text_chunk[k])
+                    obj = world.objects[sent.text_chunk[k]]
                     obj.attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
 
@@ -289,52 +281,6 @@ def corenference_resolution(sentences, world):
 
         j += 1
 
-
-# def add_character_attribute(count, nc_text, pos_dep, pos_text, nc_dep_root):
-#     characters_attributes = {}
-#     for i in range(0, len(nc_text[count])):
-#         if nc_text[count][i] not in characters_attributes:
-#             #characters_attributes.fromkeys(nc_text[count][i])
-#             if(nc_dep_root[count][i] is "conj") or (nc_dep_root[count][i] is "nsubj"):
-#                 characters_attributes.update({nc_text[count][i]: []})
-#
-#     for i in range(0, len(pos_dep[count])):
-#         if pos_dep[count][i] == "acomp":
-#             for j in range(0, len(nc_text[count])):
-#                 characters_attributes[nc_text[count][j]].append(pos_text[count][i])
-#
-#     return characters_attributes
-#
-#
-# def add_object_attribute(count, nc_text, pos_dep, pos_text, nc_dep_root):
-#     objects_attributes = {}
-#     for i in range(0, len(nc_text[count])):
-#         if nc_text[count][i] not in objects_attributes:
-#             #objects_attributes.fromkeys(nc_text[count][i])
-#             objects_attributes.update({nc_text[count][i]: []})
-#
-#     for i in range(0, len(pos_dep[count])):
-#         if pos_dep[count][i] == "acomp":
-#             for j in range(0, len(nc_text[count])):
-#                 objects_attributes[nc_text[count][j]].append(pos_text[count][i])
-#
-#     return objects_attributes
-#
-#
-# def character_attribute_extraction(nc_text, pos_lemma, pos_dep, pos_text, nc_dep_root):
-#     characters = {}
-#     objects = {}
-#     for i in range(0, len(pos_dep)):
-#         for j in range(0, len(pos_dep[i])):
-#             if pos_dep[i][j] == "ROOT":
-#                if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, pos_lemma[i][j]) is not None:
-#                         characters = add_character_attribute(i, nc_text, pos_dep, pos_text, nc_dep_root)
-#                 else:
-#                         print("ELSE", pos_dep[i][j])
-#                         objects = add_object_attribute(i, nc_text, pos_dep, pos_text, nc_dep_root)
-#
-#     return characters, objects
-
 # ---------- rachel
 
 
@@ -363,17 +309,15 @@ def setting_attribute_extraction(sentence, world):
     for x in range(0, len(sentence.text_ent)):
         text = sentence.text_ent[x]
         label = sentence.label[x]
+        print("LABEL", sentence.label[x])
 
         #Checking for Duplicate Entries
-        for k in range(0, len(setting_name)):
-            if text not in setting_name[k]:
-               continue
-            else:
-                break
 
+        print("label: ", label)
         #Check if GPE, Location, Date or Time
         if label == 'GPE' or label == 'LOCATION':
             setting_name.append(text)
+            print("it is a location!!")
             isAdded = True
             setting_type.append("LOCATION")
             isLocation = True
@@ -433,18 +377,22 @@ def setting_attribute_extraction(sentence, world):
                     isAdded = True
 
     print("------SETTING FRAME------")
-    print(setting_name, setting_time)
+    print(setting_name, setting_type, setting_time)
     
     add_setting(setting_name, setting_type, setting_time, world)
 
     return isAdded
 #Add Setting to World
 def add_setting(name, type, time, world):
-    for x in range(0, len(name)):
+    for x in range(0, len(name)-1):
         new_setting = Setting()
-        new_setting.name = name[x]
-        new_setting.type = type[x]
-        new_setting.time = time[x]
+        if name[x] is not None:
+            new_setting.name = name[x]
+            new_setting.id = name[x]
+        if type[x] is not None:
+            new_setting.type = type[x]
+        if time[x] is not None:
+            new_setting.time = time[x]
 
         world.add_setting(new_setting)
 

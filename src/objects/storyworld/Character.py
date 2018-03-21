@@ -14,7 +14,7 @@ class Character(Object):
         self.feeling = feeling
 
     def __str__(self):
-        return "CHARACTER #%d: \nName: %s \nGender: %s \ndesire: %s \nType: %s \ninSetting: %s \nmentioned: %d \nfeeling: %s\n" \
+        return "CHARACTER: %s \nName: %s \nGender: %s \ndesire: %s \nType: %s \ninSetting: %s \nmentioned: %d \nfeeling: %s\n" \
                % (self.id, self.name, self.gender, self.desire, self.type, self.inSetting, self.timesMentioned, self.feeling)\
                + "attributes: " + str(self.attributes)
 
