@@ -7,6 +7,8 @@ server = ServerInstance()
 worldid = "0"
 world = World(worldid)
 server.add_world(world)
+print("hallo")
+
 
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en')
@@ -57,16 +59,12 @@ infoextraction.details_extraction(list_of_sentences, world)
 #print("------------------")
 #print(output)
 
-#For Categorizing
+#Setting Details
+settings = []
+time = []
 
-
-#For Semantic Role Labeling
-sem_role = []
-
-#For Setting Detail Extraction
-setting_name = []
-setting_type= []
-setting_frame = [setting_name, setting_type]
+#Setting Detail Extraction
+#infoextraction.setting_attribute_extraction(list_of_sentences, world)
 
 #For Event Extraction
 seq_no = []

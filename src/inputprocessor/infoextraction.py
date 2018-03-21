@@ -4,8 +4,10 @@ from src.objects.nlp.Sentence import Sentence
 from src.objects.storyworld.Attribute import Attribute
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
+from src.objects.storyworld.Setting import Setting
 from neuralcoref import Coref
 # ----- luisa
+
 
 
 def reading(filename):
@@ -284,6 +286,8 @@ def corenference_resolution(sentences, world):
 # ---------- rachel
 
 
+
+
 #ie_categorizing
 def isStoryText(sentence):
     #checks if entry has "orsen"
@@ -293,57 +297,96 @@ def isStoryText(sentence):
         return False
 
 #ie_setting_detail_extraction
-def settingExtract(sentence):
-        #preposition checking
-        if 'in' in sentence:
-            a,c = sentence.split('in')
-        elif 'on' in sentence:
-            a,c = sentence.split('on')
-        elif 'at' in sentence:
-            a,c = sentence.split('at')
-        elif 'by' in sentence:
-            a,c = sentence.split('by')
-        elif 'to' in sentence:
-            a,c = sentence.split('to')
+def setting_attribute_extraction(list_of_sentences, world):
+    setting_name = []
+    setting_time = []
+    setting_type = []
 
-        #punctuation checking
-        if '.' in c:
-            c = c.replace('.', '')
-        if ',' in c:
-            c = c.replace(',', '')
-        if '?' in c:
-            c = c.replace('?', '')
-        if '!' in c:
-            c = c.replace('!', '')
+    for i in range(0, len(list_of_sentences)):
+        isPROPN = False
+        isLocation = False
+        isDate = False
 
-        count = len(sentence.label)
-        named_entity(c)
-        if sentence.label[count] is not None:
-            sentence.setting_type.append(sentence.label[count])
-        else:
-           db = pymysql.connect("localhost",
-                                user="root",
-                                passwd="root",
-                                db="orsen_kb")
-           cursor = db.cursor()
-           cursor.execute("SELECT second FROM concepts WHERE relation = %s AND first = %s AND second = %s", ('isA', c, 'location'))
-           row = cursor.fetchone()
-           if row is not None:
-               sentence.setting_type.append('location')
-               sentence.setting_name.append(c)
-           db.close()
+        #Check in NER
+        for x in range(0, len(list_of_sentences[i].text_ent)):
+            text = list_of_sentences[i].text_ent[x]
+            label = list_of_sentences[i].label[x]
 
-        print(sentence.setting_frame)
+            #Checking for Duplicate Entries
+            for k in range(0, len(setting_name)):
+                if text not in setting_name[k]:
+                    continue
+                else:
+                    break
 
-#add_setting_as_object
-def add_setting_attribute(setting_frame):
-    setting_attribute = {}
+            #Check if GPE, Location, Date or Time
+            if label == 'GPE' or label == 'LOCATION':
+                setting_name.append(text)
+                setting_type.append("LOCATION")
+                isLocation = True
+                isPROPN = True
 
-    return setting_attribute
+            if label == 'DATE':
+                if isLocation is False:
+                    setting_name.append(text)
+                    setting_type.append("DATE")
+                    isDate = True
+                elif isLocation is True:
+                    setting_time.append(text)
+                    setting_type.append("DATE")
+                    isDate = True
 
-def setting_attribute():
-    setting = {}
-    return setting
+            if label == 'TIME':
+                if isDate is False:
+                   if isLocation is True:
+                       setting_time.append(text)
+                       setting_type.append("TIME")
+                   elif isLocation is False:
+                       setting_name.append(text)
+                       setting_type.append("TIME")
+                elif isDate is True:
+                    if isLocation is True:
+                        hold = setting_time[len(setting_time)-1]
+                        setting_time[len(setting_time)-1] = hold + "," + text
+                        setting_type.append("TIME")
+                    elif isLocation is False:
+                        setting_time.append(text)
+                        setting_type.append("TIME")
+
+
+        #Check in DB if Location
+        for y in range(0, len(list_of_sentences[i].dep)):
+            text = list_of_sentences[i].text_token[y]
+            dep = list_of_sentences[i].dep[y]
+            if dep == 'pobj':
+                db = pymysql.connect("localhost",
+                                     user="root",
+                                     passwd="root",
+                                     db="orsen_kb")
+                cursor = db.cursor()
+                cursor.execute("SELECT second" +
+                               " FROM concepts" +
+                               " WHERE relation = %s" +
+                               " AND first = %s " +
+                               " AND second = %s", ('isA', text, 'location'))
+                locate = cursor.fetchone()
+                if locate is not None:
+                    setting_name.append(text)
+
+    print("------SETTING FRAME------")
+    print(setting_name, setting_time)
+
+#Add Setting to World
+def add_setting(name, type, time, world):
+    for x in range(0, len(name)):
+        new_setting = Setting()
+        new_setting.name = name[x]
+        new_setting.type = type[x]
+        new_setting.time = time[x]
+
+        world.add_setting(new_setting)
+
+    print("-----ADDED SETTING TO THE WORLD----")
 
 #ie_event_extract
 def eventExtract(sentence, sentences):
