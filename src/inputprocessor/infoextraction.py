@@ -434,6 +434,8 @@ def setting_attribute_extraction(sentence, world):
 
     print("------SETTING FRAME------")
     print(setting_name, setting_time)
+    
+    add_setting(setting_name, setting_type, setting_time, world)
 
     return isAdded
 #Add Setting to World
