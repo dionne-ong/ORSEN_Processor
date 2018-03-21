@@ -2,9 +2,9 @@ class Setting:
     id = -1
     name = ""
     type = ""
-    time = 0
+    time = ""
 
-    def __init__(self, id=-1, name="", type="", time=1):
+    def __init__(self, id=-1, name="", type="", time=""):
         self.id   = id
         self.name = name
         self.type = type
