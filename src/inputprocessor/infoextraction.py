@@ -66,52 +66,71 @@ def details_extraction(list_of_sentences, world):
                 sent.finished_nodes[i] = 1
                 # print("iii", i, sent.text_token[i])
                 for j in range(0, len(sent.children[i])):
-                    for k in range(0, len(sent.text_token)):
-                        #print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
-                        #     sent.children[i][j])
-                        if (str(sent.children[i][j]) == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
-                            num = k
-                            sent.finished_nodes[k] == 1
-                            break
+                    num = find_index(sent, str(sent.children[i][j]))
                     print("child", sent.children[i][j], "dep", sent.dep[num])
+
+                    # nominal subject
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
+                        print("SUBJECT",subject )
                         add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
                         add_capability(sent, str(sent.lemma[i]), str(subject), world, is_negated)
                         is_negated = False
 
+                    # adjectival complement
                     elif sent.dep[num] == "acomp":
                         add_attributes(sent, num, str(subject), world, is_negated)
                         is_negated = False
 
+                    # negation
                     elif sent.dep[num] == "neg":
                         is_negated = True
 
+                    # nominal subject (passive)
                     elif sent.dep[num] == "nsubjpass":
                         subject = sent.children[i][j]
                         add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
 
+                    # direct object
                     elif sent.dep[num] == "dobj":
                         add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
 
+                    # dative - the noun to which something is given
+                    elif sent.dep[num] == "dative":
+                        if sent.text_token[num].children is None:
+                            add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+                        else:
+                            print("may be added to settings or objects")
+
+                    # preposition
                     elif sent.dep[num] == "prep":
                         print("add it to settings or add it to objects")
 
+                    # agent
                     elif sent.dep[num] == "agent":
                         print("add it to settings or add it to objects")
 
+                    # conjunction
                     elif sent.dep[num] == "conj":
                         current_node = "conj"
                         i = num
                         break
 
+                    # clausal complement
                     elif sent.dep[num] == "ccomp":
                         current_node = "ccomp"
                         i = num
                         break
 
+                    # adverbial clause modifier
                     elif sent.dep[num] == "advcl":
                         current_node = "advcl"
+                        i = num
+                        break
+
+                    # open clausal compliment - it doesn't have its own subject
+                    elif sent.dep[num] == "xcomp":
+                        current_node = "xcomp"
                         i = num
                         break
 
@@ -119,12 +138,31 @@ def details_extraction(list_of_sentences, world):
 def add_capability(sent, attr, subj, world, negation):
     if attr not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
         new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
-        world.characters[subj].attributes.append(new_attribute)
+
+        if subj in world.characters:
+            world.characters[subj].attributes.append(new_attribute)
+        else:
+            world.objects[subj].attributes.append(new_attribute)
+
         for k in range(0, len(sent.dep_root_head)):
-            if str(sent.dep_root_head[k]) == subject:
-                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-                world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
-                subject = str(sent.text_chunk[k])
+            if str(sent.dep_root_head[k]) == subj:
+                if str(sent.dep_root_head[k]) in world.characters:
+                    world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                else:
+                    world.objects[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                subj = str(sent.text_chunk[k])
+
+
+def find_index(sent, child):
+    num = 0
+    for k in range(0, len(sent.text_token)):
+        # print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
+        #     sent.children[i][j])
+        if (child == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
+            num = k
+            sent.finished_nodes[k] == 1
+            break
+    return num
 
 
 def add_objects(sent, child, dep, lemma, world):
@@ -147,6 +185,7 @@ def add_objects(sent, child, dep, lemma, world):
                     world.characters[new_character.id].timesMentioned += 1
                     subj = sent.text_chunk[k]
         else:
+            print("BBBB")
             new_object = Object()
             new_object.name = child
             new_object.id = child
