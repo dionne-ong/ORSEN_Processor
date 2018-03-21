@@ -451,7 +451,7 @@ def add_setting(name, type, time, world):
     print("-----ADDED SETTING TO THE WORLD----")
 
 #ie_event_extract
-def event_extraction(list_of_sentences, world):
+def event_extraction(sentence, world):
     event_char = []
     event_char_action = []
     event_obj = []
@@ -460,16 +460,38 @@ def event_extraction(list_of_sentences, world):
     #check a character appearance in the character world
     list_char = world.characters
     isFound = False
+    sbj_c = 0
+    vrb_c = 0
+    pbj_c = 0
 
-    for i in range(0, len(list_of_sentences)):
-        for x in range(0, len(list_of_sentences[i].dep)):
-            if list_of_sentences[i].dep[x] == 'nsubj':
-                curr = list_of_sentences[i].dep[x]
+    for k in range(0, len(sentence.dep)):
+        if sentence.dep[k] == 'nsubj':
+            sbj_c += 1
+        elif sentence.dep[k] == 'verb':
+            vrb_c += 1
+        elif sentence.dep[k] == 'pobj':
+            pbj_c += 1
+    
+
+    for x in range(0, len(sentence.dep)):
+        if sentence.dep[x] == 'nsubj':
+            char = sentence.dep[x]
             for y in range(0, len(list_char)):
-                if curr == list_char[y]:
+                if char == list_char.name[y]:
                     isFound = True
-                    event_char.append(curr)
+                    event_char.append(char)
                     continue
+
+        if sentence.dep_root[x] == 'verb':
+            act = sentence.dep_root_head[x]
+            event_char_action.append(act)
+            continue
+
+        if sentence.dep_root[x] == 'pobj':
+            obj = sentence.text_chunk[x]
+            event_obj.append(obj)
+
+
 
     #TO DO: get object / character action
 
