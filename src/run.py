@@ -9,6 +9,7 @@ world = World(worldid)
 server.add_world(world)
 print("hallo")
 
+
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en')
 document = nlp(infoextraction.reading("document.txt"))
