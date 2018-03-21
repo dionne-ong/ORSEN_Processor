@@ -304,16 +304,25 @@ def setting_attribute_extraction(sentence, world):
     isPROPN = False
     isLocation = False
     isDate = False
+    isChar = False
 
     #Check in NER
     for x in range(0, len(sentence.text_ent)):
         text = sentence.text_ent[x]
         label = sentence.label[x]
-        print("LABEL", sentence.label[x])
 
-        #Checking for Duplicate Entries
+        # connect to character
+        list_char = world.characters
 
-        print("label: ", label)
+        if label == 'PERSON' or label == "ORG":
+            for k in list_char:
+                print(sentence.text_chunk[x])
+                print(list_char[k])
+                if list_char[k].name == sentence.text_chunk[x]:
+                    char = list_char[k].name
+                    isChar = True
+                    print("char", char)
+
         #Check if GPE, Location, Date or Time
         if label == 'GPE' or label == 'LOCATION':
             setting_name.append(text)
@@ -376,23 +385,18 @@ def setting_attribute_extraction(sentence, world):
                     setting_name.append(text)
                     isAdded = True
 
-        #connect to character
-        list_char = world.characters
-        if sentence.dep_root[x] == 'nsubj':
-            for k in range(0, len(list_char)):
-                if list_char[k].name == sentence.text_chunk[x] and setting_name[x] is not None:
-                    list_char[k].inSetting = setting_name[x]
-                    prev_char = list_char[k].name
 
-        if sentence.dep_root[x] == 'conj':
-            for k in range(0, len(list_char)):
-                if sentence.dep_root_head[x] == prev_char:
-                    if list_char[k].name == sentence.text_chunk[x] and setting_name[x] is not None:
-                        list_char[k].inSetting = setting_name[x]
-                    
 
     print("------SETTING FRAME------")
     print(setting_name, setting_type, setting_time)
+    set = len(setting_name)-1
+
+    if isChar is True:
+        print("isChar True")
+        for k in list_char:
+            if list_char[k].name == char:
+                list_char[k].inSetting = setting_name[set]
+                print("inSetting", list_char[k].inSetting)
 
     add_setting(setting_name, setting_type, setting_time, world)
 
