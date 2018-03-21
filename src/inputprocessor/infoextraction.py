@@ -376,9 +376,24 @@ def setting_attribute_extraction(sentence, world):
                     setting_name.append(text)
                     isAdded = True
 
+        #connect to character
+        list_char = world.characters
+        if sentence.dep_root[x] == 'nsubj':
+            for k in range(0, len(list_char)):
+                if list_char[k].name == sentence.text_chunk[x] and setting_name[x] is not None:
+                    list_char[k].inSetting = setting_name[x]
+                    prev_char = list_char[k].name
+
+        if sentence.dep_root[x] == 'conj':
+            for k in range(0, len(list_char)):
+                if sentence.dep_root_head[x] == prev_char:
+                    if list_char[k].name == sentence.text_chunk[x] and setting_name[x] is not None:
+                        list_char[k].inSetting = setting_name[x]
+                    
+
     print("------SETTING FRAME------")
     print(setting_name, setting_type, setting_time)
-    
+
     add_setting(setting_name, setting_type, setting_time, world)
 
     return isAdded
