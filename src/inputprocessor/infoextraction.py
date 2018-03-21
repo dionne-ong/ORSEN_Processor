@@ -1,5 +1,7 @@
 from src.db.concepts import DBO_Concept
 import pymysql
+
+from src.objects.eventchain.EventFrame import EventFrame
 from src.objects.nlp.Sentence import Sentence
 from src.objects.storyworld.Attribute import Attribute
 from src.objects.storyworld.Character import Character
@@ -299,7 +301,12 @@ def setting_attribute_extraction(sentence, world):
     setting_name = []
     setting_time = []
     setting_type = []
+    setting_char = []
+
     isAdded = False
+
+    num_char = 0
+    num_loc = 0
 
     isPROPN = False
     isLocation = False
@@ -311,22 +318,21 @@ def setting_attribute_extraction(sentence, world):
         text = sentence.text_ent[x]
         label = sentence.label[x]
 
-        # connect to character
+        #find character
         list_char = world.characters
-
         if label == 'PERSON' or label == "ORG":
             for k in list_char:
                 print(sentence.text_chunk[x])
                 print(list_char[k])
                 if list_char[k].name == sentence.text_chunk[x]:
                     char = list_char[k].name
+                    setting_char.append(char)
                     isChar = True
-                    print("char", char)
+                    num_char += 1
 
         #Check if GPE, Location, Date or Time
         if label == 'GPE' or label == 'LOCATION':
             setting_name.append(text)
-            print("it is a location!!")
             isAdded = True
             setting_type.append("LOCATION")
             isLocation = True
@@ -387,16 +393,15 @@ def setting_attribute_extraction(sentence, world):
 
 
 
-    print("------SETTING FRAME------")
+    print("------ SETTING FRAME ------")
     print(setting_name, setting_type, setting_time)
     set = len(setting_name)-1
 
+    #connecting to characters
     if isChar is True:
-        print("isChar True")
         for k in list_char:
             if list_char[k].name == char:
                 list_char[k].inSetting = setting_name[set]
-                print("inSetting", list_char[k].inSetting)
 
     add_setting(setting_name, setting_type, setting_time, world)
 
@@ -415,7 +420,7 @@ def add_setting(name, type, time, world):
 
         world.add_setting(new_setting)
 
-    print("-----ADDED SETTING TO THE WORLD----")
+    print("----- ADDED SETTING TO THE WORLD -----")
 
 #ie_event_extract
 def event_extraction(sentence, world):
@@ -458,8 +463,33 @@ def event_extraction(sentence, world):
             obj = sentence.text_chunk[x]
             event_obj.append(obj)
 
-
-
     #TO DO: get object / character action
 
     #TO DO: get setting of the sentence
+
+    print("---- EVENT FRAME ----")
+    print(event_char, event_char_action, event_obj, event_obj_action)
+
+#Add event to the world
+def add_event(char, char_action, obj, obj_action, world):
+    for x in range(0, len(char)-1):
+        new_eventframe = EventFrame()
+
+        if char[x] is not None:
+            new_eventframe.char = char[x]
+        if char_action[x] is not None:
+            new_eventframe.character_actions = char_action[x]
+        if obj[x] is not None:
+            new_eventframe.obj = obj[x]
+        if obj_action[x] is not None:
+            new_eventframe.object_actions = obj_action[x]
+
+        list_char = world.characters
+        for k in list_char:
+            if list_char[k].name == char:
+                new_eventframe.setting = list_char[k].inSetting
+
+        world.add_eventframe(new_eventframe)
+
+    print("---- EVENT ADDED TO THE WORLD ----")
+
