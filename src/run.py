@@ -31,6 +31,20 @@ for sent in sentences:
 # DetailsExtraction
 infoextraction.details_extraction(list_of_sentences, world)
 
+print(world.characters)
+print(world.objects)
+
+for c in world.characters:
+    print("char", c)
+    print(world.characters[c])
+    for a in world.characters[c].attributes:
+        print("attr", a.relation, a.name)
+
+for c in world.objects:
+    print("obj", c)
+    print(world.objects[c])
+    for a in world.objects[c].attributes:
+        print("attr", a.relation, a.name)
 
 # print("AAAAA")
 # for key, values in characters_attributes.items():

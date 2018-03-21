@@ -64,7 +64,7 @@ def details_extraction(list_of_sentences, world):
         for i in range(0, len(sent.dep)):
             if sent.dep[i] == current_node:
                 sent.finished_nodes[i] = 1
-                print("iii", i, sent.text_token[i])
+                # print("iii", i, sent.text_token[i])
                 for j in range(0, len(sent.children[i])):
                     for k in range(0, len(sent.text_token)):
                         #print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
@@ -81,7 +81,7 @@ def details_extraction(list_of_sentences, world):
                         is_negated = False
 
                     elif sent.dep[num] == "acomp":
-                        add_attributes(sent, sent.children[i][j], num, str(subject), world, is_negated)
+                        add_attributes(sent, num, str(subject), world, is_negated)
                         is_negated = False
 
                     elif sent.dep[num] == "neg":
@@ -101,9 +101,17 @@ def details_extraction(list_of_sentences, world):
                         print("add it to settings or add it to objects")
 
                     elif sent.dep[num] == "conj":
-                        print("aaaa", sent.text_token[num])
                         current_node = "conj"
-                        # what if it has other conj
+                        i = num
+                        break
+
+                    elif sent.dep[num] == "ccomp":
+                        current_node = "ccomp"
+                        i = num
+                        break
+
+                    elif sent.dep[num] == "advcl":
+                        current_node = "advcl"
                         i = num
                         break
 
@@ -126,8 +134,9 @@ def add_objects(sent, child, dep, lemma, world):
             new_character = Character()
             new_character.name = child
             new_character.id = child
+            new_character.attributes = []
             world.add_character(new_character)
-            world.characters[new_character.id].timesMentioned += 1
+            world.characters[new_character.id].timesMentioned = 1
             subj = child
             for k in range(0, len(sent.dep_root_head)):
                 if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.characters):
@@ -141,9 +150,9 @@ def add_objects(sent, child, dep, lemma, world):
             new_object = Object()
             new_object.name = child
             new_object.id = child
-            print("added", child)
+            new_object.attributes = []
             world.add_object(new_object)
-            world.objects[new_object.id].timesMentioned += 1
+            world.objects[new_object.id].timesMentioned = 1
             subj = child
             for k in range(0, len(sent.dep_root_head)):
                 if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.objects):
@@ -164,40 +173,47 @@ def add_objects(sent, child, dep, lemma, world):
         world.characters[child].timesMentioned += 1
 
 
-def add_attributes(sent, child, num, subject, world, negation):
+def add_attributes(sent, num, subject, world, negation):
     list_of_attributes = [sent.text_token[num]]
-
+    head = sent.text_token[num]
     for i in range(num, len(sent.words)):
-        if 'acomp' in sent.dep[i]:
-            print("BAAA", sent.text_token[i])
-            subj = sent.text_token[i]
+        if (sent.dep[i] == 'conj') and (sent.head_text[i] == head):
             list_of_attributes.append(sent.text_token[i])
-        elif (sent.dep[i] == 'conj') and (sent.head_text[i] == subj):
-            print("BAAA2", sent.text_token[i])
-            list_of_attributes.append(sent.text_token[i])
-            subj = sent.text_token[i]
-
-    print("BLAH",list_of_attributes)
-    print("Fix this, it gets both handsome and beautiful")
-
+            head = sent.text_token[i]
+    print("SUBJ", subject)
+    print(world.objects)
     if subject in world.characters:
+        print("YAY")
         for attr in list_of_attributes:
             new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-            world.characters[subject].attributes.append(new_attribute)
+            print("ATTRIBUTE ADDED:", attr, "To", subject)
+            char = world.characters[subject]
+            print(char)
+            char.attributes.append(new_attribute)
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == subject:
                 for attr in list_of_attributes:
                     new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-                    world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                    print("ATTRIBUTE ADDED:", attr, "To", subject)
+                    char = world.characters[subject]
+                    print(char)
+                    char.attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
 
     elif subject in world.objects:
-        new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, str(child), negation)
-        world.objects[subject].attributes.append(new_attribute)
+        for attr in list_of_attributes:
+            new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+            obj = world.objects[subject]
+            print(obj)
+            obj.attributes.append(new_attribute)
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == subject:
-                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, str(child), negation)
-                world.objects[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                for attr in list_of_attributes:
+                    new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                    print("ATTRIBUTE ADDED:", attr, "To", subject)
+                    obj = world.objects[subject]
+                    print(obj)
+                    obj.attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
 
 
@@ -210,10 +226,6 @@ def corenference_resolution(sentences, world):
         print("a", str(sentences[i]), "b", str(sentences[j]) )
         mentions = coref.get_mentions()
         print("mentions", mentions)
-        # score = coref.get_scores()
-        # print("score", score)
-        # utterances = coref.get_utterances()
-        # print("utterance", utterances)
 
         rep = coref.get_most_representative(use_no_coref_list=True)
         print("rep", rep)
