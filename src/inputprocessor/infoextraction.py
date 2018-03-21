@@ -295,67 +295,73 @@ def isStoryText(sentence):
         return False
 
 #ie_setting_detail_extraction
-def setting_attribute_extraction(list_of_sentences, world):
+def setting_attribute_extraction(sentence, world):
     setting_name = []
     setting_time = []
     setting_type = []
+    isAdded = False
 
-    for i in range(0, len(list_of_sentences)):
-        isPROPN = False
-        isLocation = False
-        isDate = False
+    isPROPN = False
+    isLocation = False
+    isDate = False
 
-        #Check in NER
-        for x in range(0, len(list_of_sentences[i].text_ent)):
-            text = list_of_sentences[i].text_ent[x]
-            label = list_of_sentences[i].label[x]
+    #Check in NER
+    for x in range(0, len(sentence.text_ent)):
+        text = sentence.text_ent[x]
+        label = sentence.label[x]
 
-            #Checking for Duplicate Entries
-            for k in range(0, len(setting_name)):
-                if text not in setting_name[k]:
-                    continue
-                else:
-                    break
+        #Checking for Duplicate Entries
+        for k in range(0, len(setting_name)):
+            if text not in setting_name[k]:
+               continue
+            else:
+                break
 
-            #Check if GPE, Location, Date or Time
-            if label == 'GPE' or label == 'LOCATION':
+        #Check if GPE, Location, Date or Time
+        if label == 'GPE' or label == 'LOCATION':
+            setting_name.append(text)
+            isAdded = True
+            setting_type.append("LOCATION")
+            isLocation = True
+            isPROPN = True
+
+        if label == 'DATE':
+            if isLocation is False:
                 setting_name.append(text)
-                setting_type.append("LOCATION")
-                isLocation = True
-                isPROPN = True
+                isAdded = True
+                setting_type.append("DATE")
+                isDate = True
+            elif isLocation is True:
+                setting_time.append(text)
+                isAdded = True
+                setting_type.append("DATE")
+                isDate = True
 
-            if label == 'DATE':
-                if isLocation is False:
-                    setting_name.append(text)
-                    setting_type.append("DATE")
-                    isDate = True
-                elif isLocation is True:
+        if label == 'TIME':
+            if isDate is False:
+                if isLocation is True:
                     setting_time.append(text)
-                    setting_type.append("DATE")
-                    isDate = True
-
-            if label == 'TIME':
-                if isDate is False:
-                   if isLocation is True:
-                       setting_time.append(text)
-                       setting_type.append("TIME")
-                   elif isLocation is False:
-                       setting_name.append(text)
-                       setting_type.append("TIME")
-                elif isDate is True:
-                    if isLocation is True:
-                        hold = setting_time[len(setting_time)-1]
-                        setting_time[len(setting_time)-1] = hold + "," + text
-                        setting_type.append("TIME")
-                    elif isLocation is False:
-                        setting_time.append(text)
-                        setting_type.append("TIME")
-
+                    isAdded = True
+                    setting_type.append("TIME")
+                elif isLocation is False:
+                    setting_name.append(text)
+                    isAdded = True
+                    setting_type.append("TIME")
+            elif isDate is True:
+                if isLocation is True:
+                    hold = setting_time[len(setting_time)-1]
+                    setting_time[len(setting_time)-1] = hold + "," + text
+                    setting_type.append("TIME")
+                    isAdded = True
+                elif isLocation is False:
+                    setting_time.append(text)
+                    setting_type.append("TIME")
+                    isAdded = True
 
         #Check in DB if Location
-        for y in range(0, len(list_of_sentences[i].dep)):
-            text = list_of_sentences[i].text_token[y]
-            dep = list_of_sentences[i].dep[y]
+        for y in range(0, len(sentence.dep)):
+            text = sentence.text_token[y]
+            dep = sentence.dep[y]
             if dep == 'pobj':
                 db = pymysql.connect("localhost",
                                      user="root",
@@ -370,10 +376,14 @@ def setting_attribute_extraction(list_of_sentences, world):
                 locate = cursor.fetchone()
                 if locate is not None:
                     setting_name.append(text)
+                    isAdded = True
 
     print("------SETTING FRAME------")
     print(setting_name, setting_time)
+    
+    add_setting(setting_name, setting_type, setting_time, world)
 
+    return isAdded
 #Add Setting to World
 def add_setting(name, type, time, world):
     for x in range(0, len(name)):
@@ -387,37 +397,26 @@ def add_setting(name, type, time, world):
     print("-----ADDED SETTING TO THE WORLD----")
 
 #ie_event_extract
-def eventExtract(sentence, sentences):
-       sent_pos = len(sentences)-1
-       root_count = len(sentences[sent_pos].dep_root)
-       be_forms = ['be', 'am', 'is', 'are', 'was', 'were', 'been', 'being']
-       type = "Action"
+def event_extraction(list_of_sentences, world):
+    event_char = []
+    event_char_action = []
+    event_obj = []
+    event_obj_action = []
 
-       for x in range(0, root_count):
-            # Assign sequence number
-            if len(sentences.seq_no) == 0:
-                sentences.seq_no.append(0)
-            else:
-                sentences.seq_no.append(len(sentences.seq_no))
+    #check a character appearance in the character world
+    list_char = world.characters
+    isFound = False
 
-            sentence.doer.append(sentences[sent_pos].dep_root[x])
-            sentence.doer_act.append(sentences[sent_pos].dep_root[x].dep_root_head)
-            sentence.rec.append(sentences[sent_pos].dep[x])
+    for i in range(0, len(list_of_sentences)):
+        for x in range(0, len(list_of_sentences[i].dep)):
+            if list_of_sentences[i].dep[x] == 'nsubj':
+                curr = list_of_sentences[i].dep[x]
+            for y in range(0, len(list_char)):
+                if curr == list_char[y]:
+                    isFound = True
+                    event_char.append(curr)
+                    continue
 
-            #Add Event Type
-            for i in range(0, len(be_forms)):
-                if be_forms[i] in sentence:
-                    type = "Descriptive"
+    #TO DO: get object / character action
 
-
-            sentence.event_type.append(type)
-            type = "Action" #reset
-
-            #Check for Location
-            if sentence.setting_label is 'location':
-                locate = sentence.setting_name
-
-            if locate is not None:
-                sentence.location.append(locate)
-
-            print(sentence.event_frame)
+    #TO DO: get setting of the sentence
