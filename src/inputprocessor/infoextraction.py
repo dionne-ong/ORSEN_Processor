@@ -38,9 +38,9 @@ def pos_ner_nc_processing(sentence):
 
     for ent in sentence.ents:
         # print("---NER---")
-        # print(ent.text, ent.start_char, ent.end_char, ent.label_)
+        print(ent.text, ent.start_char, ent.end_char, ent.label_)
         new_sentence.text_ent.append(ent.text)
-        new_sentence.label.append(ent.text)
+        new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
         # print("---NC---")
@@ -309,17 +309,15 @@ def setting_attribute_extraction(sentence, world):
     for x in range(0, len(sentence.text_ent)):
         text = sentence.text_ent[x]
         label = sentence.label[x]
+        print("LABEL", sentence.label[x])
 
         #Checking for Duplicate Entries
-        for k in range(0, len(setting_name)):
-            if text not in setting_name[k]:
-               continue
-            else:
-                break
 
+        print("label: ", label)
         #Check if GPE, Location, Date or Time
         if label == 'GPE' or label == 'LOCATION':
             setting_name.append(text)
+            print("it is a location!!")
             isAdded = True
             setting_type.append("LOCATION")
             isLocation = True
@@ -379,18 +377,22 @@ def setting_attribute_extraction(sentence, world):
                     isAdded = True
 
     print("------SETTING FRAME------")
-    print(setting_name, setting_time)
+    print(setting_name, setting_type, setting_time)
     
     add_setting(setting_name, setting_type, setting_time, world)
 
     return isAdded
 #Add Setting to World
 def add_setting(name, type, time, world):
-    for x in range(0, len(name)):
+    for x in range(0, len(name)-1):
         new_setting = Setting()
-        new_setting.name = name[x]
-        new_setting.type = type[x]
-        new_setting.time = time[x]
+        if name[x] is not None:
+            new_setting.name = name[x]
+            new_setting.id = name[x]
+        if type[x] is not None:
+            new_setting.type = type[x]
+        if time[x] is not None:
+            new_setting.time = time[x]
 
         world.add_setting(new_setting)
 

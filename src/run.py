@@ -77,6 +77,7 @@ for c in world.objects:
 settings = []
 time = []
 
+infoextraction.setting_attribute_extraction(list_of_sentences[0], world)
 #Setting Detail Extraction
 #infoextraction.setting_attribute_extraction(list_of_sentences, world)
 
