@@ -63,45 +63,74 @@ def details_extraction(list_of_sentences, world):
     for sent in list_of_sentences:
         for i in range(0, len(sent.dep)):
             if sent.dep[i] == current_node:
-               # print("iii", i, sent.text_token[i])
+                sent.finished_nodes[i] = 1
+                # print("iii", i, sent.text_token[i])
                 for j in range(0, len(sent.children[i])):
-                    for k in range(0, len(sent.text_token)):
-                        #print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
-                        #     sent.children[i][j])
-                        if (str(sent.children[i][j]) == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
-                            num = k
-                            sent.finished_nodes[k] == 1
-                            break
-                    # print("child", sent.children[i][j], "dep", sent.dep[num])
+                    num = find_index(sent, str(sent.children[i][j]))
+                    print("child", sent.children[i][j], "dep", sent.dep[num])
+
+                    # nominal subject
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
+                        print("SUBJECT",subject )
                         add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
                         add_capability(sent, str(sent.lemma[i]), str(subject), world, is_negated)
                         is_negated = False
 
+                    # adjectival complement
                     elif sent.dep[num] == "acomp":
-                        add_attributes(sent, sent.children[i][j], num, str(subject), world, is_negated)
+                        add_attributes(sent, num, str(subject), world, is_negated)
                         is_negated = False
 
+                    # negation
                     elif sent.dep[num] == "neg":
                         is_negated = True
 
+                    # nominal subject (passive)
                     elif sent.dep[num] == "nsubjpass":
                         subject = sent.children[i][j]
                         add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
 
+                    # direct object
                     elif sent.dep[num] == "dobj":
                         add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
 
+                    # dative - the noun to which something is given
+                    elif sent.dep[num] == "dative":
+                        if sent.text_token[num].children is None:
+                            add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+                        else:
+                            print("may be added to settings or objects")
+
+                    # preposition
                     elif sent.dep[num] == "prep":
                         print("add it to settings or add it to objects")
 
+                    # agent
                     elif sent.dep[num] == "agent":
                         print("add it to settings or add it to objects")
 
+                    # conjunction
                     elif sent.dep[num] == "conj":
-                        print("aaaa", sent.text_token[num])
                         current_node = "conj"
+                        i = num
+                        break
+
+                    # clausal complement
+                    elif sent.dep[num] == "ccomp":
+                        current_node = "ccomp"
+                        i = num
+                        break
+
+                    # adverbial clause modifier
+                    elif sent.dep[num] == "advcl":
+                        current_node = "advcl"
+                        i = num
+                        break
+
+                    # open clausal compliment - it doesn't have its own subject
+                    elif sent.dep[num] == "xcomp":
+                        current_node = "xcomp"
                         i = num
                         break
 
@@ -109,13 +138,32 @@ def details_extraction(list_of_sentences, world):
 def add_capability(sent, attr, subj, world, negation):
     if attr not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
         new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
-        world.characters[subj].attributes.append(new_attribute)
+
+        if subj in world.characters:
+            world.characters[subj].attributes.append(new_attribute)
+        else:
+            world.objects[subj].attributes.append(new_attribute)
+
         for k in range(0, len(sent.dep_root_head)):
-            if str(sent.dep_root_head[k]) == subject:
-                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-                world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
-                subject = str(sent.text_chunk[k])
-                
+            if str(sent.dep_root_head[k]) == subj:
+                if str(sent.dep_root_head[k]) in world.characters:
+                    world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                else:
+                    world.objects[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                subj = str(sent.text_chunk[k])
+
+
+def find_index(sent, child):
+    num = 0
+    for k in range(0, len(sent.text_token)):
+        # print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
+        #     sent.children[i][j])
+        if (child == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
+            num = k
+            sent.finished_nodes[k] == 1
+            break
+    return num
+
 
 def add_objects(sent, child, dep, lemma, world):
     if (child not in world.characters) and (child not in world.objects):
@@ -124,8 +172,9 @@ def add_objects(sent, child, dep, lemma, world):
             new_character = Character()
             new_character.name = child
             new_character.id = child
+            new_character.attributes = []
             world.add_character(new_character)
-            world.characters[new_character.id].timesMentioned += 1
+            world.characters[new_character.id].timesMentioned = 1
             subj = child
             for k in range(0, len(sent.dep_root_head)):
                 if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.characters):
@@ -136,11 +185,13 @@ def add_objects(sent, child, dep, lemma, world):
                     world.characters[new_character.id].timesMentioned += 1
                     subj = sent.text_chunk[k]
         else:
+            print("BBBB")
             new_object = Object()
             new_object.name = child
             new_object.id = child
+            new_object.attributes = []
             world.add_object(new_object)
-            world.objects[new_object.id].timesMentioned += 1
+            world.objects[new_object.id].timesMentioned = 1
             subj = child
             for k in range(0, len(sent.dep_root_head)):
                 if (str(sent.dep_root_head[k]) == subj) and (sent.text_chunk[k] not in world.objects):
@@ -161,37 +212,47 @@ def add_objects(sent, child, dep, lemma, world):
         world.characters[child].timesMentioned += 1
 
 
-def add_attributes(sent, child, num, subject, world, negation):
-    list_of_attributes = []
-
+def add_attributes(sent, num, subject, world, negation):
+    list_of_attributes = [sent.text_token[num]]
+    head = sent.text_token[num]
     for i in range(num, len(sent.words)):
-        if 'acomp' in sent.dep[i]:
-            subj = sent.text_token[i]
+        if (sent.dep[i] == 'conj') and (sent.head_text[i] == head):
             list_of_attributes.append(sent.text_token[i])
-        elif sent.dep[i] == 'conj' and sent.head_text[i] == subj:
-            list_of_attributes.append(sent.text_token[i])
-            subj = sent.text_token[i]
-
-    print(list_of_attributes)
-
+            head = sent.text_token[i]
+    print("SUBJ", subject)
+    print(world.objects)
     if subject in world.characters:
+        print("YAY")
         for attr in list_of_attributes:
             new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-            world.characters[subject].attributes.append(new_attribute)
+            print("ATTRIBUTE ADDED:", attr, "To", subject)
+            char = world.characters[subject]
+            print(char)
+            char.attributes.append(new_attribute)
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == subject:
                 for attr in list_of_attributes:
                     new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
-                    world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                    print("ATTRIBUTE ADDED:", attr, "To", subject)
+                    char = world.characters[subject]
+                    print(char)
+                    char.attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
 
     elif subject in world.objects:
-        new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, str(child), negation)
-        world.objects[subject].attributes.append(new_attribute)
+        for attr in list_of_attributes:
+            new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+            obj = world.objects[subject]
+            print(obj)
+            obj.attributes.append(new_attribute)
         for k in range(0, len(sent.dep_root_head)):
             if str(sent.dep_root_head[k]) == subject:
-                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, str(child), negation)
-                world.objects[str(sent.dep_root_head[k])].attributes.append(new_attribute)
+                for attr in list_of_attributes:
+                    new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                    print("ATTRIBUTE ADDED:", attr, "To", subject)
+                    obj = world.objects[subject]
+                    print(obj)
+                    obj.attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
 
 
@@ -204,10 +265,6 @@ def corenference_resolution(sentences, world):
         print("a", str(sentences[i]), "b", str(sentences[j]) )
         mentions = coref.get_mentions()
         print("mentions", mentions)
-        # score = coref.get_scores()
-        # print("score", score)
-        # utterances = coref.get_utterances()
-        # print("utterance", utterances)
 
         rep = coref.get_most_representative(use_no_coref_list=True)
         print("rep", rep)

@@ -13,9 +13,9 @@ class Object:
         self.type       = type
         self.inSetting  = inSetting
         self.timesMentioned = times
-        self.attributes.extend(attr)
+        self.attributes = attr
 
     def __str__(self):
-        return "OBJECT #%d: \nName: %s \nType: %s \ninSetting: %s \nmentioned: %d\n" \
-               % (self.id, self.name, self.type, self.inSetting, self.timesMentioned)\
-               + "attributes: " + str(self.attributes)
+        return "OBJECT %s: \nName: %s \nType: %s \ninSetting: %s \nmentioned: %s\n" \
+               % (str(self.id), self.name, self.type, self.inSetting, str(self.timesMentioned))\
+               + " attributes: %s" + str(self.attributes)
