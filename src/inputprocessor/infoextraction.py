@@ -370,14 +370,11 @@ def setting_attribute_extraction(list_of_sentences, world):
 
     print("------SETTING FRAME------")
     print(setting_name, setting_time)
-    return setting_name, setting_time
 
 #Add Setting to World
 def add_setting(name, type, time, world):
     for x in range(0, len(name)):
         new_setting = Setting()
-
-        new_setting.id = name[x]
         new_setting.name = name[x]
         new_setting.type = type[x]
         new_setting.time = time[x]
