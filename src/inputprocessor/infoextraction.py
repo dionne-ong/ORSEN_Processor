@@ -61,7 +61,8 @@ def details_extraction(list_of_sentences, world):
     for sent in list_of_sentences:
         for i in range(0, len(sent.dep)):
             if sent.dep[i] == current_node:
-               # print("iii", i, sent.text_token[i])
+                sent.finished_nodes[i] = 1
+                print("iii", i, sent.text_token[i])
                 for j in range(0, len(sent.children[i])):
                     for k in range(0, len(sent.text_token)):
                         #print("aa", len(sent.text_token), "node", sent.finished_nodes[k], "com", sent.text_token[k],
@@ -70,7 +71,7 @@ def details_extraction(list_of_sentences, world):
                             num = k
                             sent.finished_nodes[k] == 1
                             break
-                    # print("child", sent.children[i][j], "dep", sent.dep[num])
+                    print("child", sent.children[i][j], "dep", sent.dep[num])
                     if sent.dep[num] == "nsubj":
                         subject = sent.children[i][j]
                         add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
@@ -100,6 +101,7 @@ def details_extraction(list_of_sentences, world):
                     elif sent.dep[num] == "conj":
                         print("aaaa", sent.text_token[num])
                         current_node = "conj"
+                        # what if it has other conj
                         i = num
                         break
 
@@ -113,7 +115,7 @@ def add_capability(sent, attr, subj, world, negation):
                 new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
                 world.characters[str(sent.dep_root_head[k])].attributes.append(new_attribute)
                 subject = str(sent.text_chunk[k])
-                
+
 
 def add_objects(sent, child, dep, lemma, world):
     if (child not in world.characters) and (child not in world.objects):
@@ -137,6 +139,7 @@ def add_objects(sent, child, dep, lemma, world):
             new_object = Object()
             new_object.name = child
             new_object.id = child
+            print("added", child)
             world.add_object(new_object)
             world.objects[new_object.id].timesMentioned += 1
             subj = child
@@ -164,13 +167,15 @@ def add_attributes(sent, child, num, subject, world, negation):
 
     for i in range(num, len(sent.words)):
         if 'acomp' in sent.dep[i]:
+            print("BAAA")
             subj = sent.text_token[i]
             list_of_attributes.append(sent.text_token[i])
         elif sent.dep[i] == 'conj' and sent.head_text[i] == subj:
             list_of_attributes.append(sent.text_token[i])
             subj = sent.text_token[i]
 
-    print(list_of_attributes)
+    print("BLAH",list_of_attributes)
+    print("Fix this, it gets both handsome and beautiful")
 
     if subject in world.characters:
         for attr in list_of_attributes:

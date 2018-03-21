@@ -30,7 +30,6 @@ for sent in sentences:
 infoextraction.details_extraction(list_of_sentences, world)
 
 
-
 # print("AAAAA")
 # for key, values in characters_attributes.items():
 #     new_character = Character()
