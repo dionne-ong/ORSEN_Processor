@@ -8,6 +8,9 @@ class World:
     settings = {}
     event_chain = []
 
+    # stored as "<RESPONSE_TYPE>_<RESPONSE>" ie. "1_I see, that's intersing."
+    reponses = []
+
     def __init__(self, id=-1):
         self.id = id
 
