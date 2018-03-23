@@ -11,7 +11,7 @@ print("hallo")
 
 
 #Loading of text and segmentation of sentences
-nlp = spacy.load('en')
+nlp = spacy.load('en_core_web_sm')
 document = nlp(infoextraction.reading("document.txt"))
 sentences = [sent.string.strip() for sent in document.sents]
 list_of_sentences = []
@@ -27,6 +27,7 @@ for sent in sentences:
     print(sent)
     sent = nlp(sent)
     list_of_sentences.append(infoextraction.pos_ner_nc_processing(sent))
+
 
 # DetailsExtraction
 infoextraction.details_extraction(list_of_sentences, world)
@@ -77,9 +78,10 @@ for c in world.objects:
 settings = []
 time = []
 
-infoextraction.setting_attribute_extraction(list_of_sentences[0], world)
+#infoextraction.setting_attribute_extraction(list_of_sentences[0], world)
 #Setting Detail Extraction
 #infoextraction.setting_attribute_extraction(list_of_sentences, world)
+
 
 #For Event Extraction
 seq_no = []
@@ -90,5 +92,3 @@ rec = []
 rec_act = []
 location = []
 event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
-
-
