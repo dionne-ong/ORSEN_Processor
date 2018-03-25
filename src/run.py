@@ -29,7 +29,8 @@ for sent in sentences:
     list_of_sentences.append(infoextraction.pos_ner_nc_processing(sent))
 
 # DetailsExtraction
-infoextraction.details_extraction(list_of_sentences, world)
+for sent in list_of_sentences:
+    infoextraction.details_extraction(sent, world, "ROOT")
 
 print(world.characters)
 print(world.objects)
@@ -77,7 +78,7 @@ for c in world.objects:
 settings = []
 time = []
 
-infoextraction.setting_attribute_extraction(list_of_sentences[0], world)
+#infoextraction.setting_attribute_extraction(list_of_sentences[0], world)
 #Setting Detail Extraction
 #infoextraction.setting_attribute_extraction(list_of_sentences, world)
 
