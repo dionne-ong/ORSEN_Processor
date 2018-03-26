@@ -55,13 +55,13 @@ def pos_ner_nc_processing(sentence):
     return new_sentence
 
 
-def is_verb(sent, children):
-    for c in children:
-        temp = find_text_index(sent, c)
-        if sent.pos[temp] == "VERB" and str(sent.text_token[temp]) == str(c):
-            print("CH", c)
-            return sent.dep[temp]
-    return None
+#def is_verb(sent, children):
+#    for c in children:
+#        temp = find_text_index(sent, c)
+#        if sent.pos[temp] == "VERB" and str(sent.text_token[temp]) == str(c):
+#            print("CH", c)
+#            return sent.dep[temp]
+#    return None
 
 
 def find_text_index(sent, child):
@@ -78,6 +78,7 @@ def find_ent_index(sent, ent):
         if ent == str(sent.text_ent[k]):
             return str(sent.label[k])
     return None
+
 
 def details_extraction(sent, world, current_node, subj="", loc=""):
     num = 0
@@ -100,8 +101,9 @@ def details_extraction(sent, world, current_node, subj="", loc=""):
                     sent.finished_nodes[num] = 1
                     is_negated = False
 
-                    if is_verb(sent, sent.children[num]) is not None:
-                        details_extraction(sent, world, is_verb(sent, sent.children[num]), subject, location)
+                    if sent.children[num] is not None:
+                        for c in sent.children[num]:
+                            details_extraction(sent, world, str(c) , subject, location)
 
                 # adjectival complement
                 elif sent.dep[num] == "acomp":
@@ -109,12 +111,12 @@ def details_extraction(sent, world, current_node, subj="", loc=""):
                     add_attributes(sent, num, str(subject), world, is_negated)
                     is_negated = False
 
-                    if is_verb(sent, sent.children[num]) is not None:
-                        details_extraction(sent, world, is_verb(sent, sent.children[num]), subject, location)
+                    if sent.children[num] is not None:
+                        for c in sent.children[num]:
+                            details_extraction(sent, world, str(c), subject, location)
 
                 # attribute
                 elif sent.dep[num] == "attr":
-                    #possible na setting
                     sent.finished_nodes[num] = 1
                     location = add_settings(sent, num, subject, is_negated, world, location)
                     is_negated = False
@@ -122,8 +124,8 @@ def details_extraction(sent, world, current_node, subj="", loc=""):
                     if location == "":
                         add_attributes(sent, num, str(subject), world, is_negated)
 
-                    if is_verb(sent, sent.children[num]) is not None:
-                        details_extraction(sent, world, is_verb(sent, sent.children[num]), subject, location)
+                    if sent.children[num] is not None:
+                        details_extraction(sent, world, sent.children[num][0], subject, location)
 
                 # negation
                 elif sent.dep[num] == "neg":
@@ -136,17 +138,18 @@ def details_extraction(sent, world, current_node, subj="", loc=""):
                     subject = sent.children[i][j]
                     add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
 
-                    if is_verb(sent, sent.children[num]) is not None:
-                        details_extraction(sent, world, is_verb(sent, sent.children[num]), subject, location)
+                    if sent.children[num] is not None:
+                        for c in sent.children[num]:
+                            details_extraction(sent, world, str(c) , subject, location)
 
                 # direct object
                 elif sent.dep[num] == "dobj":
                     sent.finished_nodes[num] = 1
                     add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
 
-                    if is_verb(sent, sent.children[num]) is not None:
-                        print("PASS")
-                        details_extraction(sent, world, is_verb(sent, sent.children[num]), subject, location)
+                    if sent.children[num] is not None:
+                        for c in sent.children[num]:
+                            details_extraction(sent, world, str(c), subject, location)
 
                 # noun phrase as adverbial modifier
                 elif sent.dep[num] == "npadvmod":
@@ -168,7 +171,8 @@ def details_extraction(sent, world, current_node, subj="", loc=""):
                 # preposition
                 # agent
                 # dative - the noun to which something is given
-                elif sent.dep[num] in ["xcomp", "advcl", "ccomp", "conj", "prep", "agent", "dative"]:
+                # adverbial modifier
+                elif sent.dep[num] in ["xcomp", "advcl", "ccomp", "conj", "prep", "agent", "dative", "advmod"]:
                     print("SENT", sent.dep[num], "TOKEN", sent.text_token[num])
                     details_extraction(sent, world, sent.dep[num], subject, location)
 
@@ -258,56 +262,62 @@ def add_settings(sent, num, subject, negation, world, location):
     current_location = location
     list_of_char = char_conj_extractions(sent, subject)
 
-    # need to check if its in the db, check its NER, check whether it should be added to a existing setting
     # is there a negation for settings
-    # coref for settings
-    # what if una maadd yung time/date before the settings, figure out a way to convert that date time to location
-
-    if str(sent.text_token[num]) not in world.settings:
-        label = find_ent_index(sent, str(sent.text_token[num]))
-        new_setting = Setting()
-
-        if label in ["LOC", "GPE"]:
-            current_location = sent.text_token[num]
-            new_setting.id = current_location
-            new_setting.name = current_location
+    if not negation:
+        if str(sent.text_token[num]) not in world.settings:
+            label = find_ent_index(sent, str(sent.text_token[num]))
+            new_setting = Setting()
             new_setting.type = label
-            world.add_setting(new_setting)
+            if label in ["LOC", "GPE"]:
 
-        elif label in ["DATE", "TIME"]:
+                if current_location is "":
+                    current_location = sent.text_token[num]
+                    new_setting.id = current_location
+                    new_setting.name = current_location
 
-            if current_location is "":
+                else:
+                    prev_setting = world.settings(current_location)
+                    if prev_setting.type in ["DATE", "TIME"]:
+                        current_location = sent.text_token[num]
+                        new_setting.id = current_location
+                        new_setting.name = current_location
+                        new_setting.time = prev_setting.time
+                        world.settings.pop(prev_setting.id)
+                    else:
+                        current_location = sent.text_token[num]
+                        new_setting.id = current_location
+                        new_setting.name = current_location
+
+                world.add_setting(new_setting)
+
+            elif label in ["DATE", "TIME"]:
+
+                if current_location is "":
+                    current_location = sent.text_token[num]
+                    new_setting.id = current_location
+                    new_setting.name = current_location
+                    new_setting.type = label
+                    new_setting.time.append(str(sent.text_token[num]))
+                    world.add_setting(new_setting)
+                else:
+                    setting = world.settings[current_location]
+                    setting.time.append(str(sent.text_token[num]))
+
+            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location"):
+                print("---------------------------------------")
                 current_location = sent.text_token[num]
                 new_setting.id = current_location
                 new_setting.name = current_location
-                new_setting.type = label
-                new_setting.time.append(str(sent.text_token[num]))
+                new_setting.type = "LOC"
                 world.add_setting(new_setting)
-            else:
-                setting = world.settings[current_location]
-                setting.time.append(str(sent.text_token[num]))
 
-        elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location"):
-            print("---------------------------------------")
-            current_location = sent.text_token[num]
-            new_setting.id = current_location
-            new_setting.name = current_location
-            new_setting.type = "LOC"
-            world.add_setting(new_setting)
-
-        for c in world.characters:
-            print("char", c)
-
-        print("LOC", current_location)
-        for c in list_of_char:
-            print("WOAH", c)
-            if c in world.characters:
-                print("WHATTTTTTTT")
-                char = world.characters[c]
-                char.inSetting = current_location
-            elif c in world.objects:
-                obj = world.objects[c]
-                obj.inSetting = current_location
+            for c in list_of_char:
+                if str(c) in world.characters:
+                    char = world.characters[str(c)]
+                    char.inSetting = current_location
+                elif str(c) in world.objects:
+                    obj = world.objects[str(c)]
+                    obj.inSetting = current_location
 
     return current_location
 

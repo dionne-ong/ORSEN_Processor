@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-Mark and Andy are cute and smart.
-=======
-Mark brushed his teeth
->>>>>>> 0645c01371904aa13563dc5b465f8961aee611ad
+Mark and Grace went to the park.
