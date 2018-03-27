@@ -1,6 +1,8 @@
 
 class World:
 
+    # WORLD ELEMENTS
+
     id = -1
     characters = {}
     objects = {}
@@ -8,8 +10,12 @@ class World:
     settings = {}
     event_chain = []
 
+    # RESPONSE ELEMENTS
+
     # stored as "<RESPONSE_TYPE>_<RESPONSE>" ie. "1_I see, that's intersing."
     reponses = []
+
+    empty_response = 0
 
     def __init__(self, id=-1):
         self.id = id
