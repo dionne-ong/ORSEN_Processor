@@ -121,7 +121,6 @@ def details_extraction(sent, world, current_node, subj="", loc=""):
 
                 # open clausal compliment
                 elif sent.dep[num] == "xcomp":
-                    print("WENT", sent.lemma[num])
                     add_capability(sent, str(sent.lemma[num]), str(subject), world, is_negated)
 
                 is_negated = False
