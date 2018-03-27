@@ -515,7 +515,7 @@ def event_extraction(sentence, world, current_node):
     event_obj = []
     event_obj_action = []
     event_type = []
-
+    event_loc = []
     #get list of characters and objects from world
     list_char = world.characters
     list_obj = world.objects
@@ -523,6 +523,8 @@ def event_extraction(sentence, world, current_node):
     nsubj_count = 0
     dobj_count = 0
     acomp_count = 0
+    xcomp_count = 0
+    isThere = False
 
     for i in range(0, len(sentence.dep_root)):
         if sentence.dep_root[i] == 'nsubj':
@@ -533,8 +535,14 @@ def event_extraction(sentence, world, current_node):
     for i in range(0, len(sentence.dep)):
         if sentence.dep[i] == 'acomp':
             acomp_count += 1
+        elif sentence.dep[i] == 'xcomp':
+            xcomp_count += 1
+            isThere = True
 
+
+    print("xcomp", xcomp_count)
     curr_type = False
+    char_action = ""
     for x in range(0, len(sentence.text_token)):
         isFound_char = False
         isFound_obj = False
@@ -550,9 +558,19 @@ def event_extraction(sentence, world, current_node):
              #       if char == list_char.name[y] and isFound_char is False:
               #          event_char.append(char)
                #         isFound_char = True
-
+                #add event location
+                #for x in range(0, len(list_char)):
+                 #   if char == list_char[x].name:
+                  #      event_loc.append(list_char[x].inSetting)
                 #add character action
-                event_char_action.append(sentence.dep_root_head[x])
+            event_char_action.append(sentence.dep_root_head[x])
+
+        if isThere is True:
+            if xcomp_count > 0:
+                if sentence.dep[x] == 'xcomp':
+                    event_char_action[len(event_char_action)-1] = sentence.lemma[x]
+                    isThere = False
+
 
         if dobj_count > 0 and isAction(sentence) is False:
             if sentence.dep_root[x] == 'dobj':
@@ -578,6 +596,8 @@ def event_extraction(sentence, world, current_node):
                 print(obj)
                 event_obj.append(obj)
                 event_type.append("Descriptive")
+
+
 
     print("---- EVENT FRAME ----")
     print(event_type, event_char, event_char_action, event_obj, event_obj_action)
