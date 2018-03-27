@@ -1,13 +1,13 @@
 class Object:
 
-    id = -1
+    id = ""
     name = ""
     type = ""
     inSetting = 0
     timesMentioned = 0
     attributes = []
 
-    def __init__(self, id=-1, name="", type="", inSetting=0, times=1, attr=[]):
+    def __init__(self, id="", name="", type="", inSetting=0, times=1, attr=[]):
         self.id   = id
         self.name       = name
         self.type       = type
