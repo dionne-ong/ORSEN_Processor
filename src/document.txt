@@ -1,1 +1,5 @@
-Mark and Grace went to the park.
+<<<<<<< HEAD
+I am kind
+=======
+Karla hates swimming.
+>>>>>>> 7b6d6a5f0bbd29868f8815ef975b022a9079cb9e

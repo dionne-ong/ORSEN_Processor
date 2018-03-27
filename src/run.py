@@ -31,8 +31,8 @@ for sent in sentences:
 
 # DetailsExtraction
 for sent in list_of_sentences:
-    infoextraction.details_extraction(sent, world, "ROOT")
-
+ #   infoextraction.details_extraction(sent, world, "ROOT")
+    infoextraction.event_extraction(sent, world, "ROOT")
 print(world.characters)
 print(world.objects)
 
