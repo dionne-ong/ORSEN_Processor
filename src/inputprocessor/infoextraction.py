@@ -361,14 +361,18 @@ def corenference_resolution(sentences, world):
 
 
 
-
+CAT_STORY = 1
+CAT_COMMAND = 2
+CAT_ANSWER = 3
 #ie_categorizing
-def isStoryText(sentence):
+def getCategory(sentence):
     #checks if entry has "orsen"
-    if 'orsen' not in sentence:
-        return True
+    if 'orsen' in sentence or 'orson' in sentence:
+        return CAT_COMMAND
+    elif 'yes' in sentence or 'no' in sentence:
+        return CAT_ANSWER
     else:
-        return False
+        return CAT_STORY
 
 # #ie_setting_detail_extraction
 # def setting_attribute_extraction(sentence, world):

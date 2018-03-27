@@ -1,4 +1,4 @@
 from spacy import explain
 
 
-print(explain("ccomp"))
+print(explain("relcl"))

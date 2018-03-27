@@ -1,5 +1,5 @@
 from .Object import Object
-
+from .Setting import Setting
 
 class Character(Object):
 
@@ -7,7 +7,7 @@ class Character(Object):
     desire = ""
     feeling = ""
 
-    def __init__(self, idChar=-1, name="", typeChar="", inSetting=0, times=0, attr=[], gender="", desire="", feeling=""):
+    def __init__(self, idChar="", name="", typeChar="", inSetting=0, times=0, attr=[], gender="", desire="", feeling=""):
         super().__init__(idChar, name, typeChar, inSetting, times, attr)
         self.gender = gender
         self.desire = desire
@@ -21,4 +21,13 @@ class Character(Object):
     @staticmethod
     def convert_from_object(object):
         new_char = Character(object.id, object.name, object.type, object.inSetting, object.timesMentioned, object.attributes)
+        return new_char
+
+    @staticmethod
+    def convert_from_setting(setting):
+        new_char = Character(setting.id, setting.id)
+
+        if setting.time != "" :
+            new_char.inSetting = Setting(setting.time,setting.time, time=setting.time)
+
         return new_char
