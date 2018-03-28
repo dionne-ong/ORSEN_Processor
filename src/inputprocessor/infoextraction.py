@@ -8,22 +8,18 @@ from src.objects.storyworld.Setting import Setting
 from neuralcoref import Coref
 # ----- luisa
 
-
-
 def reading(filename):
     with open(filename, 'r') as f:
         userinput = f.read()
     return userinput
-
 
 def pos_ner_nc_processing(sentence):
     new_sentence = Sentence()
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        print("---POS----");
+        #print("---POS----");
         print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
-
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
@@ -37,13 +33,13 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-         print("---NER---")
+         #print("---NER---")
          print(ent.text, ent.start_char, ent.end_char, ent.label_)
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        print("---NC---")
+        #sprint("---NC---")
         print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
 
         new_sentence.text_chunk.append(chunk.text)
@@ -53,20 +49,11 @@ def pos_ner_nc_processing(sentence):
     return new_sentence
 
 
-#def is_verb(sent, children):
-#    for c in children:
-#        temp = find_text_index(sent, c)
-#        if sent.pos[temp] == "VERB" and str(sent.text_token[temp]) == str(c):
-#            print("CH", c)
-#            return sent.dep[temp]
-#    return None
-
-
 def find_text_index(sent, child):
     num = 0
+    child = str(child).split()
     for k in range(0, len(sent.text_token)):
-        if (str(child) == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
-            print("num", k)
+        if (str(child[-1]) == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
             num = k
             break
     return num
@@ -74,61 +61,69 @@ def find_text_index(sent, child):
 
 def find_ent_index(sent, ent):
     for k in range(0, len(sent.text_ent)):
-        if ent == str(sent.text_ent[k]):
+        if ent in str(sent.text_ent[k]):
             return str(sent.label[k])
     return None
 
 
-def details_extraction(sent, world, current_node, subj="", loc=""):
+def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
     num = -1
     subject = subj
     location = loc
     current_index = -1
+
     for i in range(0, len(sent.dep)):
         if (sent.dep[i] == current_node) and (sent.finished_nodes[i] == 0):
             current_index = i
             sent.finished_nodes[i] = 1
 
-    is_negated = False
+    if neg =="":
+        is_negated = False
+    else:
+        is_negated = neg
+
     if current_index != -1:
         i = current_index
         for j in range(0, len(sent.children[i])):
             num = find_text_index(sent, str(sent.children[i][j]))
 
-            if num != -1 and sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp"]:
-                sent.finished_nodes[num] = 1
+            if num != -1 and sent.finished_nodes[num] == 0 and\
+                    sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp"]:
 
                 # nominal subject
                 if sent.dep[num] == "nsubj":
-                    subject = sent.children[i][j]
+                    subject = compound_extraction(sent, str(sent.children[i][j]))
                     add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
                     add_capability(sent, str(sent.lemma[i]), str(subject), world, is_negated)
 
-
                 # nominal subject (passive) or direct object
                 elif sent.dep[num] == "nsubjpass" or sent.dep[num] == "dobj":
-                    add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+                    add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i], world)
 
                 # adjectival complement
                 elif sent.dep[num] == "acomp":
-                    add_attributes(sent, num, str(subject), world, is_negated)
+                    add_attributes(sent, str(sent.children[i][j]), str(subject), world, is_negated)
+                    is_negated = False
 
                 # attribute
                 elif sent.dep[num] == "attr":
                     location = add_settings(sent, num, subject, is_negated, world, location)
                     if location == "":
-                        add_attributes(sent, num, str(subject), world, is_negated)
+                        add_attributes(sent, str(sent.children[i][j]), str(subject), world, is_negated)
+                        is_negated = False
 
                 # open clausal compliment
                 elif sent.dep[num] == "xcomp":
                     add_capability(sent, str(sent.lemma[num]), str(subject), world, is_negated)
-
-                is_negated = False
+                    is_negated = False
 
                 if sent.children[num] is not None:
                     for c in sent.children[num]:
                         dep_index = find_text_index(sent, str(c))
-                        details_extraction(sent, world, sent.dep[dep_index], subject, location)
+                        if sent.finished_nodes[dep_index] == 0:
+                            details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
+
+                sent.finished_nodes[num] = 1
 
             # negation
             elif num != -1 and sent.dep[num] == "neg":
@@ -137,42 +132,62 @@ def details_extraction(sent, world, current_node, subj="", loc=""):
 
             # noun phrase as adverbial modifier
             elif num != -1 and  sent.dep[num] == "npadvmod":
-                sent.finished_nodes[num] = 1
                 location = add_settings(sent, num, subject, is_negated, world, location)
+                sent.finished_nodes[num] = 1
 
             # object of preposition
             elif num != -1 and  sent.dep[num] == "pobj":
-                sent.finished_nodes[num] = 1
                 location = add_settings(sent, num, subject, is_negated, world, location)
-
                 if location == "":
-                    add_objects(sent, str(sent.children[i][j]), sent.dep[num], sent.lemma[i], world)
+                    add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i], world)
+
+                sent.finished_nodes[num] = 1
+
+            # dative - the noun to which something is given
+            elif num != -1 and sent.dep[num] == "dative":
+                if str(sent.text_token[num]) == "to":
+                    details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
+                else:
+                    add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i],
+                                world)
+
+
+                sent.finished_nodes[num] = 1
 
             # adverbial clause modifier
             # clausal complement
             # conjunction
             # preposition
             # agent
-            # dative - the noun to which something is given
             # adverbial modifier
             elif num != -1 \
-                    and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "dative", "advmod"]:
-                print("SENT", sent.dep[num], "TOKEN", sent.text_token[num])
-                details_extraction(sent, world, sent.dep[num], subject, location)
+                    and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "advmod", "pcomp"]:
+                details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
 
             else:
                 print("ERROR: Sentence num not found.")
     else:
-        print("ERROR: CANNOT FIND CORRECT INDEX")
-        print("ERROR", current_node)
+        print("ERROR: Cannot find current index or node ", current_node,  " has been recorded")
+
+
+def compound_extraction(sent, subj):
+    num = find_text_index(sent, subj)
+    for c in sent.children[num]:
+        num = find_text_index(sent,c)
+        if sent.dep[num] == "compound":
+            sent.finished_nodes[num] == 1
+            return sent.text_token[num] + " " + subj
+    return subj
 
 
 def char_conj_extractions(sent, subj):
     list_of_conj = [subj]
-    for k in range(0, len(sent.dep_root_head)):
-        if str(sent.dep_root_head[k]) == str(subj):
-            list_of_conj.append(str(sent.text_chunk[k]))
-            subj = str(sent.text_chunk[k])
+    for k in range(0, len(sent.head_text)):
+        if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":
+            print("--------------", sent.text_token[k])
+            subj = str(sent.text_token[k])
+            list_of_conj.append(compound_extraction(sent, subj))
+            sent.finished_nodes[k] == 1
     return list_of_conj
 
 
@@ -190,6 +205,7 @@ def add_capability(sent, attr, subject, world, negation):
 
 def add_objects(sent, child, dep, lemma, world):
     list_of_char = char_conj_extractions(sent, child)
+    print("CHARAC", list_of_char)
     for c in list_of_char:
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
@@ -209,6 +225,8 @@ def add_objects(sent, child, dep, lemma, world):
                 new_object.attributes = []
                 world.add_object(new_object)
                 world.objects[new_object.id].timesMentioned = 1
+                print("ADDED", new_object.name)
+
 
         elif c in world.objects:
             if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None \
@@ -218,41 +236,69 @@ def add_objects(sent, child, dep, lemma, world):
                 world.characters[new_character.id].timesMentioned += 1
             else:
                 world.objects[c].timesMentioned += 1
+
         elif c in world.settings:
             if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None \
                     and dep == "nsubj":
-                setting = world.settings[c]
-                new_character = Character()
-                new_character.name = setting.name
-                new_character.id = setting.id
-                new_character.attributes = []
-                new_character.inSetting = setting.time
-                world.add_object(new_character)
+                new_character = Character.convert_from_setting(c)
+                world.add_character(new_character)
+                world.characters[new_character.id].timesMentioned += 1
+
         elif c in world.characters:
             world.characters[c].timesMentioned += 1
 
+        # add amod and poss attribute
+        char_index = find_text_index(sent, c)
+        for child in sent.children[char_index]:
+            index = find_text_index(sent, child)
 
-def add_attributes(sent, num, subject, world, negation):
-    list_of_attributes = [sent.text_token[num]]
+            if sent.dep[index] == "amod":
+                add_attributes(sent, sent.text_token[index], str(c), world)
+                sent.finished_nodes[index] == 1
+
+            elif sent.dep[index] =="poss":
+                if sent.text_token[index] in world.characters or sent.text_token[index] in world.objects:
+                    print("----------------HERE")
+                    add_attributes(sent, c, sent.text_token[index], world, "", DBO_Concept.HAS)
+                    sent.finished_nodes[index] == 1
+                else:
+                    print("---------------- NOT HERE")
+                    add_objects(sent, compound_extraction(sent, str(sent.text_token[index])), sent.dep[index], lemma, world)
+                    add_attributes(sent, c, compound_extraction(sent, str(sent.text_token[index])), world, "", DBO_Concept.HAS)
+
+
+def add_attributes(sent, child, subject, world, negation="", relation=""):
+    list_of_attributes = [child]
     list_of_char = char_conj_extractions(sent, subject)
-    head = sent.text_token[num]
+    head = child
 
-    for i in range(num, len(sent.words)):
+    if relation == "":
+        relation = DBO_Concept.HAS_PROPERTY
+
+    for i in range(0, len(sent.words)):
         if (sent.dep[i] == 'conj') and (sent.head_text[i] == head):
             list_of_attributes.append(sent.text_token[i])
             head = sent.text_token[i]
 
+    for i in list_of_attributes:
+        num = find_text_index(sent, str(i))
+        for c in sent.children[num]:
+            index = find_text_index(sent, str(c))
+            if sent.dep[index] == "amod":
+                list_of_attributes.append(sent.text_token[index])
+                sent.finished_nodes[index] == 1
+
     for c in list_of_char:
         if c in world.characters:
             for attr in list_of_attributes:
-                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                new_attribute = Attribute(relation, attr, negation)
                 char = world.characters[c]
                 print("ADD", attr, "TO", c)
                 char.attributes.append(new_attribute)
 
         elif c in world.objects:
             for attr in list_of_attributes:
-                new_attribute = Attribute(DBO_Concept.HAS_PROPERTY, attr, negation)
+                new_attribute = Attribute(relation, attr, negation)
                 print("ADD", attr, "TO", c)
                 obj = world.objects[c]
                 obj.attributes.append(new_attribute)
@@ -261,8 +307,6 @@ def add_attributes(sent, num, subject, world, negation):
 def add_settings(sent, num, subject, negation, world, location):
     current_location = location
     list_of_char = char_conj_extractions(sent, subject)
-
-    # is there a negation for settings
     if not negation:
         if str(sent.text_token[num]) not in world.settings:
             label = find_ent_index(sent, str(sent.text_token[num]))
@@ -277,6 +321,7 @@ def add_settings(sent, num, subject, negation, world, location):
 
                 else:
                     prev_setting = world.settings(current_location)
+                    print("PREV", prev_setting)
                     if prev_setting.type in ["DATE", "TIME"]:
                         current_location = sent.text_token[num]
                         new_setting.id = current_location
@@ -287,7 +332,7 @@ def add_settings(sent, num, subject, negation, world, location):
                         current_location = sent.text_token[num]
                         new_setting.id = current_location
                         new_setting.name = current_location
-
+                print("CURR", current_location)
                 world.add_setting(new_setting)
 
             elif label in ["DATE", "TIME"]:
@@ -297,6 +342,7 @@ def add_settings(sent, num, subject, negation, world, location):
                     new_setting.id = current_location
                     new_setting.name = current_location
                     new_setting.type = label
+                    new_setting.time = []
                     new_setting.time.append(str(sent.text_token[num]))
                     world.add_setting(new_setting)
                 else:
@@ -304,7 +350,6 @@ def add_settings(sent, num, subject, negation, world, location):
                     setting.time.append(str(sent.text_token[num]))
 
             elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location"):
-                print("---------------------------------------")
                 current_location = sent.text_token[num]
                 new_setting.id = current_location
                 new_setting.name = current_location
@@ -313,52 +358,17 @@ def add_settings(sent, num, subject, negation, world, location):
 
             for c in list_of_char:
                 if str(c) in world.characters:
+                    print("-------------")
                     char = world.characters[str(c)]
                     char.inSetting = current_location
+                    print("ch", char.inSetting)
                 elif str(c) in world.objects:
                     obj = world.objects[str(c)]
                     obj.inSetting = current_location
 
     return current_location
 
-
-def corenference_resolution(sentences, world):
-    j = 1;
-    for i in range(0, len(sentences)-1):
-        coref = Coref()
-        clusters = coref.one_shot_coref(utterances=sentences[j], context=sentences[i])
-        print("clusters", clusters)
-        print("a", str(sentences[i]), "b", str(sentences[j]) )
-        mentions = coref.get_mentions()
-        print("mentions", mentions)
-
-        rep = coref.get_most_representative(use_no_coref_list=True)
-        print("rep", rep)
-
-        for key, value in rep.items():
-            sentences[j] = sentences[j].replace(str(key), str(value))
-            if (str(value) not in world.characters) and (str(value) not in world.objects):
-                if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    new_character.gender = "M"
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    new_character.gender = "F"
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-
-        j += 1
-
-
 # ---------- rachel
-
-
 
 CAT_STORY = 1
 CAT_COMMAND = 2
@@ -498,6 +508,166 @@ def getCategory(sentence):
 #         world.add_setting(new_setting)
 #
 #     print("----- ADDED SETTING TO THE WORLD -----")
+
+
+def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
+    prn =  []
+    noun = []
+    curr = sent_curr
+    bef = sent_bef
+
+    coref = Coref()
+
+    num_prn = 0
+    num_conj = 0
+    num_pron = 0
+
+    isMore = False
+    #count pronoun, conjunction, noun
+    for x in range(0, len(s.pos)):
+        if s.pos[x] == 'PRON':
+            num_prn += 1
+        if s.pos[x] == 'CCONJ':
+            num_conj += 1
+        if s.lemma[x] =='-PRON-':
+            num_pron += 1
+
+    print("num_conj", num_conj)
+    for x in range(0, num_prn):
+        if num_conj >= 1:
+            sent = coref.continuous_coref(utterances=sent_curr)
+            num_conj -=1
+        elif isFirst is False:
+            sent = coref.one_shot_coref(utterances=sent_curr, context=sent_bef)
+
+        mentions = coref.get_mentions()
+        print("mentions", mentions)
+
+        scores = coref.get_scores()
+        #print("scores", scores)
+
+        #extract scores
+        single_mention = scores.get('single_scores')
+        pair_mention = scores.get('pair_scores')
+        single_sc_lib = []
+        pair_sc_lib = []
+        for i in range(0, len(single_mention)):
+            if single_mention.get(i) != 'None':
+                single_sc_lib.append(str(single_mention[i]))
+
+        count = 0
+        do_pop = []
+
+        #print(single_sc_lib)
+        for i in range(0, len(single_sc_lib)):
+            #print("i", i)
+            if single_sc_lib[i] == 'None':
+                do_pop.append(i)
+                count += 1
+            else:
+                single_sc_lib[i] = float(single_sc_lib[i])
+
+        #print(single_sc_lib)
+        for i in range(len(do_pop)):
+            single_sc_lib.pop(0)
+            #print(single_sc_lib)
+
+        #print(len(do_pop))
+        #print(do_pop)
+        print(single_sc_lib)
+        if isMore is True:
+            single_sc_lib.pop(1)
+
+        low_single_index = single_sc_lib.index(min(single_sc_lib))
+        low_single_index += count
+
+        print("found it low_single_index: ", low_single_index)
+
+        for i in range(0, len(pair_mention.get(low_single_index))):
+            hold = pair_mention.get(low_single_index)
+            pair_sc_lib.append(str(hold[i]))
+
+        #print(pair_sc_lib)
+
+        for i in range(0, len(pair_sc_lib)):
+            pair_sc_lib[i] = float(pair_sc_lib[i])
+
+        high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
+        print("found it high_pair_index: ", high_pair_index)
+        isMore = True
+
+        prn.append(mentions[low_single_index])
+        noun.append(mentions[high_pair_index])
+
+    for i in range(0, num_pron):
+        for x in range(0, len(prn)):
+            if " he " in curr:
+                a, b = curr.split("he")
+                curr = a + str(noun[x]) + b
+            if " He " in curr:
+                a, b = curr.split("He")
+                curr = a + str(noun[x]) + b
+            if " him " in curr:
+                a, b = curr.split("him")
+                curr = a + str(noun[x]) + b
+            if " Him " in curr:
+                a, b = curr.split("Him")
+                curr = a + str(noun[x]) + b
+            if " his " in curr:
+                a, b = curr.split("his")
+                curr = a + str(noun[x]) + "'s" + b
+            if " His " in curr:
+                a, b = curr.split("His")
+                curr = a + str(noun[x]) + "'s" + b
+
+            if " she " in curr:
+                a, b = curr.split("she")
+                curr = a + str(noun[x]) + b
+            if " She " in curr:
+                a, b = curr.split("She")
+                curr = a + str(noun[x]) + b
+            if " her " in curr:
+                a, b = curr.split("her")
+                curr = a + str(noun[x]) + b
+            if " Her " in curr:
+                a, b = curr.split("Her")
+                curr = a + str(noun[x]) + b
+            if " hers " in curr:
+                a, b = curr.split("hers")
+                curr = a + str(noun[x]) + "'s" + b
+            if " Hers " in curr:
+                a, b = curr.split("Hers")
+                curr = a + str(noun[x]) + "'s" + b
+
+            if " it " in curr:
+                a, b = curr.split("it")
+                curr = a + str(noun[x]) + b
+            if " It " in curr:
+                a, b = curr.split("It")
+                curr = a + str(noun[x]) + b
+                
+    print(prn, noun)
+    return curr
+    #rep = coref.get_most_representative()
+    #print("rep", rep)
+
+    #for key, value in rep.items():
+     #   sentences[j] = sentences[j].replace(str(key), str(value))
+      #  if (str(value) not in world.characters) and (str(value) not in world.objects):
+       #     if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+        #        new_character = Character()
+         #       new_character.name = str(value)
+          #      new_character.id = str(value)
+           #    world.add_character(new_character)
+     #           world.characters[new_character.id].timesMentioned += 1
+      #      elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+       #         new_character = Character()
+        #        new_character.name = str(value)
+         #       new_character.id = str(value)
+        #        new_character.gender = "F"
+       #         world.add_character(new_character)
+         #       world.characters[new_character.id].timesMentioned += 1
+
 def isAction(sentence):
     isAction = False
     be_forms = ["is", "are", "am", "were", "was"]
