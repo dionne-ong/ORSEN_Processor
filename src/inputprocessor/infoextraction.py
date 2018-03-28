@@ -321,44 +321,7 @@ def add_settings(sent, num, subject, negation, world, location):
 
     return current_location
 
-
-def corenference_resolution(sentences, world):
-    j = 1;
-    for i in range(0, len(sentences)-1):
-        coref = Coref()
-        clusters = coref.one_shot_coref(utterances=sentences[j], context=sentences[i])
-        print("clusters", clusters)
-        print("a", str(sentences[i]), "b", str(sentences[j]) )
-        mentions = coref.get_mentions()
-        print("mentions", mentions)
-
-        rep = coref.get_most_representative(use_no_coref_list=True)
-        print("rep", rep)
-
-        for key, value in rep.items():
-            sentences[j] = sentences[j].replace(str(key), str(value))
-            if (str(value) not in world.characters) and (str(value) not in world.objects):
-                if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    new_character.gender = "M"
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    new_character.gender = "F"
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-
-        j += 1
-
-
 # ---------- rachel
-
-
 
 CAT_STORY = 1
 CAT_COMMAND = 2
@@ -498,6 +461,91 @@ def getCategory(sentence):
 #         world.add_setting(new_setting)
 #
 #     print("----- ADDED SETTING TO THE WORLD -----")
+
+
+def coref_resolution(sentences, world):
+    j = 1;
+    for i in range(0, len(sentences)-1):
+        coref = Coref()
+
+        sent = coref.one_shot_coref(utterances=sentences[j], context=sentences[i])
+        print("a", str(sentences[i]), "b", str(sentences[j]) )
+
+        mentions = coref.get_mentions()
+        print("mentions", mentions)
+
+        scores = coref.get_scores()
+        print("scores", scores)
+
+        #extract scores
+        single_mention = scores.get('single_scores')
+        pair_mention = scores.get('pair_scores')
+        single_sc_lib = []
+        pair_sc_lib = []
+        for i in range(0, len(single_mention)):
+            if single_mention.get(i) != 'None':
+                single_sc_lib.append(str(single_mention[i]))
+        count = 0
+        do_pop = []
+        print(single_sc_lib)
+        for i in range(0, len(single_sc_lib)):
+            print("i", i)
+            if single_sc_lib[i] == 'None':
+                do_pop.append(i)
+                count += 1
+            else:
+                single_sc_lib[i] = float(single_sc_lib[i])
+
+        print(single_sc_lib)
+        for i in range(len(do_pop)):
+            single_sc_lib.pop(0)
+            print(single_sc_lib)
+
+        print(len(do_pop))
+        print(do_pop)
+        print(single_sc_lib)
+
+        low_single_index = single_sc_lib.index(min(single_sc_lib))
+        low_single_index += count
+
+        print(low_single_index)
+
+        for i in range(0, len(pair_mention.get(low_single_index))):
+            hold = pair_mention.get(low_single_index)
+            pair_sc_lib.append(str(hold[i]))
+
+        print(pair_sc_lib)
+
+        for i in range(0, len(pair_sc_lib)):
+            pair_sc_lib[i] = float(pair_sc_lib[i])
+
+        high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
+        print(high_pair_index)
+        print(mentions[low_single_index])
+        print(" is ", mentions[high_pair_index])
+
+        #rep = coref.get_most_representative()
+        #print("rep", rep)
+
+        #for key, value in rep.items():
+         #   sentences[j] = sentences[j].replace(str(key), str(value))
+          #  if (str(value) not in world.characters) and (str(value) not in world.objects):
+           #     if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+            #        new_character = Character()
+             #       new_character.name = str(value)
+              #      new_character.id = str(value)
+               #    world.add_character(new_character)
+         #           world.characters[new_character.id].timesMentioned += 1
+          #      elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+           #         new_character = Character()
+            #        new_character.name = str(value)
+             #       new_character.id = str(value)
+            #        new_character.gender = "F"
+           #         world.add_character(new_character)
+             #       world.characters[new_character.id].timesMentioned += 1
+
+        j += 1
+
 def isAction(sentence):
     isAction = False
     be_forms = ["is", "are", "am", "were", "was"]
