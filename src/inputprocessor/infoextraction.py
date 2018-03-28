@@ -8,22 +8,18 @@ from src.objects.storyworld.Setting import Setting
 from neuralcoref import Coref
 # ----- luisa
 
-
-
 def reading(filename):
     with open(filename, 'r') as f:
         userinput = f.read()
     return userinput
-
 
 def pos_ner_nc_processing(sentence):
     new_sentence = Sentence()
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        # print("---POS----");
+        #print("---POS----");
         print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
-
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
@@ -37,14 +33,14 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-        # print("---NER---")
-        # print(ent.text, ent.start_char, ent.end_char, ent.label_)
-        new_sentence.text_ent.append(ent.text)
-        new_sentence.label.append(ent.label_)
+         #print("---NER---")
+         print(ent.text, ent.start_char, ent.end_char, ent.label_)
+         new_sentence.text_ent.append(ent.text)
+         new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        # print("---NC---")
-        # print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
+        #sprint("---NC---")
+        print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
 
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
@@ -372,44 +368,7 @@ def add_settings(sent, num, subject, negation, world, location):
 
     return current_location
 
-
-def corenference_resolution(sentences, world):
-    j = 1;
-    for i in range(0, len(sentences)-1):
-        coref = Coref()
-        clusters = coref.one_shot_coref(utterances=sentences[j], context=sentences[i])
-        print("clusters", clusters)
-        print("a", str(sentences[i]), "b", str(sentences[j]) )
-        mentions = coref.get_mentions()
-        print("mentions", mentions)
-
-        rep = coref.get_most_representative(use_no_coref_list=True)
-        print("rep", rep)
-
-        for key, value in rep.items():
-            sentences[j] = sentences[j].replace(str(key), str(value))
-            if (str(value) not in world.characters) and (str(value) not in world.objects):
-                if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    new_character.gender = "M"
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    new_character.gender = "F"
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-
-        j += 1
-
-
 # ---------- rachel
-
-
 
 CAT_STORY = 1
 CAT_COMMAND = 2
@@ -550,53 +509,217 @@ def getCategory(sentence):
 #
 #     print("----- ADDED SETTING TO THE WORLD -----")
 
+
+def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
+    prn =  []
+    noun = []
+
+    coref = Coref()
+
+    num_prn = 0
+    num_conj = 0
+
+    isMore = False
+    #count pronoun
+    for x in range(0, len(s.pos)):
+        if s.pos[x] == 'PRON':
+            num_prn += 1
+
+    for x in range(0, len(s.pos)):
+        if s.pos[x] == 'CCONJ':
+            num_conj += 1
+
+
+    print("num_conj", num_conj)
+    for x in range(0, num_prn):
+        if num_conj >= 1:
+            sent = coref.continuous_coref(utterances=sent_curr)
+            num_conj -=1
+        elif isFirst is False:
+            sent = coref.one_shot_coref(utterances=sent_curr, context=sent_bef)
+
+        mentions = coref.get_mentions()
+        print("mentions", mentions)
+
+        scores = coref.get_scores()
+        print("scores", scores)
+
+        #extract scores
+        single_mention = scores.get('single_scores')
+        pair_mention = scores.get('pair_scores')
+        single_sc_lib = []
+        pair_sc_lib = []
+        for i in range(0, len(single_mention)):
+            if single_mention.get(i) != 'None':
+                single_sc_lib.append(str(single_mention[i]))
+
+        count = 0
+        do_pop = []
+        #print(single_sc_lib)
+        for i in range(0, len(single_sc_lib)):
+            #print("i", i)
+            if single_sc_lib[i] == 'None':
+                do_pop.append(i)
+                count += 1
+            else:
+                single_sc_lib[i] = float(single_sc_lib[i])
+
+        print(single_sc_lib)
+        for i in range(len(do_pop)):
+            single_sc_lib.pop(0)
+            print(single_sc_lib)
+
+        #print(len(do_pop))
+        #print(do_pop)
+        #print(single_sc_lib)
+        if isMore is True:
+            single_sc_lib.pop(1)
+
+        low_single_index = single_sc_lib.index(min(single_sc_lib))
+        low_single_index += count
+
+        #print(low_single_index)
+
+        for i in range(0, len(pair_mention.get(low_single_index))):
+            hold = pair_mention.get(low_single_index)
+            pair_sc_lib.append(str(hold[i]))
+
+        #print(pair_sc_lib)
+
+        for i in range(0, len(pair_sc_lib)):
+            pair_sc_lib[i] = float(pair_sc_lib[i])
+
+        high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
+        #print(high_pair_index)
+        isMore = True
+        prn.append(mentions[low_single_index])
+        noun.append(mentions[high_pair_index])
+
+        print(prn, noun)
+
+    #rep = coref.get_most_representative()
+    #print("rep", rep)
+
+    #for key, value in rep.items():
+     #   sentences[j] = sentences[j].replace(str(key), str(value))
+      #  if (str(value) not in world.characters) and (str(value) not in world.objects):
+       #     if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+        #        new_character = Character()
+         #       new_character.name = str(value)
+          #      new_character.id = str(value)
+           #    world.add_character(new_character)
+     #           world.characters[new_character.id].timesMentioned += 1
+      #      elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+       #         new_character = Character()
+        #        new_character.name = str(value)
+         #       new_character.id = str(value)
+        #        new_character.gender = "F"
+       #         world.add_character(new_character)
+         #       world.characters[new_character.id].timesMentioned += 1
+
+def isAction(sentence):
+    isAction = False
+    be_forms = ["is", "are", "am", "were", "was"]
+    for k in range(0, len(be_forms)):
+        for i in range(0, len(sentence.text_token)):
+            if be_forms[k] == sentence.text_token[i]:
+                isAction = True
+
+    return isAction
+
 #ie_event_extract
-def event_extraction(sentence, world):
+def event_extraction(sentence, world, current_node):
     event_char = []
     event_char_action = []
     event_obj = []
     event_obj_action = []
-
-    #check a character appearance in the character world
+    event_type = []
+    event_loc = []
+    #get list of characters and objects from world
     list_char = world.characters
-    isFound = False
-    sbj_c = 0
-    vrb_c = 0
-    pbj_c = 0
+    list_obj = world.objects
+    print(len(sentence.text_token))
+    nsubj_count = 0
+    dobj_count = 0
+    acomp_count = 0
+    xcomp_count = 0
+    isThere = False
 
-    for k in range(0, len(sentence.dep)):
-        if sentence.dep[k] == 'nsubj':
-            sbj_c += 1
-        elif sentence.dep[k] == 'verb':
-            vrb_c += 1
-        elif sentence.dep[k] == 'pobj':
-            pbj_c += 1
-    
+    for i in range(0, len(sentence.dep_root)):
+        if sentence.dep_root[i] == 'nsubj':
+            nsubj_count += 1
+        elif sentence.dep_root[i] == 'dobj':
+            dobj_count += 1
 
-    for x in range(0, len(sentence.dep)):
-        if sentence.dep[x] == 'nsubj':
-            char = sentence.dep[x]
-            for y in range(0, len(list_char)):
-                if char == list_char.name[y]:
-                    isFound = True
-                    event_char.append(char)
-                    continue
+    for i in range(0, len(sentence.dep)):
+        if sentence.dep[i] == 'acomp':
+            acomp_count += 1
+        elif sentence.dep[i] == 'xcomp':
+            xcomp_count += 1
+            isThere = True
 
-        if sentence.dep_root[x] == 'verb':
-            act = sentence.dep_root_head[x]
-            event_char_action.append(act)
-            continue
 
-        if sentence.dep_root[x] == 'pobj':
-            obj = sentence.text_chunk[x]
-            event_obj.append(obj)
+    print("xcomp", xcomp_count)
+    curr_type = False
+    char_action = ""
+    for x in range(0, len(sentence.text_token)):
+        isFound_char = False
+        isFound_obj = False
 
-    #TO DO: get object / character action
+        if nsubj_count > 0:
+            #get the subject in the sentence
+            if sentence.dep_root[x] == 'nsubj':
+                nsubj_count -= 1
+                char = sentence.text_chunk[x]
+                event_char.append(char)
+                #match the character with the list of characters from the world
+              #  for y in range(0, len(list_char)):
+             #       if char == list_char.name[y] and isFound_char is False:
+              #          event_char.append(char)
+               #         isFound_char = True
+                #add event location
+                #for x in range(0, len(list_char)):
+                 #   if char == list_char[x].name:
+                  #      event_loc.append(list_char[x].inSetting)
+                #add character action
+            event_char_action.append(sentence.dep_root_head[x])
 
-    #TO DO: get setting of the sentence
+        if isThere is True:
+            if xcomp_count > 0:
+                if sentence.dep[x] == 'xcomp':
+                    event_char_action[len(event_char_action)-1] = sentence.lemma[x]
+                    isThere = False
+
+
+        if dobj_count > 0 and isAction(sentence) is False:
+            if sentence.dep_root[x] == 'dobj':
+                dobj_count -= 1
+                print("dobj", sentence.dep_root_head[x])
+                obj = sentence.text_chunk[x]
+                print("obj", sentence.text_chunk[x])
+                event_obj.append(obj)
+                    #match the object with the list of objects from the world
+                   #     for y in range(0, len(list_obj)):
+                    #        if char == list_obj.name[y] and isFound_obj is False:
+                     #           event_obj.append(obj)
+                      #          isFound_obj = True
+
+                        # add object action action
+                        #event_obj_action.append(sentence.dep_root_head[x])
+
+                event_type.append("Action")
+
+        if acomp_count > 0 and isAction(sentence) == True:
+            if sentence.dep[x] == 'acomp':
+                obj = sentence.lemma[x]
+                print(obj)
+                event_obj.append(obj)
+                event_type.append("Descriptive")
+
+
 
     print("---- EVENT FRAME ----")
-    print(event_char, event_char_action, event_obj, event_obj_action)
+    print(event_type, event_char, event_char_action, event_obj, event_obj_action)
 
 #Add event to the world
 def add_event(char, char_action, obj, obj_action, world):

@@ -19,19 +19,28 @@ list_of_sentences = []
 #Character
 characters = []
 
-# Coreferencing
-infoextraction.corenference_resolution(sentences, world)
-
 #Part-Of-Speech, NER, Dependency Parsing
 for sent in sentences:
     print(sent)
     sent = nlp(sent)
     list_of_sentences.append(infoextraction.pos_ner_nc_processing(sent))
 
-
+list = []
+curr = 0
+bef = 0
+isFirst = False
 # DetailsExtraction
 for sent in list_of_sentences:
     infoextraction.details_extraction(sent, world, "ROOT")
+    #infoextraction.event_extraction(sent, world, "ROOT")
+    # if curr > 0:
+    #     infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
+    # else:
+    #     infoextraction.coref_resolution(sent, sentences[curr], sentences[curr], world, True)
+    # print(curr)
+    # curr += 1
+    # bef += 1
+
 
 print(world.characters)
 print(world.objects)
