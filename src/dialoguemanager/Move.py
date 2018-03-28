@@ -1,6 +1,7 @@
 class Move:
 
     def __init__(self, move_id=-1, response_type="", template=[], blanks=[], blank_index=[]):
+        self.move_id = move_id
         self.type = type
         self.template = template
         self.blanks = blanks

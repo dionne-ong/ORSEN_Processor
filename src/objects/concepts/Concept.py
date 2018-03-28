@@ -1,9 +1,5 @@
 class Concept():
 
-    RELATION_ISA = "isA"
-    RELATION_PARTOF = "PartOf"
-    RELATION_LOCATION = "AtLocation"
-
     id = -1
     relation = ""
     first = ""

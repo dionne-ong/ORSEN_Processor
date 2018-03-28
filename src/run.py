@@ -31,15 +31,22 @@ bef = 0
 isFirst = False
 # DetailsExtraction
 for sent in list_of_sentences:
-    infoextraction.details_extraction(sent, world, "ROOT")
+    #infoextraction.details_extraction(sent, world, "ROOT")
     #infoextraction.event_extraction(sent, world, "ROOT")
-    # if curr > 0:
-    #     infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
-    # else:
-    #     infoextraction.coref_resolution(sent, sentences[curr], sentences[curr], world, True)
-    # print(curr)
-    # curr += 1
-    # bef += 1
+    print("Enter sentence number: ", curr)
+    if curr == 1 or curr > 1:
+        sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
+        print("returned: ", sentences[curr])
+    else:
+        sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[curr], world, True)
+        print("returned: ", sentences[curr])
+
+    print("current index: ", curr)
+    curr += 1
+    if bef == 0 and curr == 1:
+        print("oops")
+    else:
+        bef +=1
 
 
 print(world.characters)
@@ -55,7 +62,7 @@ for c in world.objects:
     print("obj", c)
     print(world.objects[c])
     for a in world.objects[c].attributes:
-        print("attr", a.relation, a.name, a.isNegated)
+        print("attr", a.relation, a.name)
 
 # print("AAAAA")
 # for key, values in characters_attributes.items():
