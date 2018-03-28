@@ -44,22 +44,21 @@ def retrieve_output(coreferenced_text, world_id):
         if world.empty_response == 2 :
             print("2nd no response")
             choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
-            output = generate_response(choice)
+            output = generate_response(choice, world)
 
         elif world.empty_response == 3 :
             print("3rd no response")
             output = "I don't understand, maybe we can try again later?"
 
     elif getCategory(coreferenced_text) == CAT_STORY:
-        print("check_story")
         choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-        output = generate_response(choice)
+        output = generate_response(choice, world)
 
     elif getCategory(coreferenced_text) == CAT_ANSWER:
         print("check_answer")
         # TEMP
         choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-        output = generate_response(choice)
+        output = generate_response(choice, world)
 
     elif getCategory(coreferenced_text) == CAT_COMMAND:
         print("check_command")
@@ -94,11 +93,15 @@ def generate_response(move_code, world):
     elif move_code == MOVE_REQUESTION:
         choices = ["requestioning..."]
 
-    choices = []
-    choices.append(DBO_Move.get_specific_template(21))
-    print(str(choices[0]))
-    index = random.randint(0, len(choices))
-    move = choices[index]
+    while True:
+        index = random.randint(0, len(choices))
+        move = choices[index]
+
+        if move.move_id != world.last_response_id:
+            world.last_response_id = move.move_id
+            break
+
+    print("TEMPLATE",move.to_string())
 
     for blank_type in move.blanks:
 
@@ -122,7 +125,6 @@ def generate_response(move_code, world):
             else:
                 print("ERROR: Index not found.")
 
-            print(relation_index)
             if len(usable_concepts) > 0 :
                 concept_string = ""
                 concept_index = random.randint(0,len(usable_concepts))
@@ -177,6 +179,8 @@ def generate_response(move_code, world):
                 concept = usable_concepts[concept_index]
                 move.template[move.template.index("start")] = concept.first
                 move.template[move.template.index("end")] = concept.second
+                print("REPLACED")
+            print("CHECK TEST",usable_concepts)
 
         elif blank_type == "Object":
 
@@ -213,22 +217,20 @@ start_time = time.time()
 
 
 world = World()
+server.worlds[world.id] = world
 
 world.characters["KAT"] = Character("KAT", "KAT", times=3)
 world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
 world.characters["JADE"] = Character("JADE", "JADE", times=0)
 world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
 
-world.objects["O1"] = Object("O1", "O1", times=3)
-world.objects["O2"] = Object("O2", "O2", times=5)
-world.objects["O3"] = Object("O3", "O3", times=0)
+world.objects["bag"] = Object("bag", "bag", times=3)
+world.objects["book"] = Object("book", "book", times=5)
+world.objects["pen"] = Object("pen", "pen", times=0)
 
-o = world.objects.values()
-c = world.characters.values()
+print(retrieve_output("Whatever.", world.id))
+print(retrieve_output("Whatever.", world.id))
+print(retrieve_output("Whatever.", world.id))
+print(retrieve_output("Whatever.", world.id))
 
-print(list(o))
-print(c)
-print(list(o)+list(c))
-
-print(world.get_main_character())
 print("--- %s seconds ---" % (time.time() - start_time))

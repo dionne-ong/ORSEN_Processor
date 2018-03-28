@@ -87,7 +87,7 @@ def get_word_concept(word):
           "second " \
           "FROM concepts " \
           "WHERE first = %s OR second = %s "
-    print(sql)
+
     conn = SqlConnConcepts.getConnection()
     cursor = conn.cursor()
 
@@ -125,7 +125,7 @@ def get_concept(word, relation):
           "second " \
           "FROM concepts " \
           "WHERE (first = %s OR second = %s) AND relation = %s "
-    print(sql)
+
     conn = SqlConnConcepts.getConnection()
     cursor = conn.cursor()
 
@@ -159,7 +159,7 @@ def get_concept_specified(first, relation, second):
           "second " \
           "FROM concepts " \
           "WHERE first = %s AND second = %s AND relation = %s "
-    print(sql)
+
     conn = SqlConnConcepts.getConnection()
     cursor = conn.cursor()
 
@@ -193,7 +193,7 @@ def get_concept_like(relation, first="", second=""):
           "second " \
           "FROM concepts " \
           "WHERE first LIKE '%"+first+"%' AND second LIKE '%"+second+"%' AND relation = '"+relation+"'"
-    print(sql)
+
     conn = SqlConnConcepts.getConnection()
     cursor = conn.cursor()
 
@@ -233,7 +233,7 @@ def add_concept(concept):
           "(%s, " \
           " %s, " \
           " %s);"
-    print(sql)
+
     conn = SqlConnConcepts.getConnection()
     cursor = conn.cursor()
 

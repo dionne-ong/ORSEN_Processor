@@ -15,9 +15,10 @@ class World:
     # stored as "<RESPONSE_TYPE>_<RESPONSE>" ie. "1_I see, that's intersing."
     reponses = []
 
+    last_response_id = -1
     empty_response = 0
 
-    def __init__(self, id=-1):
+    def __init__(self, id="-1"):
         self.id = id
 
     def add_character(self, char):
