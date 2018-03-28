@@ -33,13 +33,20 @@ isFirst = False
 for sent in list_of_sentences:
     #infoextraction.details_extraction(sent, world, "ROOT")
     #infoextraction.event_extraction(sent, world, "ROOT")
-    if curr > 0:
-        infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
+    print("Enter sentence number: ", curr)
+    if curr == 1 or curr > 1:
+        sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
+        print("returned: ", sentences[curr])
     else:
-        infoextraction.coref_resolution(sent, sentences[curr], sentences[curr], world, True)
-    print(curr)
+        sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[curr], world, True)
+        print("returned: ", sentences[curr])
+
+    print("current index: ", curr)
     curr += 1
-    bef += 1
+    if bef == 0 and curr == 1:
+        print("oops")
+    else:
+        bef +=1
 
 
 print(world.characters)

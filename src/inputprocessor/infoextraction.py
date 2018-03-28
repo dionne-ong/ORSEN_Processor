@@ -466,22 +466,24 @@ def getCategory(sentence):
 def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
     prn =  []
     noun = []
+    curr = sent_curr
+    bef = sent_bef
 
     coref = Coref()
 
     num_prn = 0
     num_conj = 0
+    num_pron = 0
 
     isMore = False
-    #count pronoun
+    #count pronoun, conjunction, noun
     for x in range(0, len(s.pos)):
         if s.pos[x] == 'PRON':
             num_prn += 1
-
-    for x in range(0, len(s.pos)):
         if s.pos[x] == 'CCONJ':
             num_conj += 1
-
+        if s.lemma[x] =='-PRON-':
+            num_pron += 1
 
     print("num_conj", num_conj)
     for x in range(0, num_prn):
@@ -495,7 +497,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         print("mentions", mentions)
 
         scores = coref.get_scores()
-        print("scores", scores)
+        #print("scores", scores)
 
         #extract scores
         single_mention = scores.get('single_scores')
@@ -508,6 +510,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
 
         count = 0
         do_pop = []
+
         #print(single_sc_lib)
         for i in range(0, len(single_sc_lib)):
             #print("i", i)
@@ -517,21 +520,21 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             else:
                 single_sc_lib[i] = float(single_sc_lib[i])
 
-        print(single_sc_lib)
+        #print(single_sc_lib)
         for i in range(len(do_pop)):
             single_sc_lib.pop(0)
-            print(single_sc_lib)
+            #print(single_sc_lib)
 
         #print(len(do_pop))
         #print(do_pop)
-        #print(single_sc_lib)
+        print(single_sc_lib)
         if isMore is True:
             single_sc_lib.pop(1)
 
         low_single_index = single_sc_lib.index(min(single_sc_lib))
         low_single_index += count
 
-        #print(low_single_index)
+        print("found it low_single_index: ", low_single_index)
 
         for i in range(0, len(pair_mention.get(low_single_index))):
             hold = pair_mention.get(low_single_index)
@@ -543,13 +546,61 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             pair_sc_lib[i] = float(pair_sc_lib[i])
 
         high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
-        #print(high_pair_index)
+        print("found it high_pair_index: ", high_pair_index)
         isMore = True
+
         prn.append(mentions[low_single_index])
         noun.append(mentions[high_pair_index])
 
-        print(prn, noun)
+    for i in range(0, num_pron):
+        for x in range(0, len(prn)):
+            if " he " in curr:
+                a, b = curr.split("he")
+                curr = a + str(noun[x]) + b
+            if " He " in curr:
+                a, b = curr.split("He")
+                curr = a + str(noun[x]) + b
+            if " him " in curr:
+                a, b = curr.split("him")
+                curr = a + str(noun[x]) + b
+            if " Him " in curr:
+                a, b = curr.split("Him")
+                curr = a + str(noun[x]) + b
+            if " his " in curr:
+                a, b = curr.split("his")
+                curr = a + str(noun[x]) + "'s" + b
+            if " His " in curr:
+                a, b = curr.split("His")
+                curr = a + str(noun[x]) + "'s" + b
 
+            if " she " in curr:
+                a, b = curr.split("she")
+                curr = a + str(noun[x]) + b
+            if " She " in curr:
+                a, b = curr.split("She")
+                curr = a + str(noun[x]) + b
+            if " her " in curr:
+                a, b = curr.split("her")
+                curr = a + str(noun[x]) + b
+            if " Her " in curr:
+                a, b = curr.split("Her")
+                curr = a + str(noun[x]) + b
+            if " hers " in curr:
+                a, b = curr.split("hers")
+                curr = a + str(noun[x]) + "'s" + b
+            if " Hers " in curr:
+                a, b = curr.split("Hers")
+                curr = a + str(noun[x]) + "'s" + b
+
+            if " it " in curr:
+                a, b = curr.split("it")
+                curr = a + str(noun[x]) + b
+            if " It " in curr:
+                a, b = curr.split("It")
+                curr = a + str(noun[x]) + b
+                
+    print(prn, noun)
+    return curr
     #rep = coref.get_most_representative()
     #print("rep", rep)
 
