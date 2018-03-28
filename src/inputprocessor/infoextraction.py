@@ -599,53 +599,70 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         prn.append(mentions[low_single_index])
         noun.append(mentions[high_pair_index])
 
+    #print("numPron", num_pron)
+    #print(len(prn))
     for i in range(0, num_pron):
         for x in range(0, len(prn)):
             if " he " in curr:
-                a, b = curr.split("he")
-                curr = a + str(noun[x]) + b
-            if " He " in curr:
-                a, b = curr.split("He")
-                curr = a + str(noun[x]) + b
+                if str(prn[x]) == "he" or str(prn[x]) == "his" or str(prn[x]) == "him":
+                    a, b = curr.split("he")
+                    curr = a + str(noun[x]) + b
+            if "He " in curr:
+                if str(prn[x]) == "He" or str(prn[x]) == "His" or str(prn[x]) == "Him":
+                    a, b = curr.split("He")
+                    curr = a + str(noun[x]) + b
             if " him " in curr:
-                a, b = curr.split("him")
-                curr = a + str(noun[x]) + b
-            if " Him " in curr:
-                a, b = curr.split("Him")
-                curr = a + str(noun[x]) + b
+                if str(prn[x]) == "he" or str(prn[x]) == "his" or str(prn[x]) == "him":
+                    a, b = curr.split("him")
+                    curr = a + str(noun[x]) + b
+            if "Him " in curr:
+                if str(prn[x]) == "He" or str(prn[x]) == "His" or str(prn[x]) == "Him":
+                    a, b = curr.split("Him")
+                    curr = a + str(noun[x]) + b
             if " his " in curr:
-                a, b = curr.split("his")
-                curr = a + str(noun[x]) + "'s" + b
-            if " His " in curr:
-                a, b = curr.split("His")
-                curr = a + str(noun[x]) + "'s" + b
+                if str(prn[x]) == "he" or str(prn[x]) == "his" or str(prn[x]) == "him":
+                    a, b = curr.split("his")
+                    curr = a + str(noun[x]) + "'s" + b
+            if "His " in curr:
+                if str(prn[x]) == "He" or str(prn[x]) == "His" or str(prn[x]) == "Him":
+                    a, b = curr.split("His")
+                    curr = a + str(noun[x]) + "'s" + b
 
-            if " she " in curr:
-                a, b = curr.split("she")
-                curr = a + str(noun[x]) + b
-            if " She " in curr:
-                a, b = curr.split("She")
-                curr = a + str(noun[x]) + b
+            if "she " in curr:
+                if str(prn[x]) == "she" or str(prn[x]) == "her" or str(prn[x]) == "hers":
+                    a, b = curr.split("she")
+                    curr = a + str(noun[x]) + b
+            if "She " in curr:
+                if str(prn[x]) == "She" or str(prn[x]) == "Her" or str(prn[x]) == "Hers":
+                    a, b = curr.split("She")
+                    curr = a + str(noun[x]) + b
             if " her " in curr:
-                a, b = curr.split("her")
-                curr = a + str(noun[x]) + b
-            if " Her " in curr:
-                a, b = curr.split("Her")
-                curr = a + str(noun[x]) + b
+                if str(prn[x]) == "she" or str(prn[x]) == "her" or str(prn[x]) == "hers":
+                    a, b = curr.split("her")
+                    curr = a + str(noun[x]) + b
+            if "Her " in curr:
+                if str(prn[x]) == "She" or str(prn[x]) == "Her" or str(prn[x]) == "Hers":
+                    a, b = curr.split("Her")
+                    curr = a + str(noun[x]) + b
             if " hers " in curr:
-                a, b = curr.split("hers")
-                curr = a + str(noun[x]) + "'s" + b
-            if " Hers " in curr:
-                a, b = curr.split("Hers")
-                curr = a + str(noun[x]) + "'s" + b
+                if str(prn[x]) == "she" or str(prn[x]) == "her" or str(prn[x]) == "hers":
+                    a, b = curr.split("hers")
+                    curr = a + str(noun[x]) + "'s" + b
+            if "Hers " in curr:
+                if str(prn[x]) == "She" or str(prn[x]) == "Her" or str(prn[x]) == "Hers":
+                    a, b = curr.split("Hers")
+                    curr = a + str(noun[x]) + "'s" + b
 
             if " it " in curr:
                 a, b = curr.split("it")
                 curr = a + str(noun[x]) + b
-            if " It " in curr:
+            if "It " in curr:
+                #print("found it!!!!!!!!!!!")
                 a, b = curr.split("It")
                 curr = a + str(noun[x]) + b
-                
+            #print(curr)
+            #print("hello still here")
+            x -=1
     print(prn, noun)
     return curr
     #rep = coref.get_most_representative()
