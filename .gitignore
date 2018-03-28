@@ -14,3 +14,4 @@ src/objects/nlp/__pycache__/Sentence.cpython-36.pyc
 src/objects/eventchain/__pycache__/EventFrame.cpython-36.pyc
 src/objects/eventchain/__pycache__/__init__.cpython-36.pyc
 src/db/dialoguemanager/__pycache__/
+src/dialoguemanager/__pycache__/
