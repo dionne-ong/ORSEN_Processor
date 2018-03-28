@@ -1,4 +1,4 @@
-
+from operator import attrgetter
 class World:
 
     # WORLD ELEMENTS
@@ -51,3 +51,31 @@ class World:
             return True
         else:
             return False
+
+    def get_main_character(self, rank=0):
+        sorted_list = sorted(self.characters.values(), key=attrgetter('timesMentioned'), reverse=True)
+        final = [sorted_list[rank]]
+
+        for item in sorted_list:
+            if item.timesMentioned == sorted_list[rank].timesMentioned:
+                final.append(item)
+
+        return final
+
+    def get_top_characters(self, num_of_charas=3):
+        sorted_list= sorted(self.characters.values(), key=attrgetter('timesMentioned'), reverse=True)
+        return sorted_list[:num_of_charas]
+
+    def get_main_objects(self, rank=0):
+        sorted_list = sorted(self.objects.values(), key=attrgetter('timesMentioned'), reverse=True)
+        final = [sorted_list[rank]]
+
+        for item in sorted_list:
+            if item.timesMentioned == sorted_list[rank].timesMentioned:
+                final.append(item)
+
+        return final
+
+    def get_top_objects(self, num_of_charas=3):
+        sorted_list = sorted(self.objects.values(), key=attrgetter('timesMentioned'), reverse=True)
+        return sorted_list[:num_of_charas]

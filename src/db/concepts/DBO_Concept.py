@@ -12,6 +12,8 @@ DESIRES = "Desires"
 CAPABLE_OF = "CapableOf"
 HAS_PROPERTY = "HasProperty"
 
+RELATIONS = [IS_A, PART_OF, AT_LOCATION, HAS_PREREQ, CREATED_BY, USED_FOR, CAUSES, DESIRES, CAPABLE_OF, HAS_PROPERTY]
+
 
 def get_specific_concept(id):
     sql = "SELECT idconcepts, " \
@@ -37,7 +39,7 @@ def get_specific_concept(id):
         first       = row[2]
         second      = row[3]
 
-        resulting = Concept(id, relation, first, second)
+        resulting = Concept(id, first, relation, second)
 
     except:
         print("Error Concepts: unable to fetch data of character #%d" % id)
@@ -68,7 +70,7 @@ def get_all_concepts():
             first       = row[2]
             second      = row[3]
 
-            resulting.append(Concept(id, relation, first, second))
+            resulting.append(Concept(id, first, relation, second))
 
     except:
         print("Error Concepts: unable to fetch all data")
@@ -106,7 +108,7 @@ def get_word_concept(word):
             first       = row[2]
             second      = row[3]
 
-        resulting.append(Concept(id, relation, first, second))
+        resulting.append(Concept(id, first, relation, second))
 
     except:
         print("Error Concept: unable to fetch data for word "+word)
@@ -140,7 +142,7 @@ def get_concept(word, relation):
             first       = row[2]
             second      = row[3]
 
-            resulting.append(Concept(id, relation, first, second))
+            resulting.append(Concept(id, first, relation, second))
 
     except:
         print("Error Concept: unable to fetch data for word "+word)
@@ -174,10 +176,48 @@ def get_concept_specified(first, relation, second):
             first       = result[2]
             second      = result[3]
 
-            resulting = (Concept(id, relation, first, second))
+            resulting = (Concept(id, first, relation, second))
 
     except:
         print("Error Concept: unable to fetch data for word "+first+" and "+second)
+
+    conn.close()
+    return resulting
+
+
+def get_concept_like(relation, first="", second=""):
+    sql = "SELECT idconcepts, " \
+          "relation," \
+          "first," \
+          "second " \
+          "FROM concepts " \
+          "WHERE first LIKE '%"+first+"%' AND second LIKE '%"+second+"%' AND relation = '"+relation+"'"
+    print(sql)
+    conn = SqlConnConcepts.getConnection()
+    cursor = conn.cursor()
+
+    resulting = []
+
+    try:
+        cursor.execute(sql)
+        # Fetch all the rows in a list of lists.
+        result = cursor.fetchall()
+
+        id = -1
+        relation = ""
+        first = ""
+        second = ""
+
+        for row in result:
+            id          = row[0]
+            relation    = row[1]
+            first       = row[2]
+            second      = row[3]
+
+            resulting.append(Concept(id, first, relation, second))
+
+    except:
+        print("Error Concept: unable to fetch like data")
 
     conn.close()
     return resulting

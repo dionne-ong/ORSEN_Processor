@@ -1,4 +1,4 @@
-from ..SqlConnector import SqlConnConcepts
+from src.db.SqlConnector import SqlConnConcepts
 from .Move import Move
 
 TYPE_FEEDBACK = "feedback"
