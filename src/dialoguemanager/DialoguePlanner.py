@@ -36,6 +36,7 @@ server = ServerInstance()
 def retrieve_output(coreferenced_text, world_id):
     world = server.worlds[world_id]
     output = ""
+
     if coreferenced_text == "":  # if no input found
         world.empty_response += 1
         output = "I'm sorry, I did not understand what you just said. Can you say it again?"
@@ -76,6 +77,8 @@ def generate_response(move_code, world):
     response = ""
     choices = []
 
+    subject = None
+
     if move_code == MOVE_FEEDBACK:
         choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_FEEDBACK)
 
@@ -96,8 +99,6 @@ def generate_response(move_code, world):
     print(str(choices[0]))
     index = random.randint(0, len(choices))
     move = choices[index]
-
-    character_basis = None
 
     for blank_type in move.blanks:
 
@@ -144,7 +145,7 @@ def generate_response(move_code, world):
             list_choices = charas + objects
             loop_total = 0
 
-            while True:
+            while True and subject is None:
 
                 loop_total += 1
                 choice_index = random.randint(0, len(choices))
@@ -152,6 +153,7 @@ def generate_response(move_code, world):
 
                 if isinstance(decided_item, Object):
                     decided_concept = decided_item.name
+                    subject = decided_item
                     decided_node = 0
 
                 elif isinstance(decided_item, Character):
@@ -177,10 +179,28 @@ def generate_response(move_code, world):
                 move.template[move.template.index("end")] = concept.second
 
         elif blank_type == "Object":
-            print("replace object")
+
+            if subject is None:
+                charas = world.get_top_characters()
+                objects = world.get_top_objects()
+                list_choices = charas + objects
+
+                choice_index = random.randint(0, len(choices))
+                subject = list_choices[choice_index]
+
+            move.template[move.template.index("object")] = subject.id
 
         elif blank_type == "Character":
-            print("replace character")
+            if subject is None or not isinstance(subject, Character):
+                charas = world.get_top_characters(5)
+
+                choice_index = random.randint(0, len(charas))
+                subject = charas[choice_index]
+            else:
+                chara = subject
+
+            move.template[move.template.index("character")] = subject.id
+
 
         elif blank_type == "Event":
             print("replace event")

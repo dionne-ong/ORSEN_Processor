@@ -64,6 +64,10 @@ class World:
 
     def get_top_characters(self, num_of_charas=3):
         sorted_list= sorted(self.characters.values(), key=attrgetter('timesMentioned'), reverse=True)
+
+        if len(sorted_list) > num_of_charas:
+            num_of_charas = len(sorted_list)
+
         return sorted_list[:num_of_charas]
 
     def get_main_objects(self, rank=0):
