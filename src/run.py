@@ -46,7 +46,7 @@ for c in world.objects:
     print("obj", c)
     print(world.objects[c])
     for a in world.objects[c].attributes:
-        print("attr", a.relation, a.name)
+        print("attr", a.relation, a.name, a.isNegated)
 
 # print("AAAAA")
 # for key, values in characters_attributes.items():

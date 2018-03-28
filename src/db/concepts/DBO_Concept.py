@@ -11,6 +11,7 @@ CAUSES = "Causes"
 DESIRES = "Desires"
 CAPABLE_OF = "CapableOf"
 HAS_PROPERTY = "HasProperty"
+HAS = "Has"
 
 
 def get_specific_concept(id):
