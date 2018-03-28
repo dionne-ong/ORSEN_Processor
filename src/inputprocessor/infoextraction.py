@@ -108,6 +108,9 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
 
                 # nominal subject (passive) or direct object
                 elif sent.dep[num] == "nsubjpass" or sent.dep[num] == "dobj":
+                    if not subject:
+                        subject = compound_extraction(sent, str(sent.children[i][j]))
+
                     if dative and sent.dep[num] == "dobj":
                         add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
                                     sent.lemma[i], world, dative)
@@ -183,7 +186,7 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
                     print("WAHHH", current_node)
                     add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i]
                                 , world)
-
+                details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
                 sent.finished_nodes[num] = 1
 
             # dative - the noun to which something is given
@@ -309,16 +312,10 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
         elif c in world.characters:
             world.characters[c].timesMentioned += 1
 
-        if dep in ["attr", "appos"]:
-            add_attributes(sent, child, subject, world, "", DBO_Concept.IS_A)
-        if dep in ["dobj", "relcl"]:
-            if subject:
-                add_attributes(sent, child, subject, world, "", DBO_Concept.HAS)
-
         # add amod and poss attribute
         char_index = find_text_index(sent, c)
-        for child in sent.children[char_index]:
-            index = find_text_index(sent, child)
+        for ch in sent.children[char_index]:
+            index = find_text_index(sent, ch)
 
             if sent.dep[index] in ["amod", "nummod"]:
                 add_attributes(sent, sent.text_token[index], str(c), world)
@@ -333,7 +330,12 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                                 world)
                     add_attributes(sent, c, compound_extraction(sent, str(sent.text_token[index])), world, "",
                                    DBO_Concept.HAS)
-
+    print("CHILD---------------------------", child, subject)
+    if dep in ["attr", "appos"]:
+        add_attributes(sent, child, subject, world, "", DBO_Concept.IS_A)
+    if dep in ["dobj", "relcl"]:
+        if subject:
+            add_attributes(sent, child, subject, world, "", DBO_Concept.HAS)
 
 def add_attributes(sent, child, subject, world, negation="", relation=""):
     list_of_attributes = [child]
@@ -366,6 +368,7 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
 
 def add_settings(sent, num, subject, negation, world, location):
     current_location = location
+    print("subject", subject)
     list_of_char = char_conj_extractions(sent, subject)
     print("CHARACTERS ------ SETTINGS", list_of_char, subject, location)
     if not negation:
