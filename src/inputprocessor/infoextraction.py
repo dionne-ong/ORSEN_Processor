@@ -8,10 +8,12 @@ from src.objects.storyworld.Setting import Setting
 from neuralcoref import Coref
 # ----- luisa
 
+
 def reading(filename):
     with open(filename, 'r') as f:
         userinput = f.read()
     return userinput
+
 
 def pos_ner_nc_processing(sentence):
     new_sentence = Sentence()
@@ -34,13 +36,13 @@ def pos_ner_nc_processing(sentence):
 
     for ent in sentence.ents:
          #print("---NER---")
-         print(ent.text, ent.start_char, ent.end_char, ent.label_)
+         #print(ent.text, ent.start_char, ent.end_char, ent.label_)
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        #sprint("---NC---")
-        print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
+        #print("---NC---")
+        #print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
 
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
@@ -75,8 +77,12 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
     for i in range(0, len(sent.dep)):
         if (sent.dep[i] == current_node) and (sent.finished_nodes[i] == 0):
             current_index = i
+            print("HEREEE1", current_node, current_index)
             sent.finished_nodes[i] = 1
+            break
 
+    for i in sent.children[current_index]:
+        print("HEREEEE2", i)
     if neg =="":
         is_negated = False
     else:
@@ -86,9 +92,9 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
         i = current_index
         for j in range(0, len(sent.children[i])):
             num = find_text_index(sent, str(sent.children[i][j]))
-
+            print("-----------------", current_node, str(sent.children[i][j]))
             if num != -1 and sent.finished_nodes[num] == 0 and\
-                    sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp"]:
+                    sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos"]:
 
                 # nominal subject
                 if sent.dep[num] == "nsubj":
@@ -98,19 +104,34 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
 
                 # nominal subject (passive) or direct object
                 elif sent.dep[num] == "nsubjpass" or sent.dep[num] == "dobj":
-                    add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i], world)
+                    add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i], world, subject)
 
                 # adjectival complement
                 elif sent.dep[num] == "acomp":
                     add_attributes(sent, str(sent.children[i][j]), str(subject), world, is_negated)
                     is_negated = False
 
-                # attribute
+                # attribute and appositional modifier
                 elif sent.dep[num] == "attr":
                     location = add_settings(sent, num, subject, is_negated, world, location)
                     if location == "":
-                        add_attributes(sent, str(sent.children[i][j]), str(subject), world, is_negated)
-                        is_negated = False
+                        add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
+                                    sent.lemma[i], world, subject)
+
+                    is_negated = False
+
+                #appositional modifier
+                elif sent.dep[num] == "appos":
+                    location = add_settings(sent, num, subject, is_negated, world, location)
+                    if location == "":
+                        print("YOOOOOOOOOOOOOOOOOO", str(sent.head_text[num]),
+                              compound_extraction(sent, str(sent.head_text[num])))
+
+                        add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
+                                    sent.lemma[i], world, compound_extraction(sent, str(sent.head_text[num])))
+
+
+                    is_negated = False
 
                 # open clausal compliment
                 elif sent.dep[num] == "xcomp":
@@ -147,6 +168,7 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
             elif num != -1 and sent.dep[num] == "dative":
                 if str(sent.text_token[num]) == "to":
                     details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
+
                 else:
                     add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i],
                                 world)
@@ -162,6 +184,7 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
             # adverbial modifier
             elif num != -1 \
                     and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "advmod", "pcomp"]:
+                print("HEREEEE", sent.dep[num])
                 details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
 
             else:
@@ -171,8 +194,11 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
 
 
 def compound_extraction(sent, subj):
+    print("SUBJ", subj)
     num = find_text_index(sent, subj)
+    print("NUM", num)
     for c in sent.children[num]:
+        print("CHILDREN", c)
         num = find_text_index(sent,c)
         if sent.dep[num] == "compound":
             sent.finished_nodes[num] == 1
@@ -184,7 +210,6 @@ def char_conj_extractions(sent, subj):
     list_of_conj = [subj]
     for k in range(0, len(sent.head_text)):
         if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":
-            print("--------------", sent.text_token[k])
             subj = str(sent.text_token[k])
             list_of_conj.append(compound_extraction(sent, subj))
             sent.finished_nodes[k] == 1
@@ -203,9 +228,8 @@ def add_capability(sent, attr, subject, world, negation):
                     world.objects[c].attributes.append(new_attribute)
 
 
-def add_objects(sent, child, dep, lemma, world):
+def add_objects(sent, child, dep, lemma, world, subject=""):
     list_of_char = char_conj_extractions(sent, child)
-    print("CHARAC", list_of_char)
     for c in list_of_char:
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
@@ -247,6 +271,9 @@ def add_objects(sent, child, dep, lemma, world):
         elif c in world.characters:
             world.characters[c].timesMentioned += 1
 
+        if dep in ["attr", "appos"]:
+            add_attributes(sent, child, subject, world, "", DBO_Concept.IS_A)
+
         # add amod and poss attribute
         char_index = find_text_index(sent, c)
         for child in sent.children[char_index]:
@@ -256,15 +283,15 @@ def add_objects(sent, child, dep, lemma, world):
                 add_attributes(sent, sent.text_token[index], str(c), world)
                 sent.finished_nodes[index] == 1
 
-            elif sent.dep[index] =="poss":
+            elif sent.dep[index] in ["poss"]:
                 if sent.text_token[index] in world.characters or sent.text_token[index] in world.objects:
-                    print("----------------HERE")
                     add_attributes(sent, c, sent.text_token[index], world, "", DBO_Concept.HAS)
                     sent.finished_nodes[index] == 1
                 else:
-                    print("---------------- NOT HERE")
-                    add_objects(sent, compound_extraction(sent, str(sent.text_token[index])), sent.dep[index], lemma, world)
-                    add_attributes(sent, c, compound_extraction(sent, str(sent.text_token[index])), world, "", DBO_Concept.HAS)
+                    add_objects(sent, compound_extraction(sent, str(sent.text_token[index])), sent.dep[index], lemma,
+                                world)
+                    add_attributes(sent, c, compound_extraction(sent, str(sent.text_token[index])), world, "",
+                                   DBO_Concept.HAS)
 
 
 def add_attributes(sent, child, subject, world, negation="", relation=""):
@@ -279,14 +306,6 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
         if (sent.dep[i] == 'conj') and (sent.head_text[i] == head):
             list_of_attributes.append(sent.text_token[i])
             head = sent.text_token[i]
-
-    for i in list_of_attributes:
-        num = find_text_index(sent, str(i))
-        for c in sent.children[num]:
-            index = find_text_index(sent, str(c))
-            if sent.dep[index] == "amod":
-                list_of_attributes.append(sent.text_token[index])
-                sent.finished_nodes[index] == 1
 
     for c in list_of_char:
         if c in world.characters:
@@ -357,13 +376,14 @@ def add_settings(sent, num, subject, negation, world, location):
                 world.add_setting(new_setting)
 
             for c in list_of_char:
-                if str(c) in world.characters:
-                    print("-------------")
+                if str(c) in world.characters and current_location:
                     char = world.characters[str(c)]
                     char.inSetting = current_location
                     print("ch", char.inSetting)
-                elif str(c) in world.objects:
+                elif str(c) in world.objects and current_location:
+                    print("OKAY ADDED")
                     obj = world.objects[str(c)]
+                    print(obj.name, current_location)
                     obj.inSetting = current_location
 
     return current_location
