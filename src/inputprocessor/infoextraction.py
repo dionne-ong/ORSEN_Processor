@@ -20,8 +20,8 @@ def pos_ner_nc_processing(sentence):
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        print("---POS----");
-        print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+        #print("---POS----");
+        #print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
@@ -35,8 +35,8 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-         print("---NER---")
-         print(ent.text, ent.start_char, ent.end_char, ent.label_)
+         #print("---NER---")
+         #print(ent.text, ent.start_char, ent.end_char, ent.label_)
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
@@ -90,7 +90,6 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
         i = current_index
         for j in range(0, len(sent.children[i])):
             num = find_text_index(sent, str(sent.children[i][j]))
-            print("-----------------", current_node, str(sent.children[i][j]), num)
             if num != -1 and sent.finished_nodes[num] == 0 and\
                     sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos", "relcl"]:
 
@@ -106,7 +105,6 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
                         subject = compound_extraction(sent, str(sent.children[i][j]))
 
                     if dative and sent.dep[num] == "dobj":
-                        print("DAT", dative, compound_extraction(sent, str(sent.children[i][j])))
                         subject = compound_extraction(sent, str(sent.children[i][j]))
                         add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
                                     sent.lemma[i], world, dative)
@@ -171,16 +169,12 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
 
             # noun phrase as adverbial modifier
             elif num != -1 and  sent.dep[num] == "npadvmod":
-                print("LOCATION1", location)
                 location = add_settings(sent, num, subject, is_negated, world, location)
-                print("LOCATION2", location)
                 sent.finished_nodes[num] = 1
 
             # object of preposition
             elif num != -1 and  sent.dep[num] == "pobj":
-                print("LOCATION1", location)
                 location = add_settings(sent, num, subject, is_negated, world, location)
-                print("LOCATION2", location)
 
                 if location == "":
                     add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i]
@@ -209,10 +203,8 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
             # adverbial modifier
             elif num != -1 \
                     and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "advmod", "pcomp"]:
-                print("LOCATION3", location, sent.dep[num])
                 details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
-                print("LOCATION4", location, sent.dep[num])
-
+              
             else:
                 print("WARNING: Dependecy ", sent.dep[num],  " not included in the list")
     else:
@@ -247,7 +239,9 @@ def char_conj_extractions(sent, subj):
     print("LIST", list_of_conj)
     temp = str(subj).split()
     subj = temp[-1]
+    print("SUBJEC", subj)
     for k in range(0, len(sent.head_text)):
+        print("SENT", len(sent.head_text))
         if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":
             subj = str(sent.text_token[k])
             list_of_conj.append(compound_extraction(sent, subj))
@@ -275,7 +269,10 @@ def add_capability(sent, attr, subject, world, num):
 
 
 def add_objects(sent, child, dep, lemma, world, subject=""):
-    print("SENT", sent.words)
+    print("SENT", sent.words, len(sent.words), len(sent.dep), len(sent.head_text))
+    for i in sent.head_text:
+        print("ii", sent.head_text )
+    print("CHILD", child)
     list_of_char = char_conj_extractions(sent, child)
     print("LIST_OF_CHAR", list_of_char)
     for c in list_of_char:
