@@ -1,6 +1,6 @@
 from numpy import random
 from src.objects.ServerInstance import ServerInstance
-from src.inputprocessor.infoextraction import getCategory,CAT_STORY,CAT_COMMAND,CAT_ANSWER
+from src.inputprocessor.infoextraction import getCategory, CAT_STORY, CAT_COMMAND, CAT_ANSWER
 from src.dialoguemanager import DBO_Move
 from src.db.concepts import DBO_Concept
 from pattern.text.en import conjugate
@@ -8,7 +8,6 @@ from pattern.text.en import conjugate
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
 from src.objects.storyworld.World import World
-from operator import  itemgetter
 import time
 
 MOVE_FEEDBACK = 1
@@ -33,6 +32,7 @@ CONVERT_PAPART = "ppart"
 
 server = ServerInstance()
 
+
 def retrieve_output(coreferenced_text, world_id):
     world = server.worlds[world_id]
     output = ""
@@ -44,27 +44,32 @@ def retrieve_output(coreferenced_text, world_id):
         if world.empty_response == 2 :
             print("2nd no response")
             choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
-            output = generate_response(choice)
+            output = generate_response(choice, world)
 
         elif world.empty_response == 3 :
             print("3rd no response")
             output = "I don't understand, maybe we can try again later?"
 
     elif getCategory(coreferenced_text) == CAT_STORY:
-        print("check_story")
         choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-        output = generate_response(choice)
+        output = generate_response(choice, world)
 
     elif getCategory(coreferenced_text) == CAT_ANSWER:
         print("check_answer")
-        # TEMP
+        # TEMP TODO: idk how to answer this lmao / if "yes" or whatever, add to character data
         choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-        output = generate_response(choice)
+        output = generate_response(choice, world)
 
     elif getCategory(coreferenced_text) == CAT_COMMAND:
-        print("check_command")
-        # TEMP
+        # TEMP TODO: check for further commands
         choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+
+        if "your turn" in coreferenced_text:
+            choice = MOVE_HINT
+        elif "what" in coreferenced_text \
+                and ("say" in coreferenced_text or "next" in coreferenced_text):
+            choice = random.randint(MOVE_GENERAL_PUMP, MOVE_SPECIFIC_PUMP+1)
+
         output = generate_response(choice, world)
 
     else:
@@ -92,13 +97,18 @@ def generate_response(move_code, world):
         choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_HINT)
 
     elif move_code == MOVE_REQUESTION:
+        # TODO: requestioning decisions to be made
         choices = ["requestioning..."]
 
-    choices = []
-    choices.append(DBO_Move.get_specific_template(21))
-    print(str(choices[0]))
-    index = random.randint(0, len(choices))
-    move = choices[index]
+    while True:
+        index = random.randint(0, len(choices))
+        move = choices[index]
+
+        if move.move_id != world.last_response_id:
+            world.last_response_id = move.move_id
+            break
+
+    print("TEMPLATE",move.to_string())
 
     for blank_type in move.blanks:
 
@@ -122,7 +132,6 @@ def generate_response(move_code, world):
             else:
                 print("ERROR: Index not found.")
 
-            print(relation_index)
             if len(usable_concepts) > 0 :
                 concept_string = ""
                 concept_index = random.randint(0,len(usable_concepts))
@@ -147,9 +156,12 @@ def generate_response(move_code, world):
 
             while True and subject is None:
 
-                loop_total += 1
-                choice_index = random.randint(0, len(choices))
-                decided_item = list_choices[choice_index]
+                if len(list_choices) > 0:
+                    loop_total += 1
+                    choice_index = random.randint(0, len(list_choices))
+                    decided_item = list_choices[choice_index]
+                else:
+                    break
 
                 if isinstance(decided_item, Object):
                     decided_concept = decided_item.name
@@ -176,7 +188,7 @@ def generate_response(move_code, world):
                 concept_index = random.randint(0,len(usable_concepts))
                 concept = usable_concepts[concept_index]
                 move.template[move.template.index("start")] = concept.first
-                move.template[move.template.index("end")] = concept.second
+                move.template[move.template.index("end")] = concept.second\
 
         elif blank_type == "Object":
 
@@ -201,34 +213,37 @@ def generate_response(move_code, world):
 
             move.template[move.template.index("character")] = subject.id
 
-
         elif blank_type == "Event":
             print("replace event")
+            # TODO: event verb replacements
 
     response = move.to_string()
 
     return response
 
+
 start_time = time.time()
 
+test_world = World()
+server.worlds[test_world.id] = test_world
 
-world = World()
+test_world.characters["KAT"] = Character("KAT", "KAT", times=3)
+test_world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
+test_world.characters["JADE"] = Character("JADE", "JADE", times=0)
+test_world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
 
-world.characters["KAT"] = Character("KAT", "KAT", times=3)
-world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
-world.characters["JADE"] = Character("JADE", "JADE", times=0)
-world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
+test_world.objects["bag"] = Object("bag", "bag", times=3)
+test_world.objects["book"] = Object("book", "book", times=5)
+test_world.objects["pen"] = Object("pen", "pen", times=0)
 
-world.objects["O1"] = Object("O1", "O1", times=3)
-world.objects["O2"] = Object("O2", "O2", times=5)
-world.objects["O3"] = Object("O3", "O3", times=0)
+print(retrieve_output("Whatever.", test_world.id))
+print(retrieve_output("Whatever.", test_world.id))
+print(retrieve_output("Whatever.", test_world.id))
+print(retrieve_output("Whatever.", test_world.id))
 
-o = world.objects.values()
-c = world.characters.values()
+print(retrieve_output("Whatever.", test_world.id))
+print(retrieve_output("Whatever.", test_world.id))
+print(retrieve_output("Whatever.", test_world.id))
+print(retrieve_output("Whatever.", test_world.id))
 
-print(list(o))
-print(c)
-print(list(o)+list(c))
-
-print(world.get_main_character())
 print("--- %s seconds ---" % (time.time() - start_time))
