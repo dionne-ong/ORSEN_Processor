@@ -1,4 +1,7 @@
 
+FRAME_EVENT = 0
+FRAME_DESCRIPTIVE = 1
+
 class EventFrame:
 
     characters = {}
@@ -12,6 +15,9 @@ class EventFrame:
     # same except for objects
 
     setting = None
+
+    event_type = -1
+    # descriptive, action, etc.
 
     def to_sentence_string(self):
         string = "<event sentence>"

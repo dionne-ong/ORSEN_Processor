@@ -3,6 +3,7 @@ from src.objects.ServerInstance import ServerInstance
 from src.inputprocessor.infoextraction import getCategory, CAT_STORY, CAT_COMMAND, CAT_ANSWER
 from src.dialoguemanager import DBO_Move, Move
 from src.db.concepts import DBO_Concept
+from src.objects.eventchain.EventFrame import EventFrame, FRAME_EVENT, FRAME_DESCRIPTIVE
 from pattern.text.en import conjugate
 
 from src.objects.storyworld.Character import Character
@@ -124,7 +125,14 @@ def generate_response(move_code, world, remove_index=[]):
         pre_choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_GENERAL_PUMP)
 
         if len(world.event_chain) > 0:
-            
+            last = world.event_chain[len(world.event_chain)-1]
+            for item in pre_choices:
+                if last.event_type == FRAME_EVENT and "happen" in item.get_string_response():
+                    choices.append(item)
+                if "happen" not in item.get_string_response():
+                    choices.append(item)
+        else:
+            choices = pre_choices
 
     elif move_code == MOVE_SPECIFIC_PUMP:
         choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_SPECIFIC_PUMP)
