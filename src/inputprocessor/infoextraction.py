@@ -240,7 +240,7 @@ def char_conj_extractions(sent, subj):
     subj = temp[-1]
     for k in range(0, len(sent.head_text)):
         if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":
-            subj = str(sent.text_token[k])
+            subj = sent.text_token[k]
             list_of_conj.append(compound_extraction(sent, subj))
             sent.finished_nodes[k] == 1
 
@@ -271,6 +271,7 @@ def add_capability(sent, attr, subject, world, num):
 def add_objects(sent, child, dep, lemma, world, subject=""):
     list_of_char = char_conj_extractions(sent, child)
     for c in list_of_char:
+        print("CCCCCC", c, type(c))
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
                     and dep == "nsubj":
@@ -294,7 +295,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
         elif c in world.objects:
             if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None \
                     and dep == "nsubj":
-                new_character = Character.convert_from_object(c)
+                new_character = Character.convert_from_object(world.objects[c])
                 world.add_character(new_character)
                 world.characters[new_character.id].timesMentioned += 1
             else:
@@ -338,7 +339,6 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
 def add_attributes(sent, child, subject, world, negation="", relation=""):
     list_of_attributes = [child]
     list_of_char = char_conj_extractions(sent, subject)
-    print("LIST_OF_CHAR", list_of_char, list_of_attributes)
     head = child
 
     if relation == "":
@@ -348,6 +348,7 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
         if (sent.dep[i] == 'conj') and (sent.head_text[i] == str(head)):
             list_of_attributes.append(sent.text_token[i])
             head = sent.text_token[i]
+
     for c in list_of_char:
         if str(c) in world.characters:
             for attr in list_of_attributes:
