@@ -6,6 +6,7 @@ from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
 from src.objects.storyworld.Setting import Setting
 from neuralcoref import Coref
+import _operator
 # ----- luisa
 
 
@@ -583,7 +584,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
     noun = []
     curr = sent_curr
     bef = sent_bef
-
+    none = {0: None}
     coref = Coref()
 
     num_prn = 0
@@ -606,7 +607,6 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         elif isFirst is False:
             sent = coref.one_shot_coref(utterances=sent_curr, context=sent_bef)
 
-
         mentions = coref.get_mentions()
         print("mentions", mentions)
 
@@ -614,73 +614,92 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         print("rep", rep)
         scores = coref.get_scores()
         print("scores", scores)
-        count = 0
 
-        add_apos = []
-        for key, value in rep.items():
-            if str(key).lower() == "his" or str(key).lower() == "hers" or str(key).lower() == "their" or str(key).lower() == "our" or str(key).lower() == "its":
-                add_apos.append(count)
-            count +=1
-        c = 0
-        for key, value in rep.items():
-           for i in range(0, len(add_apos)):
-               if add_apos[i] == c:
-                   sent_curr = sent_curr.replace(str(key), str(value) + "'s")
+        if len(rep) > 0:
+            count = 0
 
-           c += 1
-           sent_curr = sent_curr.replace(str(key), str(value))
+            add_apos = []
+            for key, value in rep.items():
+                if str(key).lower() == "his" or str(key).lower() == "hers" or str(key).lower() == "their" or str(key).lower() == "our" or str(key).lower() == "its":
+                    add_apos.append(count)
+                count +=1
+            c = 0
+            for key, value in rep.items():
+               for i in range(0, len(add_apos)):
+                   if add_apos[i] == c:
+                       sent_curr = sent_curr.replace(str(key), str(value) + "'s")
 
-           if (str(value) not in world.characters) and (str(value) not in world.objects):
-            if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
-                new_character = Character()
-                new_character.name = str(value)
-                new_character.id = str(value)
-                world.add_character(new_character)
-                world.characters[new_character.id].timesMentioned += 1
-            elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
-                new_character = Character()
-                new_character.name = str(value)
-                new_character.id = str(value)
-                new_character.gender = "F"
-                world.add_character(new_character)
-                world.characters[new_character.id].timesMentioned += 1
+            c += 1
+            sent_curr = sent_curr.replace(str(key), str(value))
+
+            if (str(value) not in world.characters) and (str(value) not in world.objects):
+                if (str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    new_character.gender = "F"
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+
+        else:
+            # print("len is 0")
+            # extract scores
+            single_mention = scores.get('single_scores')
+            pair_mention = scores.get('pair_scores')
+            single_sc_lib = []
+            pair_sc_lib = []
+
+            print("Single", single_mention)
+            print("Pair", pair_mention)
+
+            count = 0
+            for i in range(0, len(single_mention)):
+                if single_mention.get(i) == none.get(0):
+                  print("None here")
+                  count += 1
+                else:
+                  single_sc_lib.append(float(single_mention.get(i)))
+
+            #count -=1
+            print("COUNT", count)
+            print("SINGLE_SC_LIB", single_sc_lib)
+
+            print("INDEX min", single_sc_lib.index(min(single_sc_lib)))
+            low_single_index = single_sc_lib.index(min(single_sc_lib))
+            low_single_index += count
+
+            print("found it low_single_index: ", low_single_index)
+            holder = {}
+
+            print(pair_mention.get(low_single_index))
+            holder = pair_mention.get(low_single_index)
+
+            #for i in range(0, len(holder)):
+
+
+            print("PAIR!!!!!!!!!!!", pair_sc_lib)
+
+            #high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
+
+
+            #print("found it high_pair_index: ", high_pair_index)
+
+            prn.append(mentions[low_single_index])
+            #noun.append(mentions[high_pair_index])
+
+            print("numPron", num_pron)
+
+            for i in range(0, len(prn)):
+                sent_curr = sent_curr.replace(str(prn[i]), str(noun[i]))
 
     return sent_curr
 
-    #extract scores
-        #single_mention = scores.get('single_scores')
-        #pair_mention = scores.get('pair_scores')
-        #single_sc_lib = []
-        #pair_sc_lib = []
-        #for i in range(0, len(single_mention)):
-          #  if single_mention.get(i) != 'None':
-         #       single_sc_lib.append(str(single_mention[i]))
-
-        #print(single_sc_lib)
-
-        #low_single_index = single_sc_lib.index(min(single_sc_lib))
-        #low_single_index += count
-
-        #print("found it low_single_index: ", low_single_index)
-
-        #for i in range(0, len(pair_mention.get(low_single_index))):
-         #   hold = pair_mention.get(low_single_index)
-          #  pair_sc_lib.append(str(hold[i]))
-
-        #print(pair_sc_lib)
-
-        #for i in range(0, len(pair_sc_lib)):
-         #   pair_sc_lib[i] = float(pair_sc_lib[i])
-
-        #high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
-        #print("found it high_pair_index: ", high_pair_index)
-        #isMore = True
-
-       # prn.append(mentions[low_single_index])
-      #  noun.append(mentions[high_pair_index])
-
-    #print("numPron", num_pron)
-    #print(len(prn))
 
     #rep = coref.get_most_representative()
     #print("rep", rep)
