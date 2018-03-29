@@ -780,6 +780,8 @@ def event_extraction(sentence, world, current_node):
 
         #GET OBJECT AND CHECK IF ACTION SENTENCE
         if dobj_count > 0 and isAction(sentence) is False:
+            print("IM AN ACTION")
+
             if sentence.dep_root[x] == 'dobj':
                 dobj_count -= 1
                 #print("dobj", sentence.dep_root_head[x])
@@ -794,8 +796,8 @@ def event_extraction(sentence, world, current_node):
 
           #     add object action action
           #     event_obj_action.append(sentence.dep_root_head[x])
-                event_type.append(FRAME_EVENT)
 
+                event_type.append(FRAME_EVENT)
         #GET OBJECT AND CHECK IF DESCRIPTIVE SENTENCE
         if acomp_count > 0 and isAction(sentence) == True:
             if sentence.dep[x] == 'acomp':
@@ -822,8 +824,9 @@ def add_event(type, char, char_action, obj, obj_action, world):
         print("X ", x)
         new_eventframe = EventFrame()
 
-        if len(char) > 0:
+        if len(type) > 0:
             new_eventframe.type = type[x]
+        if len(char) > 0:
             new_eventframe.doer = char[x]
         if len(char_action) > 0:
             new_eventframe.doer_actions = char_action[x]
