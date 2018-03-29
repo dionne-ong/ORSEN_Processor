@@ -50,7 +50,7 @@ for s in sentences:
     s = nlp(s)
     list_of_sent.append(infoextraction.pos_ner_nc_processing(s))
 
-    #infoextraction.details_extraction(sent, world, "ROOT")
+    infoextraction.details_extraction(sent, world, "ROOT")
     #infoextraction.event_extraction(sent, world, "ROOT")
 
 print(world.characters)

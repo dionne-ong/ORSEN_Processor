@@ -35,16 +35,14 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-         print("---NER---")
-         print(ent.text, ent.start_char, ent.end_char, ent.label_)
-         #print("---NER---")
-         #print(ent.text, ent.start_char, ent.end_char, ent.label_)
+         # print("---NER---")
+         # print(ent.text, ent.start_char, ent.end_char, ent.label_)
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        print("---NC---")
-        print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
+        # print("---NC---")
+        # print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
 
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
@@ -244,7 +242,9 @@ def compound_extraction(sent, subj):
 
 
 def char_conj_extractions(sent, subj):
+
     list_of_conj = [subj]
+    print("LIST", list_of_conj)
     temp = str(subj).split()
     subj = temp[-1]
     for k in range(0, len(sent.head_text)):
@@ -275,7 +275,9 @@ def add_capability(sent, attr, subject, world, num):
 
 
 def add_objects(sent, child, dep, lemma, world, subject=""):
+    print("SENT", sent.words)
     list_of_char = char_conj_extractions(sent, child)
+    print("LIST_OF_CHAR", list_of_char)
     for c in list_of_char:
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
