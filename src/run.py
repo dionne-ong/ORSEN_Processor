@@ -60,13 +60,13 @@ print(world.characters)
 print(world.objects)
 
 for c in world.characters:
-    print("char", c)
+    print("char", c, type(c))
     print(world.characters[c])
     for a in world.characters[c].attributes:
         print("attr", a.relation, a.name, a.isNegated)
 
 for c in world.objects:
-    print("obj", c)
+    print("obj", c, type(c))
     print(world.objects[c])
     for a in world.objects[c].attributes:
         print("attr", a.relation, a.name, a.isNegated)

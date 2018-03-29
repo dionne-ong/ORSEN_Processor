@@ -241,7 +241,7 @@ def char_conj_extractions(sent, subj):
     subj = temp[-1]
     for k in range(0, len(sent.head_text)):
         if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":
-            subj = str(sent.text_token[k])
+            subj = sent.text_token[k]
             list_of_conj.append(compound_extraction(sent, subj))
             sent.finished_nodes[k] == 1
 
@@ -272,6 +272,7 @@ def add_capability(sent, attr, subject, world, num):
 def add_objects(sent, child, dep, lemma, world, subject=""):
     list_of_char = char_conj_extractions(sent, child)
     for c in list_of_char:
+        print("CCCCCC", c, type(c))
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
                     and dep == "nsubj":
@@ -295,7 +296,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
         elif c in world.objects:
             if DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None \
                     and dep == "nsubj":
-                new_character = Character.convert_from_object(c)
+                new_character = Character.convert_from_object(world.objects[c])
                 world.add_character(new_character)
                 world.characters[new_character.id].timesMentioned += 1
             else:
@@ -339,7 +340,6 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
 def add_attributes(sent, child, subject, world, negation="", relation=""):
     list_of_attributes = [child]
     list_of_char = char_conj_extractions(sent, subject)
-    print("LIST_OF_CHAR", list_of_char, list_of_attributes)
     head = child
 
     if relation == "":
@@ -349,6 +349,7 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
         if (sent.dep[i] == 'conj') and (sent.head_text[i] == str(head)):
             list_of_attributes.append(sent.text_token[i])
             head = sent.text_token[i]
+
     for c in list_of_char:
         if str(c) in world.characters:
             for attr in list_of_attributes:
@@ -610,7 +611,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         scores = coref.get_scores()
         print("scores", scores)
 
-        if len(rep) > 0:
+        if len(rep) > 0 and len(scores)>0:
             count = 0
 
             add_apos = []
@@ -642,7 +643,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
                     world.add_character(new_character)
                     world.characters[new_character.id].timesMentioned += 1
 
-        else:
+        elif scores.get(0) != none.get(0):
             # print("len is 0")
             # extract scores
             single_mention = scores.get('single_scores')
@@ -675,20 +676,18 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             print(pair_mention.get(low_single_index))
             holder = pair_mention.get(low_single_index)
 
-            #for i in range(0, len(holder)):
+            #print("holder", len(holder))
+            for i in range(0, len(holder)):
+                pair_sc_lib.append(holder.get(i))
 
-
-            print("PAIR!!!!!!!!!!!", pair_sc_lib)
-
-            #high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
-
-
+            #print("PAIR!!!!!!!!!!!", pair_sc_lib)
+            high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
             #print("found it high_pair_index: ", high_pair_index)
 
             prn.append(mentions[low_single_index])
-            #noun.append(mentions[high_pair_index])
-
-            print("numPron", num_pron)
+            noun.append(mentions[high_pair_index])
+            print(noun, prn)
+            #print("numPron", num_pron)
 
             for i in range(0, len(prn)):
                 sent_curr = sent_curr.replace(str(prn[i]), str(noun[i]))
