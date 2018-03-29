@@ -12,10 +12,9 @@ class World:
 
     # RESPONSE ELEMENTS
 
-    # stored as "<RESPONSE_TYPE>_<RESPONSE>" ie. "1_I see, that's intersing."
+    # stored as moves
     reponses = []
 
-    last_response_id = -1
     empty_response = 0
 
     def __init__(self, id="-1"):

@@ -13,3 +13,6 @@ class EventFrame:
 
     setting = None
 
+    def to_sentence_string(self):
+        string = "<event sentence>"
+        return string
