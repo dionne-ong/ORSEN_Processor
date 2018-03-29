@@ -35,24 +35,16 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-<<<<<<< HEAD
          print("---NER---")
          print(ent.text, ent.start_char, ent.end_char, ent.label_)
-=======
          #print("---NER---")
          #print(ent.text, ent.start_char, ent.end_char, ent.label_)
->>>>>>> 33834a025b55fac192056f9d173f35ea3ff5f26f
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-<<<<<<< HEAD
         print("---NC---")
         print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
-=======
-        #print("---NC---")
-        #print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
->>>>>>> 33834a025b55fac192056f9d173f35ea3ff5f26f
 
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
@@ -692,8 +684,6 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
     #rep = coref.get_most_representative()
     #print("rep", rep)
 
-
-
 def isAction(sentence):
     isAction = False
     be_forms = ["is", "are", "am", "were", "was"]
@@ -712,6 +702,7 @@ def event_extraction(sentence, world, current_node):
     event_obj_action = []
     event_type = []
     event_loc = []
+
     #get list of characters and objects from world
     list_char = world.characters
     list_obj = world.objects

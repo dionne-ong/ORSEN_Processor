@@ -15,7 +15,7 @@ nlp = spacy.load('en_core_web_sm')
 document = nlp(infoextraction.reading("document.txt"))
 sentences = [sent.string.strip() for sent in document.sents]
 list_of_sentences = []
-
+list_of_sent = []
 #Character
 characters = []
 
@@ -31,8 +31,6 @@ bef = 0
 isFirst = False
 # DetailsExtraction
 for sent in list_of_sentences:
-<<<<<<< HEAD
-    print("Enter sentence number: ", curr)
     if curr == 1 or curr > 1:
         sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
         print("returned: ", sentences[curr])
@@ -46,32 +44,14 @@ for sent in list_of_sentences:
         print("oops")
     else:
         bef +=1
-=======
-    infoextraction.details_extraction(sent, world, "ROOT")
+
+for s in sentences:
+    print(s)
+    s = nlp(s)
+    list_of_sent.append(infoextraction.pos_ner_nc_processing(s))
+
+    #infoextraction.details_extraction(sent, world, "ROOT")
     #infoextraction.event_extraction(sent, world, "ROOT")
-    # print("Enter sentence number: ", curr)
-    # if curr == 1 or curr > 1:
-    #     sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
-    #     print("returned: ", sentences[curr])
-    # else:
-    #     sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[curr], world, True)
-    #     print("returned: ", sentences[curr])
-    #
-    # print("current index: ", curr)
-    # curr += 1
-    # if bef == 0 and curr == 1:
-    #     print("oops")
-    # else:
-    #     bef +=1
->>>>>>> 33834a025b55fac192056f9d173f35ea3ff5f26f
-
-for sent in sentences:
-    print(sent)
-    sent = nlp(sent)
-    list_of_sentences.append(infoextraction.pos_ner_nc_processing(sent))
-
-    # infoextraction.details_extraction(sent, world, "ROOT")
-    # infoextraction.event_extraction(sent, world, "ROOT")
 
 print(world.characters)
 print(world.objects)
