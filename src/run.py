@@ -52,8 +52,8 @@ for s in sentences:
     list_of_sent.append(infoextraction.pos_ner_nc_processing(s))
 
 for s in list_of_sent:
-    #infoextraction.details_extraction(sent, world, "ROOT")
-    infoextraction.event_extraction(s, world, "ROOT")
+    infoextraction.details_extraction(s, world, "ROOT")
+    #infoextraction.event_extraction(s, world, "ROOT")
 
 print(world.characters)
 print(world.objects)

@@ -21,6 +21,7 @@ class Sentence:
     def __init__(self):
         self.words = ""
         self.text_token = []
+        self.head_text = []
         self.lemma = []
         self.pos = []
         self.tag = []
