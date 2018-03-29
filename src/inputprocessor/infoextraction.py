@@ -1,5 +1,5 @@
 from src.db.concepts import DBO_Concept
-from src.objects.eventchain.EventFrame import EventFrame
+from src.objects.eventchain.EventFrame import EventFrame, FRAME_DESCRIPTIVE, FRAME_EVENT
 from src.objects.nlp.Sentence import Sentence
 from src.objects.storyworld.Attribute import Attribute
 from src.objects.storyworld.Character import Character
@@ -780,6 +780,8 @@ def event_extraction(sentence, world, current_node):
 
         #GET OBJECT AND CHECK IF ACTION SENTENCE
         if dobj_count > 0 and isAction(sentence) is False:
+            print("IM AN ACTION")
+
             if sentence.dep_root[x] == 'dobj':
                 dobj_count -= 1
                 #print("dobj", sentence.dep_root_head[x])
@@ -794,15 +796,15 @@ def event_extraction(sentence, world, current_node):
 
           #     add object action action
           #     event_obj_action.append(sentence.dep_root_head[x])
-                event_type.append("Action")
 
+                event_type.append(FRAME_EVENT)
         #GET OBJECT AND CHECK IF DESCRIPTIVE SENTENCE
         if acomp_count > 0 and isAction(sentence) == True:
             if sentence.dep[x] == 'acomp':
                 obj = sentence.lemma[x]
                 print(obj)
                 event_obj.append(obj)
-                event_type.append("Descriptive")
+                event_type.append(FRAME_DESCRIPTIVE)
 
         for i in range(0, len(event_obj)):
             print("head_text", sentence.head_text[x], "Obj", event_obj[i])
@@ -811,22 +813,27 @@ def event_extraction(sentence, world, current_node):
                 if sentence.pos[x] == "VERB":
                     event_obj_action.append(str(sentence.text_token[x]))
 
+    add_event(event_type, event_char, event_char_action, event_obj, event_obj_action, world)
     print("---- EVENT FRAME ----")
     print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action)
 
 #Add event to the world
-def add_event(char, char_action, obj, obj_action, world):
-    for x in range(0, len(char)-1):
+def add_event(type, char, char_action, obj, obj_action, world):
+    print("LEN CHAR", len(char))
+    for x in range(0, len(char)):
+        print("X ", x)
         new_eventframe = EventFrame()
 
-        if char[x] is not None:
-            new_eventframe.char = char[x]
-        if char_action[x] is not None:
-            new_eventframe.character_actions = char_action[x]
-        if obj[x] is not None:
-            new_eventframe.obj = obj[x]
-        if obj_action[x] is not None:
-            new_eventframe.object_actions = obj_action[x]
+        if len(type) > 0:
+            new_eventframe.type = type[x]
+        if len(char) > 0:
+            new_eventframe.doer = char[x]
+        if len(char_action) > 0:
+            new_eventframe.doer_actions = char_action[x]
+        if len(obj) > 0:
+            new_eventframe.receiver = obj[x]
+        if len(obj_action) > 0:
+            new_eventframe.receiver_actions = obj_action[x]
 
         list_char = world.characters
         for k in list_char:
@@ -835,5 +842,9 @@ def add_event(char, char_action, obj, obj_action, world):
 
         world.add_eventframe(new_eventframe)
 
-    print("---- EVENT ADDED TO THE WORLD ----")
+        print("---- EVENT ADDED TO THE WORLD ----")
+
+    print(world.event_chain)
+    for item in world.event_chain:
+        print(item)
 

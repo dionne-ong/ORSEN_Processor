@@ -4,7 +4,6 @@ from src.inputprocessor.infoextraction import getCategory, CAT_STORY, CAT_COMMAN
 from src.dialoguemanager import DBO_Move, Move
 from src.db.concepts import DBO_Concept
 from src.objects.eventchain.EventFrame import EventFrame, FRAME_EVENT, FRAME_DESCRIPTIVE
-from pattern.text.en import conjugate
 
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object

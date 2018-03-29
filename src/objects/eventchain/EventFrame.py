@@ -19,7 +19,11 @@ class EventFrame:
         self.setting            = setting
         self.event_type         = event_type
 
-
+    def __str__(self):
+        return str(self.sequence_no) + "-" + str(self.event_type) +\
+               "\n"+"DOER:"+ str(self.doer) +"\n"+"D-ACTIONS:"+str(self.doer_actions)+\
+               "\n"+"REC:"+ str(self.receiver) +"\n"+"R-ACTIONS:"+str(self.receiver_actions)+\
+               "\n"+"SETTING:"+str(self.setting)
 
     def to_sentence_string(self):
         string = "<event sentence>"
