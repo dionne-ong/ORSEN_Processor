@@ -45,6 +45,7 @@ for sent in list_of_sentences:
     else:
         bef +=1
 
+print(sentences)
 for s in sentences:
     print(s)
     s = nlp(s)
