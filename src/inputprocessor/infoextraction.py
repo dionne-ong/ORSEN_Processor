@@ -610,7 +610,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         scores = coref.get_scores()
         print("scores", scores)
 
-        if len(rep) > 0:
+        if len(rep) > 0 and len(scores)>0:
             count = 0
 
             add_apos = []
@@ -642,7 +642,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
                     world.add_character(new_character)
                     world.characters[new_character.id].timesMentioned += 1
 
-        else:
+        elif len(scores) > 0:
             # print("len is 0")
             # extract scores
             single_mention = scores.get('single_scores')
@@ -675,20 +675,18 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             print(pair_mention.get(low_single_index))
             holder = pair_mention.get(low_single_index)
 
-            #for i in range(0, len(holder)):
+            #print("holder", len(holder))
+            for i in range(0, len(holder)):
+                pair_sc_lib.append(holder.get(i))
 
-
-            print("PAIR!!!!!!!!!!!", pair_sc_lib)
-
-            #high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
-
-
+            #print("PAIR!!!!!!!!!!!", pair_sc_lib)
+            high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
             #print("found it high_pair_index: ", high_pair_index)
 
             prn.append(mentions[low_single_index])
-            #noun.append(mentions[high_pair_index])
-
-            print("numPron", num_pron)
+            noun.append(mentions[high_pair_index])
+            print(noun, prn)
+            #print("numPron", num_pron)
 
             for i in range(0, len(prn)):
                 sent_curr = sent_curr.replace(str(prn[i]), str(noun[i]))
