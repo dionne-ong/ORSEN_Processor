@@ -52,6 +52,11 @@ class World:
         else:
             return False
 
+    def add_eventframe(self, event):
+        print("EHST THR FUCK")
+        event.seq_no = len(self.event_chain)
+        self.event_chain.append(event)
+
     def get_main_character(self, rank=0):
         sorted_list = sorted(self.characters.values(), key=attrgetter('timesMentioned'), reverse=True)
         final = [sorted_list[rank]]

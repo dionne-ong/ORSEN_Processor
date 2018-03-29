@@ -26,7 +26,7 @@ def get_specific_concept(id):
           "FROM concepts " \
           "WHERE idconcepts = %d;" % id
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = None
@@ -58,7 +58,7 @@ def get_all_concepts():
           "second " \
           "FROM concepts "
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = []
@@ -90,7 +90,7 @@ def get_word_concept(word):
           "FROM concepts " \
           "WHERE first = %s OR second = %s "
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = []
@@ -128,7 +128,7 @@ def get_concept(word, relation):
           "FROM concepts " \
           "WHERE (first = %s OR second = %s) AND relation = %s "
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = []
@@ -162,7 +162,7 @@ def get_concept_specified(first, relation, second):
           "FROM concepts " \
           "WHERE first = %s AND second = %s AND relation = %s "
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = None
@@ -196,7 +196,7 @@ def get_concept_like(relation, first="", second=""):
           "FROM concepts " \
           "WHERE first LIKE '%"+first+"%' AND second LIKE '%"+second+"%' AND relation = '"+relation+"'"
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = []
@@ -236,7 +236,7 @@ def add_concept(concept):
           " %s, " \
           " %s);"
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     try:

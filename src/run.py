@@ -54,7 +54,7 @@ for s in sentences:
 
 for s in list_of_sent:
     infoextraction.details_extraction(s, world, "ROOT")
-    #infoextraction.event_extraction(s, world, "ROOT")
+    infoextraction.event_extraction(s, world, "ROOT")
 
 print(world.characters)
 print(world.objects)
@@ -118,5 +118,5 @@ location = []
 event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
 #dialogue
-output = DialoguePlanner.retrieve_output("", world)
+output = DialoguePlanner.retrieve_output("", worldid)
 print(output)
