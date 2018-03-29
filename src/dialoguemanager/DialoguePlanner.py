@@ -1,6 +1,6 @@
 from numpy import random
 from src.objects.ServerInstance import ServerInstance
-from src.inputprocessor.infoextraction import getCategory,CAT_STORY,CAT_COMMAND,CAT_ANSWER
+from src.inputprocessor.infoextraction import getCategory, CAT_STORY, CAT_COMMAND, CAT_ANSWER
 from src.dialoguemanager import DBO_Move
 from src.db.concepts import DBO_Concept
 from pattern.text.en import conjugate
@@ -8,7 +8,6 @@ from pattern.text.en import conjugate
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
 from src.objects.storyworld.World import World
-from operator import  itemgetter
 import time
 
 MOVE_FEEDBACK = 1

@@ -20,7 +20,7 @@ def pos_ner_nc_processing(sentence):
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        #print("---POS----");
+        print("---POS----");
         print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
@@ -35,14 +35,16 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
+         print("---NER---")
+         print(ent.text, ent.start_char, ent.end_char, ent.label_)
          #print("---NER---")
          #print(ent.text, ent.start_char, ent.end_char, ent.label_)
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        #print("---NC---")
-        #print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
+        print("---NC---")
+        print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
 
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
@@ -589,10 +591,8 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
     num_conj = 0
     num_pron = 0
 
-    isMore = False
-    #count pronoun, conjunction, noun
     for x in range(0, len(s.pos)):
-        if s.pos[x] == 'PRON':
+        if s.tag[x] == 'PRP' or s.tag[x] == 'PRP$':
             num_prn += 1
         if s.pos[x] == 'CCONJ':
             num_conj += 1
@@ -607,150 +607,84 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         elif isFirst is False:
             sent = coref.one_shot_coref(utterances=sent_curr, context=sent_bef)
 
+
         mentions = coref.get_mentions()
         print("mentions", mentions)
 
+        rep = coref.get_most_representative()
+        print("rep", rep)
         scores = coref.get_scores()
-        #print("scores", scores)
-
-        #extract scores
-        single_mention = scores.get('single_scores')
-        pair_mention = scores.get('pair_scores')
-        single_sc_lib = []
-        pair_sc_lib = []
-        for i in range(0, len(single_mention)):
-            if single_mention.get(i) != 'None':
-                single_sc_lib.append(str(single_mention[i]))
-
+        print("scores", scores)
         count = 0
-        do_pop = []
+
+        add_apos = []
+        for key, value in rep.items():
+            if str(key).lower() == "his" or str(key).lower() == "hers" or str(key).lower() == "their" or str(key).lower() == "our" or str(key).lower() == "its":
+                add_apos.append(count)
+            count +=1
+        c = 0
+        for key, value in rep.items():
+           for i in range(0, len(add_apos)):
+               if add_apos[i] == c:
+                   sent_curr = sent_curr.replace(str(key), str(value) + "'s")
+
+           c += 1
+           sent_curr = sent_curr.replace(str(key), str(value))
+
+           if (str(value) not in world.characters) and (str(value) not in world.objects):
+            if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+                new_character = Character()
+                new_character.name = str(value)
+                new_character.id = str(value)
+                world.add_character(new_character)
+                world.characters[new_character.id].timesMentioned += 1
+            elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+                new_character = Character()
+                new_character.name = str(value)
+                new_character.id = str(value)
+                new_character.gender = "F"
+                world.add_character(new_character)
+                world.characters[new_character.id].timesMentioned += 1
+
+    return sent_curr
+
+    #extract scores
+        #single_mention = scores.get('single_scores')
+        #pair_mention = scores.get('pair_scores')
+        #single_sc_lib = []
+        #pair_sc_lib = []
+        #for i in range(0, len(single_mention)):
+          #  if single_mention.get(i) != 'None':
+         #       single_sc_lib.append(str(single_mention[i]))
 
         #print(single_sc_lib)
-        for i in range(0, len(single_sc_lib)):
-            #print("i", i)
-            if single_sc_lib[i] == 'None':
-                do_pop.append(i)
-                count += 1
-            else:
-                single_sc_lib[i] = float(single_sc_lib[i])
 
-        #print(single_sc_lib)
-        for i in range(len(do_pop)):
-            single_sc_lib.pop(0)
-            #print(single_sc_lib)
+        #low_single_index = single_sc_lib.index(min(single_sc_lib))
+        #low_single_index += count
 
-        #print(len(do_pop))
-        #print(do_pop)
-        print(single_sc_lib)
-        if isMore is True:
-            single_sc_lib.pop(1)
+        #print("found it low_single_index: ", low_single_index)
 
-        low_single_index = single_sc_lib.index(min(single_sc_lib))
-        low_single_index += count
-
-        print("found it low_single_index: ", low_single_index)
-
-        for i in range(0, len(pair_mention.get(low_single_index))):
-            hold = pair_mention.get(low_single_index)
-            pair_sc_lib.append(str(hold[i]))
+        #for i in range(0, len(pair_mention.get(low_single_index))):
+         #   hold = pair_mention.get(low_single_index)
+          #  pair_sc_lib.append(str(hold[i]))
 
         #print(pair_sc_lib)
 
-        for i in range(0, len(pair_sc_lib)):
-            pair_sc_lib[i] = float(pair_sc_lib[i])
+        #for i in range(0, len(pair_sc_lib)):
+         #   pair_sc_lib[i] = float(pair_sc_lib[i])
 
-        high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
-        print("found it high_pair_index: ", high_pair_index)
-        isMore = True
+        #high_pair_index = pair_sc_lib.index(max(pair_sc_lib))
+        #print("found it high_pair_index: ", high_pair_index)
+        #isMore = True
 
-        prn.append(mentions[low_single_index])
-        noun.append(mentions[high_pair_index])
+       # prn.append(mentions[low_single_index])
+      #  noun.append(mentions[high_pair_index])
 
     #print("numPron", num_pron)
     #print(len(prn))
-    for i in range(0, num_pron):
-        for x in range(0, len(prn)):
-            if " he " in curr:
-                if str(prn[x]) == "he" or str(prn[x]) == "his" or str(prn[x]) == "him":
-                    a, b = curr.split("he")
-                    curr = a + str(noun[x]) + b
-            if "He " in curr:
-                if str(prn[x]) == "He" or str(prn[x]) == "His" or str(prn[x]) == "Him":
-                    a, b = curr.split("He")
-                    curr = a + str(noun[x]) + b
-            if " him " in curr:
-                if str(prn[x]) == "he" or str(prn[x]) == "his" or str(prn[x]) == "him":
-                    a, b = curr.split("him")
-                    curr = a + str(noun[x]) + b
-            if "Him " in curr:
-                if str(prn[x]) == "He" or str(prn[x]) == "His" or str(prn[x]) == "Him":
-                    a, b = curr.split("Him")
-                    curr = a + str(noun[x]) + b
-            if " his " in curr:
-                if str(prn[x]) == "he" or str(prn[x]) == "his" or str(prn[x]) == "him":
-                    a, b = curr.split("his")
-                    curr = a + str(noun[x]) + "'s" + b
-            if "His " in curr:
-                if str(prn[x]) == "He" or str(prn[x]) == "His" or str(prn[x]) == "Him":
-                    a, b = curr.split("His")
-                    curr = a + str(noun[x]) + "'s" + b
 
-            if "she " in curr:
-                if str(prn[x]) == "she" or str(prn[x]) == "her" or str(prn[x]) == "hers":
-                    a, b = curr.split("she")
-                    curr = a + str(noun[x]) + b
-            if "She " in curr:
-                if str(prn[x]) == "She" or str(prn[x]) == "Her" or str(prn[x]) == "Hers":
-                    a, b = curr.split("She")
-                    curr = a + str(noun[x]) + b
-            if " her " in curr:
-                if str(prn[x]) == "she" or str(prn[x]) == "her" or str(prn[x]) == "hers":
-                    a, b = curr.split("her")
-                    curr = a + str(noun[x]) + b
-            if "Her " in curr:
-                if str(prn[x]) == "She" or str(prn[x]) == "Her" or str(prn[x]) == "Hers":
-                    a, b = curr.split("Her")
-                    curr = a + str(noun[x]) + b
-            if " hers " in curr:
-                if str(prn[x]) == "she" or str(prn[x]) == "her" or str(prn[x]) == "hers":
-                    a, b = curr.split("hers")
-                    curr = a + str(noun[x]) + "'s" + b
-            if "Hers " in curr:
-                if str(prn[x]) == "She" or str(prn[x]) == "Her" or str(prn[x]) == "Hers":
-                    a, b = curr.split("Hers")
-                    curr = a + str(noun[x]) + "'s" + b
-
-            if " it " in curr:
-                a, b = curr.split("it")
-                curr = a + str(noun[x]) + b
-            if "It " in curr:
-                #print("found it!!!!!!!!!!!")
-                a, b = curr.split("It")
-                curr = a + str(noun[x]) + b
-            #print(curr)
-            #print("hello still here")
-            x -=1
-    print(prn, noun)
-    return curr
     #rep = coref.get_most_representative()
     #print("rep", rep)
-
-    #for key, value in rep.items():
-     #   sentences[j] = sentences[j].replace(str(key), str(value))
-      #  if (str(value) not in world.characters) and (str(value) not in world.objects):
-       #     if(str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
-        #        new_character = Character()
-         #       new_character.name = str(value)
-          #      new_character.id = str(value)
-           #    world.add_character(new_character)
-     #           world.characters[new_character.id].timesMentioned += 1
-      #      elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
-       #         new_character = Character()
-        #        new_character.name = str(value)
-         #       new_character.id = str(value)
-        #        new_character.gender = "F"
-       #         world.add_character(new_character)
-         #       world.characters[new_character.id].timesMentioned += 1
 
 def isAction(sentence):
     isAction = False
@@ -770,6 +704,7 @@ def event_extraction(sentence, world, current_node):
     event_obj_action = []
     event_type = []
     event_loc = []
+
     #get list of characters and objects from world
     list_char = world.characters
     list_obj = world.objects
