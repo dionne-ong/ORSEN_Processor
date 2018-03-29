@@ -241,7 +241,8 @@ def generate_response(move_code, world, remove_index=[]):
                 usable_concepts = DBO_Concept.get_concept_like(blank_type, first=decided_concept)
             elif decided_node == 1:
                 usable_concepts = DBO_Concept.get_concept_like(blank_type, second=decided_concept)
-            else:
+
+            if len(usable_concepts) == 0:
                 usable_concepts = DBO_Concept.get_concept_like(blank_type)
 
             loop_total = 0
