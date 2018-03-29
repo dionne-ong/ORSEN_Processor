@@ -31,8 +31,6 @@ bef = 0
 isFirst = False
 # DetailsExtraction
 for sent in list_of_sentences:
-    #infoextraction.details_extraction(sent, world, "ROOT")
-    #infoextraction.event_extraction(sent, world, "ROOT")
     print("Enter sentence number: ", curr)
     if curr == 1 or curr > 1:
         sentences[curr] = infoextraction.coref_resolution(sent, sentences[curr], sentences[bef], world, False)
@@ -48,6 +46,13 @@ for sent in list_of_sentences:
     else:
         bef +=1
 
+for sent in sentences:
+    print(sent)
+    sent = nlp(sent)
+    list_of_sentences.append(infoextraction.pos_ner_nc_processing(sent))
+
+    # infoextraction.details_extraction(sent, world, "ROOT")
+    # infoextraction.event_extraction(sent, world, "ROOT")
 
 print(world.characters)
 print(world.objects)
