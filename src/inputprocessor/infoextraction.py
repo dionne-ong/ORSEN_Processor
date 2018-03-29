@@ -204,7 +204,7 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
             elif num != -1 \
                     and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "advmod", "pcomp"]:
                 details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
-              
+
             else:
                 print("WARNING: Dependecy ", sent.dep[num],  " not included in the list")
     else:
@@ -236,12 +236,9 @@ def compound_extraction(sent, subj):
 def char_conj_extractions(sent, subj):
 
     list_of_conj = [subj]
-    print("LIST", list_of_conj)
     temp = str(subj).split()
     subj = temp[-1]
-    print("SUBJEC", subj)
     for k in range(0, len(sent.head_text)):
-        print("SENT", len(sent.head_text))
         if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":
             subj = str(sent.text_token[k])
             list_of_conj.append(compound_extraction(sent, subj))
@@ -259,8 +256,11 @@ def add_capability(sent, attr, subject, world, num):
         negation = False
 
     if attr not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
-        new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
 
+        if sent.dep[num] == "relcl":
+            new_attribute = Attribute(DBO_Concept.RECEIVED_ACTION, attr, negation)
+        else:
+            new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
         for c in list_of_char:
             if str(c) in world.characters:
                     world.characters[c].attributes.append(new_attribute)
@@ -269,12 +269,7 @@ def add_capability(sent, attr, subject, world, num):
 
 
 def add_objects(sent, child, dep, lemma, world, subject=""):
-    print("SENT", sent.words, len(sent.words), len(sent.dep), len(sent.head_text))
-    for i in sent.head_text:
-        print("ii", sent.head_text )
-    print("CHILD", child)
     list_of_char = char_conj_extractions(sent, child)
-    print("LIST_OF_CHAR", list_of_char)
     for c in list_of_char:
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
