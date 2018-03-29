@@ -1,8 +1,9 @@
 from numpy import random
 from src.objects.ServerInstance import ServerInstance
 from src.inputprocessor.infoextraction import getCategory, CAT_STORY, CAT_COMMAND, CAT_ANSWER
-from src.dialoguemanager import DBO_Move
+from src.dialoguemanager import DBO_Move, Move
 from src.db.concepts import DBO_Concept
+from src.objects.eventchain.EventFrame import EventFrame, FRAME_EVENT, FRAME_DESCRIPTIVE
 from pattern.text.en import conjugate
 
 from src.objects.storyworld.Character import Character
@@ -15,6 +16,7 @@ MOVE_GENERAL_PUMP = 2
 MOVE_SPECIFIC_PUMP = 3
 MOVE_HINT = 4
 MOVE_REQUESTION = 5
+MOVE_UNKNOWN = 6
 
 CONVERT_INFINITIVE = "inf"
 CONVERT_1PRSG = "1sg"
@@ -35,60 +37,102 @@ server = ServerInstance()
 
 def retrieve_output(coreferenced_text, world_id):
     world = server.worlds[world_id]
+    if len(world.reponses) > 0:
+        last_response_type_num = world.reponses[len(world.reponses)-1].type_num
+    else:
+        last_response_type_num = -1
     output = ""
-
+    choice = -1
     if coreferenced_text == "":  # if no input found
         world.empty_response += 1
-        output = "I'm sorry, I did not understand what you just said. Can you say it again?"
 
-        if world.empty_response == 2 :
+        if world.empty_response == 1:
+            if last_response_type_num in [MOVE_FEEDBACK, MOVE_HINT]:
+                output = Move.Move(template=["I'm sorry, I did not understand what you just said. Can you say it again?"], type_num=MOVE_REQUESTION)
+            elif last_response_type_num == MOVE_GENERAL_PUMP:
+                output = generate_response(MOVE_SPECIFIC_PUMP, world)
+            elif last_response_type_num == MOVE_SPECIFIC_PUMP:
+                output = generate_response(MOVE_HINT, world)
+                output.template = ["What if "]+output.template
+            else:
+                output = Move.Move(template=["I don't think I heard you. Can you say that last part again?"], type_num=MOVE_REQUESTION)
+
+        if world.empty_response == 2:
             print("2nd no response")
-            choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
+            if last_response_type_num == MOVE_GENERAL_PUMP:
+                output = generate_response(MOVE_SPECIFIC_PUMP, world)
+            elif last_response_type_num == MOVE_SPECIFIC_PUMP:
+                output = generate_response(MOVE_HINT, world)
+                output.template = ["What if "] + output.template
+            else:
+                choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
+                output = generate_response(choice, world)
+
+        elif world.empty_response == 3:
+            print("3rd no response")
+            choice = MOVE_REQUESTION
+            output = Move.Move(template=["I don't think I can hear you, are you sure you want to continue?"], type_num=choice)
+    else:
+
+        world.empty_response = 0
+
+        if getCategory(coreferenced_text) == CAT_STORY:
+            choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
             output = generate_response(choice, world)
 
-        elif world.empty_response == 3 :
-            print("3rd no response")
-            output = "I don't understand, maybe we can try again later?"
+        elif getCategory(coreferenced_text) == CAT_ANSWER:
+            print("check_answer")
+            # TEMP TODO: idk how to answer this lmao / if "yes" or whatever, add to character data
+            if last_response_type_num == MOVE_REQUESTION:
+                output = Move.Move(template=["Ok, let's keep going then!"], type_num=MOVE_UNKNOWN)
+            else:
+                choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+                output = generate_response(choice, world)
 
-    elif getCategory(coreferenced_text) == CAT_STORY:
-        choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-        output = generate_response(choice, world)
+        elif getCategory(coreferenced_text) == CAT_COMMAND:
+            # TEMP TODO: check for further commands
+            choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
 
-    elif getCategory(coreferenced_text) == CAT_ANSWER:
-        print("check_answer")
-        # TEMP TODO: idk how to answer this lmao / if "yes" or whatever, add to character data
-        choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-        output = generate_response(choice, world)
+            if "your turn" in coreferenced_text:
+                choice = MOVE_HINT
+            elif "what" in coreferenced_text \
+                    and ("say" in coreferenced_text or "next" in coreferenced_text):
+                choice = random.randint(MOVE_GENERAL_PUMP, MOVE_SPECIFIC_PUMP+1)
 
-    elif getCategory(coreferenced_text) == CAT_COMMAND:
-        # TEMP TODO: check for further commands
-        choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+            output = generate_response(choice, world)
 
-        if "your turn" in coreferenced_text:
-            choice = MOVE_HINT
-        elif "what" in coreferenced_text \
-                and ("say" in coreferenced_text or "next" in coreferenced_text):
-            choice = random.randint(MOVE_GENERAL_PUMP, MOVE_SPECIFIC_PUMP+1)
+        else:
+            output = Move.Move(template=["I don't know what to say."], type_num=MOVE_UNKNOWN)
 
-        output = generate_response(choice, world)
-
-    else:
-        output = "I don't know what to say."
+    world.reponses.append(output)
 
     return output
 
 
-def generate_response(move_code, world):
-    response = ""
+def generate_response(move_code, world, remove_index=[]):
     choices = []
 
     subject = None
+    if len(world.reponses) > 0:
+        last_response_id = world.reponses[len(world.reponses)-1].move_id
+    else:
+        last_response_id = -1
 
     if move_code == MOVE_FEEDBACK:
         choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_FEEDBACK)
 
     elif move_code == MOVE_GENERAL_PUMP:
-        choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_GENERAL_PUMP)
+        pre_choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_GENERAL_PUMP)
+
+        if len(world.event_chain) > 0:
+            last = world.event_chain[len(world.event_chain)-1]
+            for item in pre_choices:
+                if last.event_type == FRAME_EVENT and "happen" in item.get_string_response():
+                    choices.append(item)
+                if "happen" not in item.get_string_response():
+                    choices.append(item)
+        else:
+            choices = pre_choices
 
     elif move_code == MOVE_SPECIFIC_PUMP:
         choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_SPECIFIC_PUMP)
@@ -100,35 +144,52 @@ def generate_response(move_code, world):
         # TODO: requestioning decisions to be made
         choices = ["requestioning..."]
 
+    index_loop = 0
     while True:
+        index_loop += 1
         index = random.randint(0, len(choices))
         move = choices[index]
 
-        if move.move_id != world.last_response_id:
-            world.last_response_id = move.move_id
+        if move.move_id != last_response_id and move.move_id not in remove_index:
+            move.type_num = move_code
             break
 
-    print("TEMPLATE",move.to_string())
+        if index_loop > 20:
+            return generate_response(MOVE_FEEDBACK, world)
 
     for blank_type in move.blanks:
 
         if ":" in blank_type:
             split_relation = str(blank_type).split(":")
             relation_index = -1
+            replacement_index = -1
 
             for i in range(0, len(split_relation)):
                 if split_relation[i] in DBO_Concept.RELATIONS:
                     relation_index = i
+                else:
+                    replacement_index = i
 
             usable_concepts = []
-            to_replace = ""
+            txt_relation = split_relation[relation_index]
+            to_replace = split_relation[replacement_index]
+
+            if to_replace in ["setting"]:
+                if to_replace == "setting":
+                    if subject is None:
+                        return generate_response(move_code, world)
+                    elif subject.inSetting is None:
+                        return generate_response(move_code, world)
+                    else:
+                        txt_concept = subject.inSetting.name
+
+            else:
+                txt_concept = to_replace
 
             if relation_index == 0:
-                usable_concepts = DBO_Concept.get_concept_like(split_relation[relation_index], second=split_relation[1])
-                to_replace=split_relation[1]
+                usable_concepts = DBO_Concept.get_concept_like(txt_relation, second=txt_concept)
             elif relation_index == 1:
-                usable_concepts = DBO_Concept.get_concept_like(split_relation[relation_index], first=split_relation[0])
-                to_replace=split_relation[0]
+                usable_concepts = DBO_Concept.get_concept_like(txt_relation, first=txt_concept)
             else:
                 print("ERROR: Index not found.")
 
@@ -184,11 +245,20 @@ def generate_response(move_code, world):
             else:
                 usable_concepts = DBO_Concept.get_concept_like(blank_type)
 
+            loop_total = 0
+            while len(usable_concepts) > 0:
+                loop_total += 1
+                usable_concepts = DBO_Concept.get_concept_like(blank_type)
+                if loop_total > 10:
+                    break
+
             if len(usable_concepts) > 0:
                 concept_index = random.randint(0,len(usable_concepts))
                 concept = usable_concepts[concept_index]
                 move.template[move.template.index("start")] = concept.first
-                move.template[move.template.index("end")] = concept.second\
+                move.template[move.template.index("end")] = concept.second
+            else:
+                print("ERROR: NO USABLE CONCEPTS decided:",decided_concept)
 
         elif blank_type == "Object":
 
@@ -202,6 +272,16 @@ def generate_response(move_code, world):
 
             move.template[move.template.index("object")] = subject.id
 
+        elif blank_type == "Item":
+
+            if subject is None:
+                objects = world.get_top_objects()
+
+                choice_index = random.randint(0, len(choices))
+                subject = objects [choice_index]
+
+            move.template[move.template.index("item")] = subject.id
+
         elif blank_type == "Character":
             if subject is None or not isinstance(subject, Character):
                 charas = world.get_top_characters(5)
@@ -213,13 +293,26 @@ def generate_response(move_code, world):
 
             move.template[move.template.index("character")] = subject.id
 
+        elif blank_type == "inSetting":
+            if subject is None:
+                return generate_response(move_code, world)
+            elif subject.inSetting is None:
+                return generate_response(move_code, world)
+            else:
+                move.template[move.template.index("setting")] = subject.inSetting.name
+
+        elif blank_type == "Repeat":
+            if len(world.event_chain) > 0:
+                move.template[move.template.index("repeat")]\
+                    = world.event_chain[len(world.event_chain)-1].to_sentence_string()
+            else:
+                generate_response(move_code, world)
         elif blank_type == "Event":
             print("replace event")
             # TODO: event verb replacements
 
-    response = move.to_string()
-
-    return response
+    move.subject = subject
+    return move
 
 
 start_time = time.time()
