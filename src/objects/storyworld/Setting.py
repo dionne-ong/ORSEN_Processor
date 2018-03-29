@@ -1,10 +1,10 @@
 class Setting:
-    id = -1
+    id = ""
     name = ""
     type = ""
-    time = 0
+    time = ""
 
-    def __init__(self, id, name, type, time):
+    def __init__(self, id="", name="", type="", time=""):
         self.id   = id
         self.name = name
         self.type = type
