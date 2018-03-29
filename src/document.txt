@@ -1,5 +1,2 @@
-<<<<<<< HEAD
-Luisa throws a ball. Its color is blue
-=======
-He led them.
->>>>>>> 33834a025b55fac192056f9d173f35ea3ff5f26f
+Luisa throws a ball and it bounces into the park
+

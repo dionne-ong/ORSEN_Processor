@@ -37,8 +37,7 @@ def pos_ner_nc_processing(sentence):
     for ent in sentence.ents:
          print("---NER---")
          print(ent.text, ent.start_char, ent.end_char, ent.label_)
-         #print("---NER---")
-         #print(ent.text, ent.start_char, ent.end_char, ent.label_)
+
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
@@ -726,8 +725,11 @@ def event_extraction(sentence, world, current_node):
             xcomp_count += 1
             isThere = True
 
-
+    print("nsubj", nsubj_count)
+    print("dobj", dobj_count)
+    print("acomp", acomp_count)
     print("xcomp", xcomp_count)
+
     curr_type = False
     char_action = ""
     for x in range(0, len(sentence.text_token)):
@@ -735,21 +737,24 @@ def event_extraction(sentence, world, current_node):
         isFound_obj = False
 
         if nsubj_count > 0:
+
             #get the subject in the sentence
+            #GETS CHARACTER AND CHARACTER ACTION
             if sentence.dep_root[x] == 'nsubj':
                 nsubj_count -= 1
                 char = sentence.text_chunk[x]
                 event_char.append(char)
-                #match the character with the list of characters from the world
-              #  for y in range(0, len(list_char)):
-             #       if char == list_char.name[y] and isFound_char is False:
-              #          event_char.append(char)
-               #         isFound_char = True
-                #add event location
-                #for x in range(0, len(list_char)):
-                 #   if char == list_char[x].name:
-                  #      event_loc.append(list_char[x].inSetting)
-                #add character action
+            #   match the character with the list of characters from the world
+            #   for y in range(0, len(list_char)):
+            #      if char == list_char.name[y] and isFound_char is False:
+            #         event_char.append(char)
+            #         isFound_char = True
+            #   add event location
+            #   for x in range(0, len(list_char)):
+            #      if char == list_char[x].name:
+            #       event_loc.append(list_char[x].inSetting)
+            #   add character action
+
             event_char_action.append(sentence.dep_root_head[x])
 
         if isThere is True:
@@ -758,25 +763,25 @@ def event_extraction(sentence, world, current_node):
                     event_char_action[len(event_char_action)-1] = sentence.lemma[x]
                     isThere = False
 
-
+        #GET OBJECT AND CHECK IF ACTION SENTENCE
         if dobj_count > 0 and isAction(sentence) is False:
             if sentence.dep_root[x] == 'dobj':
                 dobj_count -= 1
-                print("dobj", sentence.dep_root_head[x])
+                #print("dobj", sentence.dep_root_head[x])
                 obj = sentence.text_chunk[x]
-                print("obj", sentence.text_chunk[x])
+                #print("obj", sentence.text_chunk[x])
                 event_obj.append(obj)
-                    #match the object with the list of objects from the world
-                   #     for y in range(0, len(list_obj)):
-                    #        if char == list_obj.name[y] and isFound_obj is False:
-                     #           event_obj.append(obj)
-                      #          isFound_obj = True
+          #     match the object with the list of objects from the world
+          #     for y in range(0, len(list_obj)):
+          #        if char == list_obj.name[y] and isFound_obj is False:
+          #           event_obj.append(obj)
+          #          isFound_obj = True
 
-                        # add object action action
-                        #event_obj_action.append(sentence.dep_root_head[x])
-
+          #     add object action action
+          #     event_obj_action.append(sentence.dep_root_head[x])
                 event_type.append("Action")
 
+        #GET OBJECT AND CHECK IF DESCRIPTIVE SENTENCE
         if acomp_count > 0 and isAction(sentence) == True:
             if sentence.dep[x] == 'acomp':
                 obj = sentence.lemma[x]
@@ -784,10 +789,15 @@ def event_extraction(sentence, world, current_node):
                 event_obj.append(obj)
                 event_type.append("Descriptive")
 
-
+        for i in range(0, len(event_obj)):
+            print("head_text", sentence.head_text[x], "Obj", event_obj[i])
+            print("text_token", sentence.text_token[x])
+            if str(sentence.head_text[x]) in event_obj[i]:
+                if sentence.pos[x] == "VERB":
+                    event_obj_action.append(str(sentence.text_token[x]))
 
     print("---- EVENT FRAME ----")
-    print(event_type, event_char, event_char_action, event_obj, event_obj_action)
+    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action)
 
 #Add event to the world
 def add_event(char, char_action, obj, obj_action, world):
