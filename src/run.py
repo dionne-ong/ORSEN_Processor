@@ -2,6 +2,7 @@ import spacy
 from src.objects.ServerInstance import ServerInstance
 from src.objects.storyworld.World import World
 from src.inputprocessor import infoextraction
+from src.dialoguemanager import DialoguePlanner
 
 server = ServerInstance()
 worldid = "0"
@@ -115,3 +116,7 @@ rec = []
 rec_act = []
 location = []
 event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
+
+#dialogue
+output = DialoguePlanner.retrieve_output("", world)
+print(output)

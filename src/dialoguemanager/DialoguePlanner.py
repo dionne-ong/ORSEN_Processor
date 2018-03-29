@@ -34,7 +34,6 @@ CONVERT_PAPART = "ppart"
 
 server = ServerInstance()
 
-
 def retrieve_output(coreferenced_text, world_id):
     world = server.worlds[world_id]
     if len(world.reponses) > 0:
@@ -315,28 +314,28 @@ def generate_response(move_code, world, remove_index=[]):
     return move
 
 
-start_time = time.time()
-
-test_world = World()
-server.worlds[test_world.id] = test_world
-
-test_world.characters["KAT"] = Character("KAT", "KAT", times=3)
-test_world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
-test_world.characters["JADE"] = Character("JADE", "JADE", times=0)
-test_world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
-
-test_world.objects["bag"] = Object("bag", "bag", times=3)
-test_world.objects["book"] = Object("book", "book", times=5)
-test_world.objects["pen"] = Object("pen", "pen", times=0)
-
-print(retrieve_output("Whatever.", test_world.id))
-print(retrieve_output("Whatever.", test_world.id))
-print(retrieve_output("Whatever.", test_world.id))
-print(retrieve_output("Whatever.", test_world.id))
-
-print(retrieve_output("Whatever.", test_world.id))
-print(retrieve_output("Whatever.", test_world.id))
-print(retrieve_output("Whatever.", test_world.id))
-print(retrieve_output("Whatever.", test_world.id))
-
-print("--- %s seconds ---" % (time.time() - start_time))
+# start_time = time.time()
+#
+# test_world = World()
+# server.worlds[test_world.id] = test_world
+#
+# test_world.characters["KAT"] = Character("KAT", "KAT", times=3)
+# test_world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
+# test_world.characters["JADE"] = Character("JADE", "JADE", times=0)
+# test_world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
+#
+# test_world.objects["bag"] = Object("bag", "bag", times=3)
+# test_world.objects["book"] = Object("book", "book", times=5)
+# test_world.objects["pen"] = Object("pen", "pen", times=0)
+#
+# print(retrieve_output("Whatever.", test_world.id))
+# print(retrieve_output("Whatever.", test_world.id))
+# print(retrieve_output("Whatever.", test_world.id))
+# print(retrieve_output("Whatever.", test_world.id))
+#
+# print(retrieve_output("Whatever.", test_world.id))
+# print(retrieve_output("Whatever.", test_world.id))
+# print(retrieve_output("Whatever.", test_world.id))
+# print(retrieve_output("Whatever.", test_world.id))
+#
+# print("--- %s seconds ---" % (time.time() - start_time))
