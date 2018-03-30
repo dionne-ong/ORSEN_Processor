@@ -15,7 +15,7 @@ nlp = spacy.load('en_core_web_sm')
 output = "Hello, I am ORSEN. Let's start."
 while True:
 
-    text = input(output)
+    text = input("O: " + output + "\n")
     document = nlp(str(text))
     sentences = [sent.string.strip() for sent in document.sents]
     list_of_sentences = []
