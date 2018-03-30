@@ -75,7 +75,7 @@ class World:
 
         return sorted_list[:num_of_charas]
 
-    def get_main_objects(self, rank=0):
+    def get_main_object(self, rank=0):
         sorted_list = sorted(self.objects.values(), key=attrgetter('timesMentioned'), reverse=True)
         final = [sorted_list[rank]]
 
@@ -87,4 +87,8 @@ class World:
 
     def get_top_objects(self, num_of_charas=3):
         sorted_list = sorted(self.objects.values(), key=attrgetter('timesMentioned'), reverse=True)
+
+        if len(sorted_list) > num_of_charas:
+            num_of_charas = len(sorted_list)
+
         return sorted_list[:num_of_charas]

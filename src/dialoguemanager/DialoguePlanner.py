@@ -75,7 +75,11 @@ def retrieve_output(coreferenced_text, world_id):
         world.empty_response = 0
 
         if getCategory(coreferenced_text) == CAT_STORY:
-            choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+            if len(world.event_chain) > 5:
+                choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+            else:
+                choice = random.randint(MOVE_FEEDBACK, MOVE_GENERAL_PUMP+1)
+
             output = generate_response(choice, world)
 
         elif getCategory(coreferenced_text) == CAT_ANSWER:
@@ -117,7 +121,19 @@ def generate_response(move_code, world, remove_index=[]):
         last_response_id = -1
 
     if move_code == MOVE_FEEDBACK:
-        choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_FEEDBACK)
+
+        pre_choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_FEEDBACK)
+
+        if len(world.event_chain) > 0:
+            last = world.event_chain[len(world.event_chain)-1]
+            for item in pre_choices:
+                if last.event_type == FRAME_EVENT and "happen" in item.get_string_response():
+                    choices.append(item)
+                if "happen" not in item.get_string_response():
+                    choices.append(item)
+        else:
+            choices = pre_choices
+
 
     elif move_code == MOVE_GENERAL_PUMP:
         pre_choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_GENERAL_PUMP)
@@ -260,6 +276,8 @@ def generate_response(move_code, world, remove_index=[]):
                 move.template[move.template.index("end")] = concept.second
             else:
                 print("ERROR: NO USABLE CONCEPTS decided:",decided_concept)
+                remove_index.append(move.move_id)
+                return generate_response(move_code, world, remove_index)
 
         elif blank_type == "Object":
 
