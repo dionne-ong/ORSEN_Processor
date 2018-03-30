@@ -15,7 +15,7 @@ def get_specific_template(id):
           "FROM templates " \
           "WHERE idtemplates = %d;" % id
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = None
@@ -66,7 +66,7 @@ def get_templates_of_type(type):
           "FROM templates " \
           "WHERE response_type = '%s';" % type
 
-    conn = SqlConnConcepts.getConnection()
+    conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 
     resulting = []
