@@ -364,9 +364,40 @@ def generate_response(move_code, world, remove_index):
             else:
                 remove_index.append(move.move_id)
                 return generate_response(move_code, world, remove_index)
+
+        elif blank_type == "Pronoun":
+            if subject is None:
+                move.template[move.template.index("pronoun")] = "it"
+            else:
+                if isinstance(subject, Object):
+                    move.template[move.template.index("pronoun")] = "they"
+                elif subject.gender == "":
+                    move.template[move.template.index("pronoun")] = "they"
+                elif subject.gender == "M":
+                    move.template[move.template.index("pronoun")] = "he"
+                elif subject.gender == "F":
+                    move.template[move.template.index("pronoun")] = "she"
+                else:
+                    move.template[move.template.index("pronoun")] = subject.name
+
         elif blank_type == "Event":
-            print("replace event")
-            # TODO: event verb replacements
+            loop_back = len(world.event_chain)-1
+
+            while loop_back >= 0:
+                event = world.event_chain[loop_back]
+
+                if event.event_type == FRAME_EVENT:
+                    if len(event.doer_actions) > 0:
+                        verb = event.doer_actions[0]
+                        move.template[move.template.index("eventverb")] = verb
+                        #TODO: subject = doer
+
+                loop_back -= 1
+
+            if loop_back == -1:
+                remove_index.append(move.move_id)
+                return generate_response(move_code, world, remove_index)
+
 
     move.subject = subject
     return move
