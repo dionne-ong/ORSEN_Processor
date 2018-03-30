@@ -268,7 +268,7 @@ def generate_response(move_code, world, remove_index=[]):
                 objects = world.get_top_objects()
                 list_choices = charas + objects
 
-                choice_index = random.randint(0, len(choices))
+                choice_index = random.randint(0, len(list_choices))
                 subject = list_choices[choice_index]
 
             move.template[move.template.index("object")] = subject.id
