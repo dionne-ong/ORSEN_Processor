@@ -37,4 +37,4 @@ class Sentence:
         self.dep_root_head = []
 
         self.finished_nodes = []
-        self.location =""
+        self.location = ""
