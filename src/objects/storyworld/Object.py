@@ -3,7 +3,7 @@ class Object:
     id = ""
     name = ""
     type = []
-    inSetting = 0
+    inSetting = {}
     timesMentioned = 0
     attributes = []
 

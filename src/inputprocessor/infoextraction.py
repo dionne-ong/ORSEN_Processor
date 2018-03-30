@@ -282,7 +282,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_character.id = c
                 new_character.attributes = []
                 new_character.type = []
-                new_character.inSetting = sent.location
+                new_character.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_character(new_character)
                 world.characters[new_character.id].timesMentioned = 1
                 print("ADDED", new_character.name)
@@ -293,7 +293,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_object.id = c
                 new_object.attributes = []
                 new_object.type = []
-                new_object.inSetting = sent.location
+                new_object.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_object(new_object)
                 world.objects[new_object.id].timesMentioned = 1
                 print("ADDED", new_object.name)
@@ -391,46 +391,22 @@ def add_settings(sent, num, subject, negation, world):
         if str(sent.text_token[num]) not in world.settings:
             label = find_ent_index(sent, str(sent.text_token[num]))
             if label in ["LOC", "GPE"]:
+                is_setting = True
                 new_setting = Setting()
                 new_setting.type = label
-                is_setting = True
-
-                if current_location is "":
-                    current_location = sent.text_token[num]
-                    new_setting.id = current_location
-                    new_setting.name = current_location
-
-                else:
-                    prev_setting = world.settings[current_location]
-                    print("PREV", prev_setting)
-                    if prev_setting.type in ["DATE", "TIME"]:
-                        current_location = sent.text_token[num]
-                        new_setting.id = current_location
-                        new_setting.name = current_location
-                        new_setting.time = prev_setting.time
-                        world.settings.pop(prev_setting.id)
-                    else:
-                        current_location = sent.text_token[num]
-                        new_setting.id = current_location
-                        new_setting.name = current_location
-
+                new_setting.id = sent.text_token[num]
+                new_setting.name = sent.text_token[num]
+                current_location[label] = sent.text_token[num]
                 world.add_setting(new_setting)
 
             elif label in ["DATE", "TIME"]:
-                new_setting = Setting()
                 is_setting = True
-
-                if current_location is "":
-                    current_location = sent.text_token[num]
-                    new_setting.id = current_location
-                    new_setting.name = current_location
-                    new_setting.type = label
-                    new_setting.time = []
-                    new_setting.time.append(str(sent.text_token[num]))
-                    world.add_setting(new_setting)
-                else:
-                    setting = world.settings[current_location]
-                    setting.time.append(str(sent.text_token[num]))
+                new_setting = Setting()
+                new_setting.type = label
+                new_setting.id = sent.text_token[num]
+                new_setting.name = sent.text_token[num]
+                current_location[label] = sent.text_token[num]
+                world.add_setting(new_setting)
 
             elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or DBO_Concept.\
                     get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location") or DBO_Concept.\
@@ -439,55 +415,41 @@ def add_settings(sent, num, subject, negation, world):
                 is_setting = True
                 new_setting = Setting()
                 new_setting.type = "LOC"
-
-                if current_location is "":
-                    current_location = sent.text_token[num]
-                    new_setting.id = current_location
-                    new_setting.name = current_location
-
-                else:
-                    prev_setting = world.settings[current_location]
-                    print("PREV", prev_setting)
-                    if prev_setting.type in ["DATE", "TIME"]:
-                        current_location = sent.text_token[num]
-                        new_setting.id = current_location
-                        new_setting.name = current_location
-                        new_setting.time = prev_setting.time
-                        world.settings.pop(prev_setting.id)
-                    else:
-                        current_location = sent.text_token[num]
-                        new_setting.id = current_location
-                        new_setting.name = current_location
-
+                new_setting.id = sent.text_token[num]
+                new_setting.name = sent.text_token[num]
+                current_location["LOC"] = sent.text_token[num]
                 world.add_setting(new_setting)
 
-
             elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "time period"):
+
                 is_setting = True
-
-                if current_location is "":
-                    current_location = sent.text_token[num]
-                    new_setting = Setting()
-                    new_setting.id = current_location
-                    new_setting.name = current_location
-                    new_setting.type = "TIME"
-                    new_setting.time = []
-                    new_setting.time.append(str(sent.text_token[num]))
-                    world.add_setting(new_setting)
-                else:
-                    setting = world.settings[current_location]
-                    setting.time.append(str(sent.text_token[num]))
-
-            for c in list_of_char:
-                if str(c) in world.characters and current_location:
-                    char = world.characters[str(c)]
-                    char.inSetting = current_location
-                elif str(c) in world.objects and current_location:
-                    obj = world.objects[str(c)]
-                    print(obj.name, current_location)
-                    obj.inSetting = current_location
+                new_setting = Setting()
+                new_setting.type = "TIME"
+                new_setting.id = sent.text_token[num]
+                new_setting.name = sent.text_token[num]
+                current_location["TIME"] = sent.text_token[num]
+                world.add_setting(new_setting)
 
             sent.location = current_location
+
+        else:
+            is_setting = True
+
+            if world.settings[str(sent.text_token[num])].type == "LOC":
+                current_location["LOC"] = sent.text_token[num]
+            elif world.settings[str(sent.text_token[num])].type == "TIME":
+                current_location["TIME"] = sent.text_token[num]
+            elif world.settings[str(sent.text_token[num])].type == "LOC":
+                current_location["LOC"] = sent.text_token[num]
+
+        for c in list_of_char:
+            if str(c) in world.characters and current_location:
+                char = world.characters[str(c)]
+                char.inSetting = current_location
+            elif str(c) in world.objects and current_location:
+                obj = world.objects[str(c)]
+                print(obj.name, current_location)
+                obj.inSetting = current_location
 
     return is_setting
 
