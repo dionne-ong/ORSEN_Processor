@@ -713,6 +713,7 @@ def isAction(sentence):
 
 #ie_event_extract
 def event_extraction(sentence, world, current_node):
+    print("Entering EVENT EXTRACTION")
     event_char = []
     event_char_action = []
     event_obj = []
@@ -723,11 +724,13 @@ def event_extraction(sentence, world, current_node):
     #get list of characters and objects from world
     list_char = world.characters
     list_obj = world.objects
-    print(len(sentence.text_token))
+    #print(len(sentence.text_token))
+
     nsubj_count = 0
     dobj_count = 0
     acomp_count = 0
     xcomp_count = 0
+    conj_count = 0
     isThere = False
 
     for i in range(0, len(sentence.dep_root)):
@@ -735,6 +738,8 @@ def event_extraction(sentence, world, current_node):
             nsubj_count += 1
         elif sentence.dep_root[i] == 'dobj':
             dobj_count += 1
+        elif sentence.dep_root[i] == 'conj':
+            conj_count += 1
 
     for i in range(0, len(sentence.dep)):
         if sentence.dep[i] == 'acomp':
@@ -743,11 +748,11 @@ def event_extraction(sentence, world, current_node):
             xcomp_count += 1
             isThere = True
 
-    print("nsubj", nsubj_count)
-    print("dobj", dobj_count)
-    print("acomp", acomp_count)
-    print("xcomp", xcomp_count)
-
+    #print("nsubj", nsubj_count)
+    #print("dobj", dobj_count)
+    #print("acomp", acomp_count)
+    #print("xcomp", xcomp_count)
+    #print("conj", conj_count)
     curr_type = False
     char_action = ""
     for x in range(0, len(sentence.text_token)):
@@ -755,23 +760,20 @@ def event_extraction(sentence, world, current_node):
         isFound_obj = False
 
         if nsubj_count > 0:
-
-            #get the subject in the sentence
             #GETS CHARACTER AND CHARACTER ACTION
             if sentence.dep_root[x] == 'nsubj':
                 nsubj_count -= 1
                 char = sentence.text_chunk[x]
-                event_char.append(char)
-            #   match the character with the list of characters from the world
-                for y in range(0, len(list_char)):
-                   if char == list_char.name[y] and isFound_char is False:
-                      event_char.append(char)
-                      isFound_char = True
-            #    add event location
-                for x in range(0, len(list_char)):
-                   if char == list_char[x].name:
-                       event_loc.append(list_char[x].inSetting)
-                       #print("LOCATION", list_char[x].inSetting)
+                if conj_count > 0 and isFound_char is False:
+                    for i in range(0, len(sentence.text_token)):
+                        print("TEXT TOKEN", sentence.text_token)
+                        if sentence.dep[i] == 'conj' and sentence.head_text[i] == char:
+                            event_char.append(char + " and " + sentence.text_token[i])
+                            isFound_char = True
+                elif isFound_char is False:
+                    event_char.append(char)
+                    isFound_char = True
+
             #   add character action
             event_char_action.append(sentence.dep_root_head[x])
 
