@@ -65,7 +65,9 @@ def find_text_index(sent, child):
 def find_ent_index(sent, ent):
     for k in range(0, len(sent.text_ent)):
         if ent in str(sent.text_ent[k]):
-            return str(sent.label[k])
+            print("TEXT ENT", str(sent.text_ent[k]))
+            return k
+            break
     return None
 
 
@@ -390,24 +392,33 @@ def add_settings(sent, num, subject, negation, world):
         list_of_char = char_conj_extractions(sent, subject)
 
     if not negation:
-        if str(sent.text_token[num]) not in world.settings:
-            label = find_ent_index(sent, str(sent.text_token[num]))
+        ent_index = find_ent_index(sent, str(sent.text_token[num]))
+        print("-----------------ENT INDEX", ent_index)
+        if ent_index is not None:
+            label = sent.label[ent_index]
+            ent_text = sent.text_ent[ent_index]
+            print("-------------------------", ent_text)
+        else:
+            label = ""
+            ent_text = sent.text_token[num]
+
+        if str(ent_text) not in world.settings:
             if label in ["LOC", "GPE"]:
                 is_setting = True
                 new_setting = Setting()
                 new_setting.type = label
-                new_setting.id = sent.text_token[num]
-                new_setting.name = sent.text_token[num]
-                current_location[label] = sent.text_token[num]
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location[label] = ent_text
                 world.add_setting(new_setting)
 
             elif label in ["DATE", "TIME"]:
                 is_setting = True
                 new_setting = Setting()
                 new_setting.type = label
-                new_setting.id = sent.text_token[num]
-                new_setting.name = sent.text_token[num]
-                current_location[label] = sent.text_token[num]
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location[label] = ent_text
                 world.add_setting(new_setting)
 
             elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or DBO_Concept.\
@@ -417,9 +428,9 @@ def add_settings(sent, num, subject, negation, world):
                 is_setting = True
                 new_setting = Setting()
                 new_setting.type = "LOC"
-                new_setting.id = sent.text_token[num]
-                new_setting.name = sent.text_token[num]
-                current_location["LOC"] = sent.text_token[num]
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location["LOC"] = ent_text
                 world.add_setting(new_setting)
 
             elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "time period"):
@@ -427,9 +438,9 @@ def add_settings(sent, num, subject, negation, world):
                 is_setting = True
                 new_setting = Setting()
                 new_setting.type = "TIME"
-                new_setting.id = sent.text_token[num]
-                new_setting.name = sent.text_token[num]
-                current_location["TIME"] = sent.text_token[num]
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location["TIME"] = ent_text
                 world.add_setting(new_setting)
 
             sent.location = current_location
@@ -438,11 +449,11 @@ def add_settings(sent, num, subject, negation, world):
             is_setting = True
 
             if world.settings[str(sent.text_token[num])].type == "LOC":
-                current_location["LOC"] = sent.text_token[num]
+                current_location["LOC"] = ent_text
             elif world.settings[str(sent.text_token[num])].type == "TIME":
-                current_location["TIME"] = sent.text_token[num]
+                current_location["TIME"] = ent_text
             elif world.settings[str(sent.text_token[num])].type == "LOC":
-                current_location["LOC"] = sent.text_token[num]
+                current_location["LOC"] = ent_text
 
         for c in list_of_char:
             if str(c) in world.characters and current_location:
