@@ -707,6 +707,21 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             print(noun, prn)
             #print("numPron", num_pron)
 
+            if (str(value) not in world.characters) and (str(value) not in world.objects):
+                if (str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    new_character.gender = "F"
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+
             for i in range(0, len(prn)):
                 sent_curr = sent_curr.replace(str(prn[i]), str(noun[i]))
 
