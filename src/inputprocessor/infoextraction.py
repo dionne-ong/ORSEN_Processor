@@ -127,6 +127,8 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
                     if location == "":
                         add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
                                     sent.lemma[i], world, subject)
+                        if not subject:
+                            subject = sent.text_token[num]
 
                     is_negated = False
 
@@ -203,7 +205,7 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
             # agent
             # adverbial modifier
             elif num != -1 \
-                    and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "advmod", "pcomp"]:
+                    and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "advmod", "pcomp", "acl"]:
                 details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
 
             else:
@@ -277,12 +279,14 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
     for c in list_of_char:
         print("CCCCCC", c, type(c))
         if (c not in world.characters) and (c not in world.objects):
-            if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) is not None) \
+            if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) or
+                    DBO_Concept.get_concept_specified("person", DBO_Concept.CAPABLE_OF, lemma) is not None)\
                     and dep == "nsubj":
                 new_character = Character()
                 new_character.name = c
                 new_character.id = c
                 new_character.attributes = []
+                new_character.type = []
                 world.add_character(new_character)
                 world.characters[new_character.id].timesMentioned = 1
                 print("ADDED", new_character.name)
@@ -292,6 +296,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_object.name = c
                 new_object.id = c
                 new_object.attributes = []
+                new_object.type = []
                 world.add_object(new_object)
                 world.objects[new_object.id].timesMentioned = 1
                 print("ADDED", new_object.name)
@@ -361,12 +366,20 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
                 print("ADD", attr, "TO", c)
                 char.attributes.append(new_attribute)
 
+                if relation == DBO_Concept.IS_A:
+                    print("RELATION", relation)
+                    char.type.append(attr)
+
         elif str(c) in world.objects:
             for attr in list_of_attributes:
                 new_attribute = Attribute(relation, attr, negation)
                 print("ADD", attr, "TO", c)
                 obj = world.objects[str(c)]
                 obj.attributes.append(new_attribute)
+
+                if relation == DBO_Concept.IS_A:
+                    print("RELATION", relation)
+                    obj.type.append(attr)
 
 
 def add_settings(sent, num, subject, negation, world, location):
@@ -417,7 +430,9 @@ def add_settings(sent, num, subject, negation, world, location):
                     setting = world.settings[current_location]
                     setting.time.append(str(sent.text_token[num]))
 
-            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location"):
+            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or DBO_Concept.\
+                    get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location") or DBO_Concept.\
+                    get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "site"):
                 current_location = sent.text_token[num]
                 new_setting.id = current_location
                 new_setting.name = current_location
