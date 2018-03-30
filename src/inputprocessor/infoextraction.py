@@ -835,9 +835,14 @@ def event_extraction(sentence, world, current_node):
                 if sentence.pos[x] == "VERB":
                     event_obj_action.append(str(sentence.text_token[x]))
 
-    add_event(event_type, event_char, event_char_action, event_obj, event_obj_action, event_loc, world)
+
+    event_obj_com = []
+    event_obj = ",".join(event_obj)
+    event_obj_com.append(event_obj)
+
+    add_event(event_type, event_char, event_char_action, event_obj_com, event_obj_action, event_loc, world)
     print("---- EVENT FRAME ----")
-    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action, "LOC", event_loc)
+    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj_com, "Obj_Action", event_obj_action, "LOC", event_loc)
 
 #Add event to the world
 def add_event(type, char, char_action, obj, obj_action, loc, world):
@@ -853,11 +858,11 @@ def add_event(type, char, char_action, obj, obj_action, loc, world):
         if len(char) > 0:
             new_eventframe.doer = char[x]
         if len(char_action) > 0:
-            new_eventframe.doer_actions = char_action[x]
+            new_eventframe.doer_actions = char[x] + ":" + char_action[x]
         if len(obj) > 0:
             new_eventframe.receiver = obj[x]
         if len(obj_action) > 0:
-            new_eventframe.receiver_actions = obj_action[x]
+            new_eventframe.receiver_actions = obj[x] + ":" + obj_action[x]
 
         list_char = world.characters
         for k in list_char:
