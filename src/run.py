@@ -60,7 +60,7 @@ while True:
 
     for s in list_of_sent:
         infoextraction.details_extraction(s, world, "ROOT")
-        #infoextraction.event_extraction(s, world, "ROOT")
+        infoextraction.event_extraction(s, world, "ROOT")
 
     print(world.characters)
     print(world.objects)
