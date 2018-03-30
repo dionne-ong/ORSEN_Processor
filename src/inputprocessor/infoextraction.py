@@ -622,6 +622,21 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             print(noun, prn)
             #print("numPron", num_pron)
 
+            if (str(value) not in world.characters) and (str(value) not in world.objects):
+                if (str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
+                    new_character = Character()
+                    new_character.name = str(value)
+                    new_character.id = str(value)
+                    new_character.gender = "F"
+                    world.add_character(new_character)
+                    world.characters[new_character.id].timesMentioned += 1
+
             for i in range(0, len(prn)):
                 sent_curr = sent_curr.replace(str(prn[i]), str(noun[i]))
 
@@ -643,6 +658,7 @@ def isAction(sentence):
 
 #ie_event_extract
 def event_extraction(sentence, world, current_node):
+    print("Entering EVENT EXTRACTION")
     event_char = []
     event_char_action = []
     event_obj = []
@@ -653,18 +669,22 @@ def event_extraction(sentence, world, current_node):
     #get list of characters and objects from world
     list_char = world.characters
     list_obj = world.objects
-    print(len(sentence.text_token))
+    #print(len(sentence.text_token))
+
     nsubj_count = 0
     dobj_count = 0
     acomp_count = 0
     xcomp_count = 0
+    conj_count = 0
+    attr_count = 0
     isThere = False
-
     for i in range(0, len(sentence.dep_root)):
         if sentence.dep_root[i] == 'nsubj':
             nsubj_count += 1
         elif sentence.dep_root[i] == 'dobj':
             dobj_count += 1
+        elif sentence.dep_root[i] == 'conj':
+            conj_count += 1
 
     for i in range(0, len(sentence.dep)):
         if sentence.dep[i] == 'acomp':
@@ -672,12 +692,14 @@ def event_extraction(sentence, world, current_node):
         elif sentence.dep[i] == 'xcomp':
             xcomp_count += 1
             isThere = True
+        elif sentence.dep[i] == 'attr':
+            attr_count += 1
 
-    print("nsubj", nsubj_count)
-    print("dobj", dobj_count)
-    print("acomp", acomp_count)
-    print("xcomp", xcomp_count)
-
+    #print("nsubj", nsubj_count)
+    #print("dobj", dobj_count)
+    #print("acomp", acomp_count)
+    #print("xcomp", xcomp_count)
+    #print("conj", conj_count)
     curr_type = False
     char_action = ""
     for x in range(0, len(sentence.text_token)):
@@ -685,35 +707,32 @@ def event_extraction(sentence, world, current_node):
         isFound_obj = False
 
         if nsubj_count > 0:
-
-            #get the subject in the sentence
             #GETS CHARACTER AND CHARACTER ACTION
-            if sentence.dep_root[x] == 'nsubj':
+            if sentence.dep[x] == 'nsubj':
+                print("TEXT TOKEN", sentence.text_token)
                 nsubj_count -= 1
-                char = sentence.text_chunk[x]
-                event_char.append(char)
-            #   match the character with the list of characters from the world
-                for y in range(0, len(list_char)):
-                   if char == list_char.name[y] and isFound_char is False:
-                      event_char.append(char)
-                      isFound_char = True
-            #    add event location
-                for x in range(0, len(list_char)):
-                   if char == list_char[x].name:
-                       event_loc.append(list_char[x].inSetting)
-                       #print("LOCATION", list_char[x].inSetting)
-            #   add character action
-            event_char_action.append(sentence.dep_root_head[x])
+                char = sentence.text_token[x]
+                print("CHAR", char)
+                if conj_count > 0 and isFound_char is False:
+                    for i in range(0, len(sentence.text_token)):
+                        if sentence.dep[i] == 'conj' and sentence.head_text[i] == char:
+                            event_char.append(char + " and " + sentence.text_token[i])
+                            if sentence.head_text[x] != char:
+                                event_char_action.append(sentence.head_text[x])
+                            isFound_char = True
+                elif conj_count == 0 and isFound_char is False:
+                    event_char.append(char)
+                    if sentence.head_text[x] != char:
+                        event_char_action.append(sentence.head_text[x])
+                    isFound_char = True
 
-        if isThere is True:
-            if xcomp_count > 0:
-                if sentence.dep[x] == 'xcomp':
-                    event_char_action[len(event_char_action)-1] = sentence.lemma[x]
-                    isThere = False
+        if xcomp_count > 0:
+            if sentence.dep[x] == 'xcomp':
+                event_obj.append(sentence.lemma[x])
 
         #GET OBJECT AND CHECK IF ACTION SENTENCE
         if dobj_count > 0 and isAction(sentence) is False:
-            print("IM AN ACTION")
+            #print("IM AN ACTION")
 
             if sentence.dep_root[x] == 'dobj':
                 dobj_count -= 1
@@ -732,23 +751,28 @@ def event_extraction(sentence, world, current_node):
 
                 event_type.append(FRAME_EVENT)
         #GET OBJECT AND CHECK IF DESCRIPTIVE SENTENCE
-        if acomp_count > 0 and isAction(sentence) == True:
-            if sentence.dep[x] == 'acomp':
+        if (acomp_count > 0 or attr_count > 0)and isAction(sentence) == True:
+            if sentence.dep[x] == 'acomp' or sentence.dep[x] == 'attr':
                 obj = sentence.lemma[x]
-                print(obj)
+                #print(obj)
                 event_obj.append(obj)
                 event_type.append(FRAME_DESCRIPTIVE)
 
         for i in range(0, len(event_obj)):
-            print("head_text", sentence.head_text[x], "Obj", event_obj[i])
-            print("text_token", sentence.text_token[x])
+            #print("head_text", sentence.head_text[x], "Obj", event_obj[i])
+            #print("text_token", sentence.text_token[x])
             if str(sentence.head_text[x]) in event_obj[i]:
                 if sentence.pos[x] == "VERB":
                     event_obj_action.append(str(sentence.text_token[x]))
 
-    add_event(event_type, event_char, event_char_action, event_obj, event_obj_action, event_loc, world)
+
+    event_obj_com = []
+    event_obj = ",".join(event_obj)
+    event_obj_com.append(event_obj)
+
+    add_event(event_type, event_char, event_char_action, event_obj_com, event_obj_action, event_loc, world)
     print("---- EVENT FRAME ----")
-    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action, "LOC", event_loc)
+    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj_com, "Obj_Action", event_obj_action, "LOC", event_loc)
 
 #Add event to the world
 def add_event(type, char, char_action, obj, obj_action, loc, world):
@@ -764,11 +788,11 @@ def add_event(type, char, char_action, obj, obj_action, loc, world):
         if len(char) > 0:
             new_eventframe.doer = char[x]
         if len(char_action) > 0:
-            new_eventframe.doer_actions = char_action[x]
+            new_eventframe.doer_actions = char[x] + ":" + char_action[x]
         if len(obj) > 0:
             new_eventframe.receiver = obj[x]
         if len(obj_action) > 0:
-            new_eventframe.receiver_actions = obj_action[x]
+            new_eventframe.receiver_actions = obj[x] + ":" + obj_action[x]
 
         list_char = world.characters
         for k in list_char:
