@@ -238,6 +238,9 @@ def char_conj_extractions(sent, subj):
 
     list_of_conj = [subj]
     temp = str(subj).split()
+    if not temp:
+        return []
+
     subj = temp[-1]
     for k in range(0, len(sent.head_text)):
         if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":

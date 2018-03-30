@@ -175,9 +175,11 @@ def generate_response(move_code, world, remove_index=[]):
             if to_replace in ["setting"]:
                 if to_replace == "setting":
                     if subject is None:
-                        return generate_response(move_code, world)
+                        remove_index.append(move.move_id)
+                        return generate_response(move_code, world, remove_index)
                     elif subject.inSetting is None:
-                        return generate_response(move_code, world)
+                        remove_index.append(move.move_id)
+                        return generate_response(move_code, world, remove_index)
                     else:
                         txt_concept = subject.inSetting.name
 
@@ -240,7 +242,8 @@ def generate_response(move_code, world, remove_index=[]):
                 usable_concepts = DBO_Concept.get_concept_like(blank_type, first=decided_concept)
             elif decided_node == 1:
                 usable_concepts = DBO_Concept.get_concept_like(blank_type, second=decided_concept)
-            else:
+
+            if len(usable_concepts) == 0:
                 usable_concepts = DBO_Concept.get_concept_like(blank_type)
 
             loop_total = 0
@@ -265,7 +268,7 @@ def generate_response(move_code, world, remove_index=[]):
                 objects = world.get_top_objects()
                 list_choices = charas + objects
 
-                choice_index = random.randint(0, len(choices))
+                choice_index = random.randint(0, len(list_choices))
                 subject = list_choices[choice_index]
 
             move.template[move.template.index("object")] = subject.id
@@ -284,8 +287,12 @@ def generate_response(move_code, world, remove_index=[]):
             if subject is None or not isinstance(subject, Character):
                 charas = world.get_top_characters(5)
 
-                choice_index = random.randint(0, len(charas))
-                subject = charas[choice_index]
+                if len(charas) > 0:
+                    choice_index = random.randint(0, len(charas))
+                    subject = charas[choice_index]
+                else:
+                    remove_index.append(move.move_id)
+                    return generate_response(move_code, world, remove_index)
             else:
                 chara = subject
 
@@ -293,9 +300,11 @@ def generate_response(move_code, world, remove_index=[]):
 
         elif blank_type == "inSetting":
             if subject is None:
-                return generate_response(move_code, world)
+                remove_index.append(move.move_id)
+                return generate_response(move_code, world,remove_index)
             elif subject.inSetting is None:
-                return generate_response(move_code, world)
+                remove_index.append(move.move_id)
+                return generate_response(move_code, world,remove_index)
             else:
                 move.template[move.template.index("setting")] = subject.inSetting.name
 
@@ -304,7 +313,8 @@ def generate_response(move_code, world, remove_index=[]):
                 move.template[move.template.index("repeat")]\
                     = world.event_chain[len(world.event_chain)-1].to_sentence_string()
             else:
-                generate_response(move_code, world)
+                remove_index.append(move.move_id)
+                return generate_response(move_code, world,remove_index)
         elif blank_type == "Event":
             print("replace event")
             # TODO: event verb replacements
