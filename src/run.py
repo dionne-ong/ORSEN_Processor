@@ -13,8 +13,10 @@ server.add_world(world)
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_core_web_sm')
 output = "Hello, I am ORSEN. Let's start."
+retrieved = None
 while True:
-
+    if retrieved is not None:
+        output = retrieved.get_string_response()
     text = input("O: " + output + "\n")
     document = nlp(str(text))
     sentences = [sent.string.strip() for sent in document.sents]
@@ -122,5 +124,4 @@ while True:
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
     #dialogue
-    output = DialoguePlanner.retrieve_output(text, worldid)
-    print(output)
+    retrieved = DialoguePlanner.retrieve_output(text, worldid)
