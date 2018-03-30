@@ -122,5 +122,5 @@ while True:
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
     #dialogue
-    output = DialoguePlanner.retrieve_output("", worldid)
+    output = DialoguePlanner.retrieve_output(text, worldid)
     print(output)
