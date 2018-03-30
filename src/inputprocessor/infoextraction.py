@@ -65,14 +65,15 @@ def find_text_index(sent, child):
 def find_ent_index(sent, ent):
     for k in range(0, len(sent.text_ent)):
         if ent in str(sent.text_ent[k]):
-            return str(sent.label[k])
+            print("TEXT ENT", str(sent.text_ent[k]))
+            return k
+            break
     return None
 
 
-def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
+def details_extraction(sent, world, current_node, subj="", neg=""):
     num = -1
     subject = subj
-    location = loc
     current_index = -1
     dative = ""
     direct_object = ""
@@ -92,7 +93,8 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
         for j in range(0, len(sent.children[i])):
             num = find_text_index(sent, str(sent.children[i][j]))
             if num != -1 and sent.finished_nodes[num] == 0 and\
-                    sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos", "relcl"]:
+                    sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos", "relcl",
+                                      "npadvmod", "advmod"]:
 
                 # nominal subject
                 if sent.dep[num] == "nsubj":
@@ -123,8 +125,7 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
 
                 # attribute and appositional modifier
                 elif sent.dep[num] == "attr":
-                    location = add_settings(sent, num, subject, is_negated, world, location)
-                    if location == "":
+                    if add_settings(sent, num, subject, is_negated, world):
                         add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
                                     sent.lemma[i], world, subject)
                         if not subject:
@@ -134,8 +135,7 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
 
                 # appositional modifier
                 elif sent.dep[num] == "appos":
-                    location = add_settings(sent, num, subject, is_negated, world, location)
-                    if location == "":
+                    if not add_settings(sent, num, subject, is_negated, world):
                         add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
                                     sent.lemma[i], world, compound_extraction(sent, str(sent.head_text[num])))
 
@@ -150,11 +150,16 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
                 elif sent.dep[num] == "relcl":
                     add_capability(sent, str(sent.lemma[num]), str(sent.head_text[num]), world, num)
 
+                # noun phrase as adverbial modifier
+                elif num != -1 and sent.dep[num] in ["npadvmod", "advmod"]:
+                    add_settings(sent, num, subject, is_negated, world)
+                    sent.finished_nodes[num] = 1
+
                 if sent.children[num] is not None:
                     for c in sent.children[num]:
                         dep_index = find_text_index(sent, str(c))
                         if sent.finished_nodes[dep_index] == 0:
-                            details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
+                            details_extraction(sent, world, sent.dep[num], subject, is_negated)
 
                 sent.finished_nodes[num] = 1
 
@@ -170,25 +175,18 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
                 sent.finished_nodes[num] = 1
                 is_negated = True
 
-            # noun phrase as adverbial modifier
-            elif num != -1 and  sent.dep[num] == "npadvmod":
-                location = add_settings(sent, num, subject, is_negated, world, location)
-                sent.finished_nodes[num] = 1
-
             # object of preposition
-            elif num != -1 and  sent.dep[num] == "pobj":
-                location = add_settings(sent, num, subject, is_negated, world, location)
-
-                if location == "":
+            elif num != -1 and sent.dep[num] == "pobj":
+                if not add_settings(sent, num, subject, is_negated, world):
                     add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num], sent.lemma[i]
                                 , world)
-                details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
+                details_extraction(sent, world, sent.dep[num], subject, is_negated)
                 sent.finished_nodes[num] = 1
 
             # dative - the noun to which something is given
             elif num != -1 and sent.dep[num] == "dative":
                 if str(sent.text_token[num]) == "to":
-                    details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
+                    details_extraction(sent, world, sent.dep[num], subject, is_negated)
                     if sent.children[num]:
                         dative = compound_extraction(sent, sent.children[num][0])
                 else:
@@ -205,8 +203,8 @@ def details_extraction(sent, world, current_node, subj="", loc="", neg=""):
             # agent
             # adverbial modifier
             elif num != -1 \
-                    and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "advmod", "pcomp", "acl"]:
-                details_extraction(sent, world, sent.dep[num], subject, location, is_negated)
+                    and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "pcomp", "acl"]:
+                details_extraction(sent, world, sent.dep[num], subject, is_negated)
 
             else:
                 print("WARNING: Dependecy ", sent.dep[num],  " not included in the list")
@@ -270,14 +268,15 @@ def add_capability(sent, attr, subject, world, num):
         for c in list_of_char:
             if str(c) in world.characters:
                     world.characters[c].attributes.append(new_attribute)
-            else:
+            elif str(c) in world.objects:
                     world.objects[c].attributes.append(new_attribute)
 
 
 def add_objects(sent, child, dep, lemma, world, subject=""):
     list_of_char = char_conj_extractions(sent, child)
     for c in list_of_char:
-        print("CCCCCC", c, type(c))
+        #print("CCCCCC", c, type(c))
+
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) or
                     DBO_Concept.get_concept_specified("person", DBO_Concept.CAPABLE_OF, lemma) is not None)\
@@ -287,6 +286,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_character.id = c
                 new_character.attributes = []
                 new_character.type = []
+                new_character.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_character(new_character)
                 world.characters[new_character.id].timesMentioned = 1
                 print("ADDED", new_character.name)
@@ -297,6 +297,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_object.id = c
                 new_object.attributes = []
                 new_object.type = []
+                new_object.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_object(new_object)
                 world.objects[new_object.id].timesMentioned = 1
                 print("ADDED", new_object.name)
@@ -382,74 +383,89 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
                     obj.type.append(attr)
 
 
-def add_settings(sent, num, subject, negation, world, location):
-    current_location = location
+def add_settings(sent, num, subject, negation, world):
+    current_location = sent.location
+    print("CURRENT LOC", current_location)
     list_of_char = []
+    is_setting = False
     if subject:
         list_of_char = char_conj_extractions(sent, subject)
 
     if not negation:
-        if str(sent.text_token[num]) not in world.settings:
-            label = find_ent_index(sent, str(sent.text_token[num]))
-            new_setting = Setting()
-            new_setting.type = label
+        ent_index = find_ent_index(sent, str(sent.text_token[num]))
+        print("-----------------ENT INDEX", ent_index)
+        if ent_index is not None:
+            label = sent.label[ent_index]
+            ent_text = sent.text_ent[ent_index]
+            print("-------------------------", ent_text)
+        else:
+            label = ""
+            ent_text = sent.text_token[num]
+
+        if str(ent_text) not in world.settings:
             if label in ["LOC", "GPE"]:
-
-                if current_location is "":
-                    current_location = sent.text_token[num]
-                    new_setting.id = current_location
-                    new_setting.name = current_location
-
-                else:
-                    prev_setting = world.settings(current_location)
-                    print("PREV", prev_setting)
-                    if prev_setting.type in ["DATE", "TIME"]:
-                        current_location = sent.text_token[num]
-                        new_setting.id = current_location
-                        new_setting.name = current_location
-                        new_setting.time = prev_setting.time
-                        world.settings.pop(prev_setting.id)
-                    else:
-                        current_location = sent.text_token[num]
-                        new_setting.id = current_location
-                        new_setting.name = current_location
-                print("CURR", current_location)
+                is_setting = True
+                new_setting = Setting()
+                new_setting.type = label
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location[label] = ent_text
                 world.add_setting(new_setting)
 
             elif label in ["DATE", "TIME"]:
-
-                if current_location is "":
-                    current_location = sent.text_token[num]
-                    new_setting.id = current_location
-                    new_setting.name = current_location
-                    new_setting.type = label
-                    new_setting.time = []
-                    new_setting.time.append(str(sent.text_token[num]))
-                    world.add_setting(new_setting)
-                else:
-                    setting = world.settings[current_location]
-                    setting.time.append(str(sent.text_token[num]))
+                is_setting = True
+                new_setting = Setting()
+                new_setting.type = label
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location[label] = ent_text
+                world.add_setting(new_setting)
 
             elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or DBO_Concept.\
                     get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location") or DBO_Concept.\
                     get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "site"):
-                current_location = sent.text_token[num]
-                new_setting.id = current_location
-                new_setting.name = current_location
+
+                is_setting = True
+                new_setting = Setting()
                 new_setting.type = "LOC"
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location["LOC"] = ent_text
                 world.add_setting(new_setting)
 
-            for c in list_of_char:
-                if str(c) in world.characters and current_location:
-                    char = world.characters[str(c)]
-                    char.inSetting = current_location
-                elif str(c) in world.objects and current_location:
-                    obj = world.objects[str(c)]
-                    print(obj.name, current_location)
-                    obj.inSetting = current_location
+            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "time period"):
 
-            print("CURRENT LOC", current_location, list_of_char)
-    return current_location
+                is_setting = True
+                new_setting = Setting()
+                new_setting.type = "TIME"
+                new_setting.id = ent_text
+                new_setting.name = ent_text
+                current_location["TIME"] = ent_text
+                world.add_setting(new_setting)
+
+            sent.location = current_location
+
+        else:
+            is_setting = True
+
+            if world.settings[str(sent.text_token[num])].type == "LOC":
+                current_location["LOC"] = ent_text
+            elif world.settings[str(sent.text_token[num])].type == "TIME":
+                current_location["TIME"] = ent_text
+            elif world.settings[str(sent.text_token[num])].type == "LOC":
+                current_location["LOC"] = ent_text
+
+        for c in list_of_char:
+            if str(c) in world.characters and current_location:
+                char = world.characters[str(c)]
+                char.inSetting = current_location
+            elif str(c) in world.objects and current_location:
+                obj = world.objects[str(c)]
+                print(obj.name, current_location)
+                obj.inSetting = current_location
+
+    return is_setting
+
 
 # ---------- rachel
 
@@ -465,132 +481,6 @@ def getCategory(sentence):
         return CAT_ANSWER
     else:
         return CAT_STORY
-
-# #ie_setting_detail_extraction
-# def setting_attribute_extraction(sentence, world):
-#     setting_name = []
-#     setting_time = []
-#     setting_type = []
-#     setting_char = []
-#
-#     isAdded = False
-#
-#     num_char = 0
-#     num_loc = 0
-#
-#     isPROPN = False
-#     isLocation = False
-#     isDate = False
-#     isChar = False
-#
-#     #Check in NER
-#     for x in range(0, len(sentence.text_ent)):
-#         text = sentence.text_ent[x]
-#         label = sentence.label[x]
-#
-#         #find character
-#         list_char = world.characters
-#         if label == 'PERSON' or label == "ORG":
-#             for k in list_char:
-#                 print(sentence.text_chunk[x])
-#                 print(list_char[k])
-#                 if list_char[k].name == sentence.text_chunk[x]:
-#                     char = list_char[k].name
-#                     setting_char.append(char)
-#                     isChar = True
-#                     num_char += 1
-#
-#         #Check if GPE, Location, Date or Time
-#         if label == 'GPE' or label == 'LOCATION':
-#             setting_name.append(text)
-#             isAdded = True
-#             setting_type.append("LOCATION")
-#             isLocation = True
-#             isPROPN = True
-#
-#         if label == 'DATE':
-#             if isLocation is False:
-#                 setting_name.append(text)
-#                 isAdded = True
-#                 setting_type.append("DATE")
-#                 isDate = True
-#             elif isLocation is True:
-#                 setting_time.append(text)
-#                 isAdded = True
-#                 setting_type.append("DATE")
-#                 isDate = True
-#
-#         if label == 'TIME':
-#             if isDate is False:
-#                 if isLocation is True:
-#                     setting_time.append(text)
-#                     isAdded = True
-#                     setting_type.append("TIME")
-#                 elif isLocation is False:
-#                     setting_name.append(text)
-#                     isAdded = True
-#                     setting_type.append("TIME")
-#             elif isDate is True:
-#                 if isLocation is True:
-#                     hold = setting_time[len(setting_time)-1]
-#                     setting_time[len(setting_time)-1] = hold + "," + text
-#                     setting_type.append("TIME")
-#                     isAdded = True
-#                 elif isLocation is False:
-#                     setting_time.append(text)
-#                     setting_type.append("TIME")
-#                     isAdded = True
-#
-#         #Check in DB if Location
-#         for y in range(0, len(sentence.dep)):
-#             text = sentence.text_token[y]
-#             dep = sentence.dep[y]
-#             if dep == 'pobj':
-#                 db = pymysql.connect("localhost",
-#                                      user="root",
-#                                      passwd="root",
-#                                      db="orsen_kb")
-#                 cursor = db.cursor()
-#                 cursor.execute("SELECT second" +
-#                                " FROM concepts" +
-#                                " WHERE relation = %s" +
-#                                " AND first = %s " +
-#                                " AND second = %s", ('isA', text, 'location'))
-#                 locate = cursor.fetchone()
-#                 if locate is not None:
-#                     setting_name.append(text)
-#                     isAdded = True
-#
-#
-#
-#     print("------ SETTING FRAME ------")
-#     print(setting_name, setting_type, setting_time)
-#     set = len(setting_name)-1
-#
-#     #connecting to characters
-#     if isChar is True:
-#         for k in list_char:
-#             if list_char[k].name == char:
-#                 list_char[k].inSetting = setting_name[set]
-#
-#     add_setting(setting_name, setting_type, setting_time, world)
-#
-#     return isAdded
-# #Add Setting to World
-# def add_setting(name, type, time, world):
-#     for x in range(0, len(name)-1):
-#         new_setting = Setting()
-#         if name[x] is not None:
-#             new_setting.name = name[x]
-#             new_setting.id = name[x]
-#         if type[x] is not None:
-#             new_setting.type = type[x]
-#         if time[x] is not None:
-#             new_setting.time = time[x]
-#
-#         world.add_setting(new_setting)
-#
-#     print("----- ADDED SETTING TO THE WORLD -----")
 
 
 def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
@@ -661,8 +551,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
                     world.add_character(new_character)
                     world.characters[new_character.id].timesMentioned += 1
 
-        elif scores.get(0) != none.get(0):
-            # print("len is 0")
+        elif len(scores.get('single_scores'))> 1:
             # extract scores
             single_mention = scores.get('single_scores')
             pair_mention = scores.get('pair_scores')
@@ -707,21 +596,6 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             print(noun, prn)
             #print("numPron", num_pron)
 
-            if (str(value) not in world.characters) and (str(value) not in world.objects):
-                if (str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-                elif (str(key).lower() == "she") or (str(key).lower() == "her") or (str(key).lower() == "hers"):
-                    new_character = Character()
-                    new_character.name = str(value)
-                    new_character.id = str(value)
-                    new_character.gender = "F"
-                    world.add_character(new_character)
-                    world.characters[new_character.id].timesMentioned += 1
-
             for i in range(0, len(prn)):
                 sent_curr = sent_curr.replace(str(prn[i]), str(noun[i]))
 
@@ -762,7 +636,9 @@ def event_extraction(sentence, world, current_node):
     xcomp_count = 0
     conj_count = 0
     attr_count = 0
+    cc_count = 0
     isThere = False
+    isContinue = True
     for i in range(0, len(sentence.dep_root)):
         if sentence.dep_root[i] == 'nsubj':
             nsubj_count += 1
@@ -779,7 +655,8 @@ def event_extraction(sentence, world, current_node):
             isThere = True
         elif sentence.dep[i] == 'attr':
             attr_count += 1
-
+        elif sentence.dep[i] =='cc':
+            cc_count += 1
     #print("nsubj", nsubj_count)
     #print("dobj", dobj_count)
     #print("acomp", acomp_count)
@@ -793,32 +670,43 @@ def event_extraction(sentence, world, current_node):
 
         if nsubj_count > 0:
             #GETS CHARACTER AND CHARACTER ACTION
-            if sentence.dep[x] == 'nsubj':
-                print("TEXT TOKEN", sentence.text_token)
+            if sentence.dep[x] == 'nsubj' and isContinue is True:
+                #print("TEXT TOKEN", sentence.text_token)
                 nsubj_count -= 1
                 char = sentence.text_token[x]
-                print("CHAR", char)
+                char = compound_extraction(sentence, char)
+                #print("CHAR", char)
                 if conj_count > 0 and isFound_char is False:
                     for i in range(0, len(sentence.text_token)):
                         if sentence.dep[i] == 'conj' and sentence.head_text[i] == char:
                             event_char.append(char + " and " + sentence.text_token[i])
                             if sentence.head_text[x] != char:
                                 event_char_action.append(sentence.head_text[x])
+                                if isAction(sentence) is False:
+                                    event_type.append(FRAME_EVENT)
+                                else:
+                                    event_type.append(FRAME_DESCRIPTIVE)
                             isFound_char = True
                 elif conj_count == 0 and isFound_char is False:
                     event_char.append(char)
                     if sentence.head_text[x] != char:
                         event_char_action.append(sentence.head_text[x])
+                        if isAction(sentence) is False:
+                            event_type.append(FRAME_EVENT)
+                        else:
+                            event_type.append(FRAME_DESCRIPTIVE)
                     isFound_char = True
 
+
+
+        #GET OBJECT AND CHECK IF ACTION SENTENCE
         if xcomp_count > 0:
             if sentence.dep[x] == 'xcomp':
                 event_obj.append(sentence.lemma[x])
+        #print("cc", cc_count)
 
-        #GET OBJECT AND CHECK IF ACTION SENTENCE
         if dobj_count > 0 and isAction(sentence) is False:
             #print("IM AN ACTION")
-
             if sentence.dep_root[x] == 'dobj':
                 dobj_count -= 1
                 #print("dobj", sentence.dep_root_head[x])
@@ -834,36 +722,37 @@ def event_extraction(sentence, world, current_node):
           #     add object action action
           #     event_obj_action.append(sentence.dep_root_head[x])
 
-                event_type.append(FRAME_EVENT)
         #GET OBJECT AND CHECK IF DESCRIPTIVE SENTENCE
-        if (acomp_count > 0 or attr_count > 0)and isAction(sentence) == True:
+        if (acomp_count > 0 or attr_count > 0) and isAction(sentence) == True:
             if sentence.dep[x] == 'acomp' or sentence.dep[x] == 'attr':
                 obj = sentence.lemma[x]
                 #print(obj)
                 event_obj.append(obj)
-                event_type.append(FRAME_DESCRIPTIVE)
-
-        for i in range(0, len(event_obj)):
-            #print("head_text", sentence.head_text[x], "Obj", event_obj[i])
-            #print("text_token", sentence.text_token[x])
-            if str(sentence.head_text[x]) in event_obj[i]:
-                if sentence.pos[x] == "VERB":
-                    event_obj_action.append(str(sentence.text_token[x]))
 
 
-    event_obj_com = []
-    event_obj = ",".join(event_obj)
-    event_obj_com.append(event_obj)
 
-    add_event(event_type, event_char, event_char_action, event_obj_com, event_obj_action, event_loc, world)
-    print("---- EVENT FRAME ----")
-    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj_com, "Obj_Action", event_obj_action, "LOC", event_loc)
+    if len(event_obj) > 0 and len(char) < 2:
+        event_obj_com = []
+        event_obj = ",".join(event_obj)
+        event_obj_com.append(event_obj)
+
+        add_event(event_type, event_char, event_char_action, event_obj_com, event_obj_action, event_loc, world)
+
+        print("---- EVENT FRAME ----")
+        print("Type", event_type, "Char", event_char, "Char_Action", event_char_action, "Obj", event_obj_com, "Obj_Action", event_obj_action, "LOC", event_loc)
+    else:
+        #print("LEN OBJ", len(event_obj))
+        #print("LEN CHAR", len(event_char))
+        add_event(event_type, event_char, event_char_action, event_obj, event_obj_action, event_loc, world)
+
+        print("---- EVENT FRAME ----")
+        print("Type", event_type, "Char", event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action, "LOC", event_loc)
 
 #Add event to the world
 def add_event(type, char, char_action, obj, obj_action, loc, world):
-    print("LEN CHAR", len(char))
+
+    print("LEN OBJ", len(obj))
     for x in range(0, len(char)):
-        print("X ", x)
         new_eventframe = EventFrame()
 
         if len(type) > 0:
@@ -874,9 +763,10 @@ def add_event(type, char, char_action, obj, obj_action, loc, world):
             new_eventframe.doer = char[x]
         if len(char_action) > 0:
             new_eventframe.doer_actions = char[x] + ":" + char_action[x]
-        if len(obj) > 0:
+
+        if x < len(obj):
             new_eventframe.receiver = obj[x]
-        if len(obj_action) > 0:
+        if x < len(obj_action):
             new_eventframe.receiver_actions = obj[x] + ":" + obj_action[x]
 
         list_char = world.characters
