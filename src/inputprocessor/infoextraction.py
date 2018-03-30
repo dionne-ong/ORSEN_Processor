@@ -21,8 +21,8 @@ def pos_ner_nc_processing(sentence):
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        #print("---POS----");
-        #print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+        print("---POS----");
+        print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
@@ -36,14 +36,14 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-         #print("---NER---")
-         #print(ent.text, ent.start_char, ent.end_char, ent.label_)
+         print("---NER---")
+         print(ent.text, ent.start_char, ent.end_char, ent.label_)
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        # print("---NC---")
-        # print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
+        print("---NC---")
+        print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
 
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
@@ -760,16 +760,16 @@ def event_extraction(sentence, world, current_node):
                 char = sentence.text_chunk[x]
                 event_char.append(char)
             #   match the character with the list of characters from the world
-            #   for y in range(0, len(list_char)):
-            #      if char == list_char.name[y] and isFound_char is False:
-            #         event_char.append(char)
-            #         isFound_char = True
-            #   add event location
-            #   for x in range(0, len(list_char)):
-            #      if char == list_char[x].name:
-            #       event_loc.append(list_char[x].inSetting)
+                for y in range(0, len(list_char)):
+                   if char == list_char.name[y] and isFound_char is False:
+                      event_char.append(char)
+                      isFound_char = True
+            #    add event location
+                for x in range(0, len(list_char)):
+                   if char == list_char[x].name:
+                       event_loc.append(list_char[x].inSetting)
+                       #print("LOCATION", list_char[x].inSetting)
             #   add character action
-
             event_char_action.append(sentence.dep_root_head[x])
 
         if isThere is True:
@@ -813,12 +813,12 @@ def event_extraction(sentence, world, current_node):
                 if sentence.pos[x] == "VERB":
                     event_obj_action.append(str(sentence.text_token[x]))
 
-    add_event(event_type, event_char, event_char_action, event_obj, event_obj_action, world)
+    add_event(event_type, event_char, event_char_action, event_obj, event_obj_action, event_loc, world)
     print("---- EVENT FRAME ----")
-    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action)
+    print("Type", event_type, "Char",event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action, "LOC", event_loc)
 
 #Add event to the world
-def add_event(type, char, char_action, obj, obj_action, world):
+def add_event(type, char, char_action, obj, obj_action, loc, world):
     print("LEN CHAR", len(char))
     for x in range(0, len(char)):
         print("X ", x)
@@ -826,6 +826,8 @@ def add_event(type, char, char_action, obj, obj_action, world):
 
         if len(type) > 0:
             new_eventframe.type = type[x]
+        if len(loc) > 0:
+            new_eventframe.setting = loc[x]
         if len(char) > 0:
             new_eventframe.doer = char[x]
         if len(char_action) > 0:
