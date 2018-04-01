@@ -54,9 +54,9 @@ def retrieve_output(coreferenced_text, world_id):
             if last_response_type_num in [MOVE_FEEDBACK, MOVE_HINT]:
                 output = Move.Move(template=["I'm sorry, I did not understand what you just said. Can you say it again?"], type_num=MOVE_REQUESTION)
             elif last_response_type_num == MOVE_GENERAL_PUMP:
-                output = generate_response(MOVE_SPECIFIC_PUMP, world, [])
+                output = generate_response(MOVE_SPECIFIC_PUMP, world, [], coreferenced_text)
             elif last_response_type_num == MOVE_SPECIFIC_PUMP:
-                output = generate_response(MOVE_HINT, world, [])
+                output = generate_response(MOVE_HINT, world, [], coreferenced_text)
                 output.template = ["What if "]+output.template
             else:
                 output = Move.Move(template=["I don't think I heard you. Can you say that last part again?"], type_num=MOVE_REQUESTION)
@@ -64,13 +64,13 @@ def retrieve_output(coreferenced_text, world_id):
         if world.empty_response == 2:
             print("2nd no response")
             if last_response_type_num == MOVE_GENERAL_PUMP:
-                output = generate_response(MOVE_SPECIFIC_PUMP, world, [])
+                output = generate_response(MOVE_SPECIFIC_PUMP, world, [], coreferenced_text)
             elif last_response_type_num == MOVE_SPECIFIC_PUMP:
-                output = generate_response(MOVE_HINT, world, [])
+                output = generate_response(MOVE_HINT, world, [], coreferenced_text)
                 output.template = ["What if "] + output.template
             else:
                 choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
-                output = generate_response(choice, world, [])
+                output = generate_response(choice, world, [], coreferenced_text)
 
         elif world.empty_response == 3:
             print("3rd no response")
@@ -86,7 +86,7 @@ def retrieve_output(coreferenced_text, world_id):
             else:
                 choice = random.randint(MOVE_FEEDBACK, MOVE_GENERAL_PUMP+1)
 
-            output = generate_response(choice, world, [])
+            output = generate_response(choice, world, [], coreferenced_text)
 
         elif getCategory(coreferenced_text) == CAT_ANSWER:
             print("check_answer")
@@ -95,7 +95,7 @@ def retrieve_output(coreferenced_text, world_id):
                 output = Move.Move(template=["Ok, let's keep going then!"], type_num=MOVE_UNKNOWN)
             else:
                 choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-                output = generate_response(choice, world, [])
+                output = generate_response(choice, world, [], coreferenced_text)
 
         elif getCategory(coreferenced_text) == CAT_COMMAND:
             # TEMP TODO: check for further commands
@@ -107,7 +107,7 @@ def retrieve_output(coreferenced_text, world_id):
                     and ("say" in coreferenced_text or "next" in coreferenced_text):
                 choice = random.randint(MOVE_GENERAL_PUMP, MOVE_SPECIFIC_PUMP+1)
 
-            output = generate_response(choice, world, [])
+            output = generate_response(choice, world, [], coreferenced_text)
 
         else:
             output = Move.Move(template=["I don't know what to say."], type_num=MOVE_UNKNOWN)
@@ -117,7 +117,7 @@ def retrieve_output(coreferenced_text, world_id):
     return output
 
 
-def generate_response(move_code, world, remove_index):
+def generate_response(move_code, world, remove_index, text):
 
     choices = []
     subject = None
@@ -177,7 +177,7 @@ def generate_response(move_code, world, remove_index):
 
         if index_loop > 20:
             remove_index.append(move.move_id)
-            return generate_response(MOVE_FEEDBACK, world, remove_index)
+            return generate_response(MOVE_FEEDBACK, world, remove_index, text)
 
     for blank_type in move.blanks:
 
@@ -200,10 +200,10 @@ def generate_response(move_code, world, remove_index):
                 if to_replace == "setting":
                     if subject is None:
                         remove_index.append(move.move_id)
-                        return generate_response(move_code, world, remove_index)
+                        return generate_response(move_code, world, remove_index, text)
                     elif subject.inSetting is None:
                         remove_index.append(move.move_id)
-                        return generate_response(move_code, world, remove_index)
+                        return generate_response(move_code, world, remove_index, text)
                     else:
                         txt_concept = subject.inSetting.name
 
@@ -279,7 +279,7 @@ def generate_response(move_code, world, remove_index):
                         decided_node = NODE_END
                     else:
                         remove_index.append(move.move_id)
-                        return generate_response(move_code, world, remove_index)
+                        return generate_response(move_code, world, remove_index, text)
             # find
             if decided_node == NODE_START:
                 usable_concepts = DBO_Concept.get_concept_like(blank_type, first=decided_concept)
@@ -291,7 +291,8 @@ def generate_response(move_code, world, remove_index):
                 usable_concepts = []
 
             if len(usable_concepts) == 0:
-                usable_concepts = DBO_Concept.get_concept_like(blank_type)
+                remove_index.append(move.move_id)
+                return generate_response(move_code, world, remove_index, text)
 
             loop_total = 0
             while len(usable_concepts) > 0:
@@ -308,7 +309,7 @@ def generate_response(move_code, world, remove_index):
             else:
                 print("ERROR: NO USABLE CONCEPTS decided:",decided_concept)
                 remove_index.append(move.move_id)
-                return generate_response(move_code, world, remove_index)
+                return generate_response(move_code, world, remove_index, text)
 
         elif blank_type == "Object":
 
@@ -341,7 +342,7 @@ def generate_response(move_code, world, remove_index):
                     subject = charas[choice_index]
                 else:
                     remove_index.append(move.move_id)
-                    return generate_response(move_code, world, remove_index)
+                    return generate_response(move_code, world, remove_index, text)
             else:
                 chara = subject
 
@@ -350,20 +351,22 @@ def generate_response(move_code, world, remove_index):
         elif blank_type == "inSetting":
             if subject is None:
                 remove_index.append(move.move_id)
-                return generate_response(move_code, world, remove_index)
+                return generate_response(move_code, world, remove_index, text)
             elif subject.inSetting is None:
                 remove_index.append(move.move_id)
-                return generate_response(move_code, world, remove_index)
+                return generate_response(move_code, world, remove_index, text)
             else:
                 move.template[move.template.index("setting")] = subject.inSetting.name
 
         elif blank_type == "Repeat":
-            if len(world.event_chain) > 0:
-                move.template[move.template.index("repeat")]\
-                    = world.event_chain[len(world.event_chain)-1].to_sentence_string()
-            else:
-                remove_index.append(move.move_id)
-                return generate_response(move_code, world, remove_index)
+            move.template[move.template.index("repeat")] = text
+            # REPHRASING CODE
+            # if len(world.event_chain) > 0:
+            #     move.template[move.template.index("repeat")]\
+            #         = world.event_chain[len(world.event_chain)-1].to_sentence_string()
+            # else:
+            #     remove_index.append(move.move_id)
+            #     return generate_response(move_code, world, remove_index)
 
         elif blank_type == "Pronoun":
             if subject is None:

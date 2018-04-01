@@ -9,23 +9,19 @@ worldid = "0"
 world = World(worldid)
 server.add_world(world)
 
-
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_core_web_sm')
-output = "Hello, I am ORSEN. Let's start."
-retrieved = None
-while True:
-    if retrieved is not None:
-        output = retrieved.get_string_response()
-    text = input("O: " + output + "\n")
+
+
+def extract_info(text):
     document = nlp(str(text))
     sentences = [sent.string.strip() for sent in document.sents]
     list_of_sentences = []
     list_of_sent = []
-    #Character
+    # Character
     characters = []
 
-    #Part-Of-Speech, NER, Dependency Parsing
+    # Part-Of-Speech, NER, Dependency Parsing
     for sent in sentences:
         print(sent)
         sent = nlp(sent)
@@ -50,7 +46,7 @@ while True:
         if bef == 0 and curr == 1:
             print("oops")
         else:
-            bef +=1
+            bef += 1
 
     print(sentences)
     for s in sentences:
@@ -78,43 +74,7 @@ while True:
     for s in world.settings:
         print(world.settings[s])
 
-    # print("AAAAA")
-    # for key, values in characters_attributes.items():
-    #     new_character = Character()
-    #     new_character.name = key
-    #     print("CHAR", key)
-    #     if values is not None:
-    #         for value in values:
-    #             print("CHAR ATTR" , value)
-    #             new_character.attributes.append(value)
-    #     world.add_character(new_character)
-    #
-    # for key, values in object_attributes.items():
-    #     new_obj = Object()
-    #     new_obj.name = key
-    #     print("OBJ", key)
-    #     if values is not None:
-    #         for value in values:
-    #             print("OBJ ATTR", value)
-    #             new_obj.attributes.append(value)
-    #     world.add_object(new_obj)
-
-    #nlp = StanfordCoreNLP(r'C:\stanford-corenlp-full-2018-01-31', memory='8g')
-    #props = {'annotators': 'dcoref', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
-    #output = [nlp.annotate(sent, properties=props) for sent in sentences]
-    #print("------------------")
-    #print(output)
-
-    #Setting Details
-    settings = []
-    time = []
-
-    #infoextraction.setting_attribute_extraction(list_of_sentences[0], world)
-    #Setting Detail Extraction
-    #infoextraction.setting_attribute_extraction(list_of_sentences, world)
-
-
-    #For Event Extraction
+    # For Event Extraction
     seq_no = []
     event_type = []
     doer = []
@@ -124,5 +84,18 @@ while True:
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
+
+output = "Hello, I am ORSEN. Let's start."
+retrieved = None
+while True:
+    if retrieved is not None:
+        output = retrieved.get_string_response()
+    text = input("O: " + output + "\n")
+
+    extract_info(text)
+
     #dialogue
     retrieved = DialoguePlanner.retrieve_output(text, worldid)
+
+    if retrieved.type_num == DialoguePlanner.MOVE_HINT:
+        extract_info(retrieved.get_string_response())

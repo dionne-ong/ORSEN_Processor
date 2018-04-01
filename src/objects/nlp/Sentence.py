@@ -17,7 +17,7 @@ class Sentence:
 
     finished_nodes = []
 
-    location = ""
+    location = {}
 
     def __init__(self):
         self.words = ""
@@ -37,4 +37,4 @@ class Sentence:
         self.dep_root_head = []
 
         self.finished_nodes = []
-        self.location = ""
+        self.location = {}
