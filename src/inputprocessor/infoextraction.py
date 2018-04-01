@@ -823,7 +823,8 @@ def event_extraction(sentence, world, current_node):
 
                          isNeg = False
                          for i in range(0, len(sentence.text_token)):
-                            if (sentence.dep[i] == 'conj') and (sentence.pos[i] == 'VERB') and (sentence.head_text[i] in head_char_action) and verb_count > 0:
+                            if (sentence.dep[i] == 'conj') and \
+                                    (sentence.head_text[i] in head_char_action) and verb_count > 0:
                                 verb_count -= 1
 
                                 if sentence.dep[i - 1] == 'neg' and sentence.head_text[i - 1] == sentence.text_token[i]:
