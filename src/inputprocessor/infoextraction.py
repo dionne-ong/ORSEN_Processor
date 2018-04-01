@@ -763,6 +763,11 @@ def event_extraction(sentence, world, current_node):
                              head_char_action = sentence.text_token[i-1] + " " + sentence.head_text[x]
                              hold_char_action = [head_char_action]
 
+                         if (i+1) < len(sentence.dep):
+                             if sentence.dep[i+1] == 'neg' and sentence.head_text[i+1] == sentence.head_text[x]:
+                                 head_char_action = sentence.head_text[x] + " " + sentence.text_token[i+1]
+                                 hold_char_action = [head_char_action]
+
                          if (i+1) < len(sentence.text_token):
                             if sentence.dep[i + 1] == 'prep':
                                 head_char_action = sentence.text_token[i] + " " + sentence.text_token[i + 1]
@@ -851,7 +856,6 @@ def event_extraction(sentence, world, current_node):
                     hold_obj = [o]
                     head_obj = o
 
-                    event_type[len(event_type)-1] = FRAME_DESCRIPTIVE
                     isFound_obj = True
 
                 elif sentence.dep[i] == 'dobj':
