@@ -781,9 +781,11 @@ def event_extraction(sentence, world, current_node):
                 #print("TOKEN", sentence.text_token)
                 for i in range(0, len(sentence.text_token)):
                     #print(sentence.head_text[i], "checking", head_char)
-                    if (sentence.dep[i] == 'conj') and sentence.head_text[i] in head_char:
-                        h = compound_extraction(sentence, sentence.text_token[i])
-                        hold_char.append(h)
+                    print("headtext", sentence.head_text[i], head_char)
+                    if (sentence.dep[i] == 'conj') and sentence.head_text[i].lower() == head_char:
+                        #h = compound_extraction(sentence, sentence.text_token[i])
+                        print("it the same")
+                        hold_char.append(sentence.text_token[i])
                         isComp_char = True
                         head_char = sentence.text_token[i]
                         #print("HEADTEXT", sentence.head_text[i])
@@ -859,7 +861,7 @@ def event_extraction(sentence, world, current_node):
                         event_type.append(FRAME_EVENT)
                     else:
                         event_type.append(FRAME_DESCRIPTIVE)
-                #print("HOLDCHAR", hold_char)
+                print("HOLDCHAR", hold_char)
                 #print("ISCOMP", isComp_char)
 
                 if isComp_char is True:
