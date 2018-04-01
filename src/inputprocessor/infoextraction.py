@@ -767,6 +767,7 @@ def event_extraction(sentence, world, current_node):
             if sentence.dep[x] == 'nsubj' or sentence.dep[x] == 'nsubjpass':
                 isComp_char = False
                 isComp_char_action = False
+                isNeg_char_action = False
                 isFound_char_action = False
                 isDesc = False
                 nsubj_count -= 1
@@ -803,11 +804,13 @@ def event_extraction(sentence, world, current_node):
                          if sentence.dep[i-1] == 'neg' and sentence.head_text[i-1] == sentence.head_text[x]:
                              head_char_action = sentence.text_token[i-1] + " " + sentence.head_text[x]
                              hold_char_action = [head_char_action]
+                             isNeg_char_action = True
 
                          if (i+1) < len(sentence.dep):
                              if sentence.dep[i+1] == 'neg' and sentence.head_text[i+1] == sentence.head_text[x]:
                                  head_char_action = sentence.head_text[x] + " " + sentence.text_token[i+1]
                                  hold_char_action = [head_char_action]
+                                 isNeg_char_action = True
 
                          if (i+1) < len(sentence.text_token):
                             if sentence.dep[i + 1] == 'prep':
@@ -815,6 +818,7 @@ def event_extraction(sentence, world, current_node):
                                 hold_char_action = [head_char_action]
                                 if sentence.text_token[i+1] == 'like':
                                     isDesc = True
+
                          isNeg = False
                          for i in range(0, len(sentence.text_token)):
                             if (sentence.dep[i] == 'conj') and (sentence.pos[i] == 'VERB') and (sentence.head_text[i] in head_char_action) and verb_count > 0:
@@ -839,6 +843,11 @@ def event_extraction(sentence, world, current_node):
 
                 if isComp_char_action is True:
                     event_char_action.append(",".join(hold_char_action))
+
+                    pos = len(event_char_action)-1
+                    if isNeg_char_action is True and 'not' not in event_char_action[pos]:
+                        event_char_action[pos] = "not " + event_char_action[pos]
+
                     isFound_char_action = True
                 else:
                     event_char_action.append(hold_char_action[0])
