@@ -54,18 +54,20 @@ def pos_ner_nc_processing(sentence):
 
 def find_text_index(sent, child):
     num = 0
-    child = str(child).split()
+    child = str(child).lower()
+    temp = child.split()
     for k in range(0, len(sent.text_token)):
-        if (str(child[-1]) == str(sent.text_token[k])) and (sent.finished_nodes[k] == 0):
+        text_token = str(sent.text_token[k]).lower()
+        if (temp[-1] == text_token) and (sent.finished_nodes[k] == 0):
             num = k
             break
     return num
 
 
 def find_ent_index(sent, ent):
+    ent = ent.lower()
     for k in range(0, len(sent.text_ent)):
-        if ent in str(sent.text_ent[k]):
-            print("TEXT ENT", str(sent.text_ent[k]))
+        if ent in str(sent.text_ent[k]).lower():
             return k
             break
     return None
@@ -125,7 +127,9 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
 
                 # attribute and appositional modifier
                 elif sent.dep[num] == "attr":
-                    if add_settings(sent, num, subject, is_negated, world):
+                    print("ADD TO OBJ")
+                    if not add_settings(sent, num, subject, is_negated, world):
+                        print("ADD TO OBJ")
                         add_objects(sent, compound_extraction(sent, str(sent.children[i][j])), sent.dep[num],
                                     sent.lemma[i], world, subject)
                         if not subject:
@@ -143,6 +147,7 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
 
                 # open clausal compliment
                 elif sent.dep[num] == "xcomp":
+                    print("WHAT", sent.finished_nodes[num])
                     add_capability(sent, str(sent.lemma[num]), str(subject), world, num)
                     is_negated = False
 
@@ -203,7 +208,7 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
             # agent
             # adverbial modifier
             elif num != -1 \
-                    and sent.dep[num] in ["advcl", "ccomp", "conj", "prep", "agent", "pcomp", "acl"]:
+                    and sent.dep[num] in ["advcl","ccomp", "conj", "prep", "agent", "pcomp", "acl"]:
                 details_extraction(sent, world, sent.dep[num], subject, is_negated)
 
             else:
@@ -214,28 +219,36 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
 
 def compound_extraction(sent, subj):
     num = 0
-    temp = str(subj).split()
+    subj = str(subj).lower()
+    temp = subj.split()
+
+    if not temp:
+        return ""
 
     for k in range(0, len(sent.text_token)):
-        if str(temp[-1]) == str(sent.text_token[k]):
+        text_token = str(sent.text_token[k]).lower()
+        if str(temp[-1]) == text_token:
             num = k
             break
 
     for c in sent.children[num]:
+        c = str(c).lower()
+
         for k in range(0, len(sent.text_token)):
-            if str(sent.text_token[k]) == str(c):
+            text_token = str(sent.text_token[k]).lower()
+            if text_token == c:
                 num = k
                 break
 
         if sent.dep[num] == "compound":
-            sent.finished_nodes[num] == 1
-            return sent.text_token[num] + " " + subj
+            sent.finished_nodes[num] = 1
+            return str(sent.text_token[num]).lower() + " " + subj
 
     return subj
 
 
 def char_conj_extractions(sent, subj):
-
+    subj = str(subj).lower()
     list_of_conj = [subj]
     temp = str(subj).split()
     if not temp:
@@ -243,40 +256,52 @@ def char_conj_extractions(sent, subj):
 
     subj = temp[-1]
     for k in range(0, len(sent.head_text)):
-        if str(sent.head_text[k]) == str(subj) and sent.dep[k] == "conj":
-            subj = sent.text_token[k]
+        head_text = str(sent.head_text[k]).lower()
+        if head_text == subj and sent.dep[k] == "conj":
+            print("YAS")
+            subj = sent.text_token[k].lower()
             list_of_conj.append(compound_extraction(sent, subj))
-            sent.finished_nodes[k] == 1
-
+            sent.finished_nodes[k] = 1
+    print("LIST OF CHAR", list_of_conj)
     return list_of_conj
 
 
 def add_capability(sent, attr, subject, world, num):
     list_of_char = char_conj_extractions(sent, subject)
+    list_of_capabilities = [attr.lower()]
+    head = attr.lower()
+
+    for i in range(0, len(sent.words)):
+        if sent.dep[i] in ['conj', 'xcomp'] and (sent.head_text[i] == str(head)):
+            list_of_capabilities.append(sent.text_token[i].lower())
+            head = sent.text_token[i].lower()
+            sent.finished_nodes[i] = 1
+            print("HOW", sent.text_token[i], sent.finished_nodes[i])
 
     if sent.dep[num-1] == "neg":
         negation = True
     else:
         negation = False
+    print("LIST_OF_CAP", list_of_capabilities)
+    for cap in list_of_capabilities:
+        if cap not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
 
-    if attr not in ["is", "was", "are", "be", "am", "are", "were", "been", "being"]:
-
-        if sent.dep[num] == "relcl":
-            new_attribute = Attribute(DBO_Concept.RECEIVED_ACTION, attr, negation)
-        else:
-            new_attribute = Attribute(DBO_Concept.CAPABLE_OF, attr, negation)
-        for c in list_of_char:
-            if str(c) in world.characters:
-                    world.characters[c].attributes.append(new_attribute)
-            elif str(c) in world.objects:
-                    world.objects[c].attributes.append(new_attribute)
+            if sent.dep[num] == "relcl":
+                new_attribute = Attribute(DBO_Concept.RECEIVED_ACTION, cap, negation)
+            else:
+                new_attribute = Attribute(DBO_Concept.CAPABLE_OF, cap, negation)
+            for c in list_of_char:
+                c = str(c).lower()
+                if c in world.characters:
+                        world.characters[c].attributes.append(new_attribute)
+                elif c in world.objects:
+                        world.objects[c].attributes.append(new_attribute)
 
 
 def add_objects(sent, child, dep, lemma, world, subject=""):
     list_of_char = char_conj_extractions(sent, child)
     for c in list_of_char:
-        #print("CCCCCC", c, type(c))
-
+        c = c.lower()
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) or
                     DBO_Concept.get_concept_specified("person", DBO_Concept.CAPABLE_OF, lemma) is not None)\
@@ -286,7 +311,10 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_character.id = c
                 new_character.attributes = []
                 new_character.type = []
-                new_character.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
+                if sent.location:
+                    new_character.inSetting = sent.location
+                else:
+                    new_character.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_character(new_character)
                 world.characters[new_character.id].timesMentioned = 1
                 print("ADDED", new_character.name)
@@ -297,7 +325,10 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_object.id = c
                 new_object.attributes = []
                 new_object.type = []
-                new_object.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
+                if sent.location:
+                    new_object.inSetting = sent.location
+                else:
+                    new_object.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_object(new_object)
                 world.objects[new_object.id].timesMentioned = 1
                 print("ADDED", new_object.name)
@@ -328,12 +359,12 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
 
             if sent.dep[index] in ["amod", "nummod"]:
                 add_attributes(sent, sent.text_token[index], str(c), world)
-                sent.finished_nodes[index] == 1
+                sent.finished_nodes[index] = 1
 
             elif sent.dep[index] in ["poss"]:
                 if sent.text_token[index] in world.characters or sent.text_token[index] in world.objects:
                     add_attributes(sent, c, sent.text_token[index], world, "", DBO_Concept.HAS)
-                    sent.finished_nodes[index] == 1
+                    sent.finished_nodes[index] = 1
                 else:
                     add_objects(sent, compound_extraction(sent, str(sent.text_token[index])), sent.dep[index], lemma,
                                 world)
@@ -347,23 +378,28 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
 
 
 def add_attributes(sent, child, subject, world, negation="", relation=""):
-    list_of_attributes = [child]
+    list_of_attributes = [child.lower()]
     list_of_char = char_conj_extractions(sent, subject)
-    head = child
+    head = child.lower()
 
     if relation == "":
         relation = DBO_Concept.HAS_PROPERTY
 
     for i in range(0, len(sent.words)):
         if (sent.dep[i] == 'conj') and (sent.head_text[i] == str(head)):
-            list_of_attributes.append(sent.text_token[i])
-            head = sent.text_token[i]
+            list_of_attributes.append(sent.text_token[i].lower())
+            head = sent.text_token[i].lower()
+            sent.finished_nodes[i] = 1
+
+    print("LIST OF ATTR", list_of_attributes)
 
     for c in list_of_char:
-        if str(c) in world.characters:
+        c = str(c).lower()
+        if c in world.characters:
             for attr in list_of_attributes:
+                attr = attr.lower()
                 new_attribute = Attribute(relation, attr, negation)
-                char = world.characters[str(c)]
+                char = world.characters[c]
                 print("ADD", attr, "TO", c)
                 char.attributes.append(new_attribute)
 
@@ -371,11 +407,12 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
                     print("RELATION", relation)
                     char.type.append(attr)
 
-        elif str(c) in world.objects:
+        elif c in world.objects:
             for attr in list_of_attributes:
+                attr = attr.lower()
                 new_attribute = Attribute(relation, attr, negation)
                 print("ADD", attr, "TO", c)
-                obj = world.objects[str(c)]
+                obj = world.objects[c]
                 obj.attributes.append(new_attribute)
 
                 if relation == DBO_Concept.IS_A:
@@ -386,6 +423,8 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
 def add_settings(sent, num, subject, negation, world):
     current_location = sent.location
     print("CURRENT LOC", current_location)
+    print("NEXT LOC", sent.text_token[num])
+
     list_of_char = []
     is_setting = False
     if subject:
@@ -393,16 +432,15 @@ def add_settings(sent, num, subject, negation, world):
 
     if not negation:
         ent_index = find_ent_index(sent, str(sent.text_token[num]))
-        print("-----------------ENT INDEX", ent_index)
         if ent_index is not None:
             label = sent.label[ent_index]
             ent_text = sent.text_ent[ent_index]
-            print("-------------------------", ent_text)
         else:
             label = ""
             ent_text = sent.text_token[num]
+        ent_text = str(ent_text).lower()
 
-        if str(ent_text) not in world.settings:
+        if ent_text not in world.settings:
             if label in ["LOC", "GPE"]:
                 is_setting = True
                 new_setting = Setting()
@@ -458,12 +496,15 @@ def add_settings(sent, num, subject, negation, world):
         for c in list_of_char:
             if str(c) in world.characters and current_location:
                 char = world.characters[str(c)]
-                char.inSetting = current_location
+                for key, value in current_location.items():
+                    if value:
+                        char.inSetting[key] = value
             elif str(c) in world.objects and current_location:
                 obj = world.objects[str(c)]
-                print(obj.name, current_location)
-                obj.inSetting = current_location
-
+                for key, value in current_location.items():
+                    if value:
+                        obj.inSetting[key] = value
+    print("IS SETTING", is_setting)
     return is_setting
 
 
