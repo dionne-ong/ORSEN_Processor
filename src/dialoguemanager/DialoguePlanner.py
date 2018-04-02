@@ -423,7 +423,7 @@ def generate_response(move_code, world, remove_index, text):
 
             if loop_back == -1:
                 remove_index.append(move.move_id)
-                return generate_response(move_code, world, remove_index)
+                return generate_response(move_code, world, remove_index, text)
 
 
     move.subject = subject
