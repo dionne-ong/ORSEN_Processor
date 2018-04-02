@@ -94,10 +94,11 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
         i = current_index
         for j in range(0, len(sent.children[i])):
             num = find_text_index(sent, str(sent.children[i][j]))
+            print("CHILD-----", sent.dep[num], sent.children[i][j])
             if num != -1 and sent.finished_nodes[num] == 0 and\
                     sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos", "relcl",
                                       "npadvmod", "advmod"]:
-
+                print("CHILD", sent.dep[num])
                 # nominal subject
                 if sent.dep[num] == "nsubj":
                     subject = compound_extraction(sent, str(sent.children[i][j]))
@@ -147,7 +148,7 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
 
                 # open clausal compliment
                 elif sent.dep[num] == "xcomp":
-                    print("WHAT", sent.finished_nodes[num])
+                    print("ENTERING", sent.finished_nodes[num])
                     add_capability(sent, str(sent.lemma[num]), str(subject), world, num)
                     is_negated = False
 
@@ -200,6 +201,7 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
                     dative = compound_extraction(sent, str(sent.children[i][j]))
 
                 sent.finished_nodes[num] = 1
+
 
             # adverbial clause modifier
             # clausal complement
@@ -272,11 +274,9 @@ def add_capability(sent, attr, subject, world, num):
     head = attr.lower()
 
     for i in range(0, len(sent.words)):
-        if sent.dep[i] in ['conj', 'xcomp'] and (sent.head_text[i] == str(head)):
+        if sent.dep[i] in ['conj'] and (sent.head_text[i] == str(head)):
             list_of_capabilities.append(sent.text_token[i].lower())
             head = sent.text_token[i].lower()
-            sent.finished_nodes[i] = 1
-            print("HOW", sent.text_token[i], sent.finished_nodes[i])
 
     if sent.dep[num-1] == "neg":
         negation = True
@@ -589,7 +589,9 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
                        sent_curr = sent_curr.replace(str(key), str(value) + "'s")
 
             c += 1
-            sent_curr = sent_curr.replace(str(key), str(value))
+            hold_key = " " + str(key) + " "
+            hold_val = " " + str(value) + " "
+            sent_curr = sent_curr.replace(hold_key, hold_val)
 
             if (str(value) not in world.characters) and (str(value) not in world.objects):
                 if (str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
@@ -669,6 +671,13 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             for i in range(0, len(s.text_token)):
                 if s.dep[i] == 'nsubj' and (s.pos[i] == 'PROPN' or s.pos[i] == 'NOUN'):
                     print(s.dep[i], "check prop or noun", s.pos[i])
+                    isThis = s.text_token[i]
+                    for j in range(0, len(s.text_token)):
+                        if s.dep[j] == 'nsubj' and s.pos[j] == 'PRON' or s.tag[j] =='PRP$' or s.tag[j] == 'PRP':
+                            print(s.dep[j], "check pron", s.pos[j])
+                            changeThis = s.text_token[j]
+
+                elif s.pos[i] == 'NOUN' or s.pos[i] == 'PROPN':
                     isThis = s.text_token[i]
                     for j in range(0, len(s.text_token)):
                         if s.dep[j] == 'nsubj' and s.pos[j] == 'PRON' or s.tag[j] =='PRP$' or s.tag[j] == 'PRP':
