@@ -9,6 +9,7 @@ from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
 from src.objects.storyworld.World import World
 import time
+import random as ran
 
 STORY_THRESHOLD = 3
 
@@ -47,6 +48,12 @@ def retrieve_output(coreferenced_text, world_id):
         last_response_type_num = -1
     output = ""
     choice = -1
+
+    if len(world.event_chain) <=  1 and ("my name is" in coreferenced_text or \
+            ("hello" in coreferenced_text and ("I am" in coreferenced_text or "I'm" in coreferenced_text))):
+        return Move.Move(template=["Nice to meet you! So how does your story start?"], type_num=MOVE_REQUESTION)
+
+
     if coreferenced_text == "":  # if no input found
         world.empty_response += 1
 
@@ -201,11 +208,11 @@ def generate_response(move_code, world, remove_index, text):
                     if subject is None:
                         remove_index.append(move.move_id)
                         return generate_response(move_code, world, remove_index, text)
-                    elif subject.inSetting is None:
+                    elif subject.inSetting['LOC'] is None:
                         remove_index.append(move.move_id)
                         return generate_response(move_code, world, remove_index, text)
                     else:
-                        txt_concept = subject.inSetting.name
+                        txt_concept = subject.inSetting['LOC']
 
             else:
                 txt_concept = to_replace
@@ -253,7 +260,7 @@ def generate_response(move_code, world, remove_index, text):
                     subject = decided_item
 
                     if len(subject.type) > 0:
-                        decided_concept = subject.type[random.randint(0, len(subject.type))]
+                        decided_concept = subject.name[random.randint(0, len(subject.type))]
                         decided_node = NODE_START
                     else:
 
@@ -265,7 +272,26 @@ def generate_response(move_code, world, remove_index, text):
                         elif isinstance(decided_item, Character):
                             # get... something... relationship??
                             # TODO: use relationship or something to get a concept
-                            print("check relationship")
+                            found_attr = DBO_Concept.HAS_PROPERTY
+                            decided_concept = ""
+                            subject = decided_item
+
+                            if blank_type == DBO_Concept.HAS_PREREQ or blank_type == DBO_Concept.CAUSES:
+                                found_attr = DBO_Concept.CAPABLE_OF
+                                decided_node = NODE_START
+
+                            elif blank_type == DBO_Concept.IS_A or blank_type == DBO_Concept.PART_OF or DBO_Concept.USED_FOR:
+                                found_attr = DBO_Concept.IS_A
+                                decided_node = NODE_START
+
+                            for item in decided_item.attributes:
+                                if item.relation == found_attr and not item.isNegated:
+                                    decided_concept = item.name
+                                    break
+
+                            if decided_concept == "":
+                                remove_index.append(move.move_id)
+                                return generate_response(move_code, world, remove_index, text)
 
                     if decided_node != -1 or loop_total > 10:
                         break
@@ -275,7 +301,7 @@ def generate_response(move_code, world, remove_index, text):
                     settings = world.settings
 
                     if len(settings) > 0:
-                        decided_concept = settings[random.randint(0, len(settings))]
+                        decided_concept = settings[ran.choice(list(settings.keys()))]
                         decided_node = NODE_END
                     else:
                         remove_index.append(move.move_id)
@@ -328,7 +354,7 @@ def generate_response(move_code, world, remove_index, text):
             if subject is None:
                 objects = world.get_top_objects()
 
-                choice_index = random.randint(0, len(choices))
+                choice_index = random.randint(0, len(objects))
                 subject = objects [choice_index]
 
             move.template[move.template.index("item")] = subject.id
@@ -356,7 +382,7 @@ def generate_response(move_code, world, remove_index, text):
                 remove_index.append(move.move_id)
                 return generate_response(move_code, world, remove_index, text)
             else:
-                move.template[move.template.index("setting")] = subject.inSetting.name
+                move.template[move.template.index("inSetting")] = subject.inSetting['LOC']
 
         elif blank_type == "Repeat":
             move.template[move.template.index("repeat")] = text
@@ -392,7 +418,8 @@ def generate_response(move_code, world, remove_index, text):
                 if event.event_type == FRAME_EVENT:
                     if len(event.doer_actions) > 0:
                         verb = event.doer_actions[0]
-                        move.template[move.template.index("eventverb")] = verb
+                        if "eventverb" in move.template:
+                            move.template[move.template.index("eventverb")] = verb
                         #TODO: subject = doer
 
                 loop_back -= 1
@@ -412,14 +439,14 @@ start_time = time.time()
 test_world = World()
 server.worlds[test_world.id] = test_world
 
-test_world.characters["KAT"] = Character("KAT", "KAT", times=3)
-test_world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
-test_world.characters["JADE"] = Character("JADE", "JADE", times=0)
-test_world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
-
-test_world.objects["bag"] = Object("bag", "bag", times=3)
-test_world.objects["book"] = Object("book", "book", times=5)
-test_world.objects["pen"] = Object("pen", "pen", times=0)
+# test_world.characters["KAT"] = Character("KAT", "KAT", times=3)
+# test_world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
+# test_world.characters["JADE"] = Character("JADE", "JADE", times=0)
+# test_world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
+#
+# test_world.objects["bag"] = Object("bag", "bag", times=3)
+# test_world.objects["book"] = Object("book", "book", times=5)
+# test_world.objects["pen"] = Object("pen", "pen", times=0)
 
 # decided_item = None
 # decided_node = -1
