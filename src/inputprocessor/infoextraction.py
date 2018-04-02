@@ -21,8 +21,8 @@ def pos_ner_nc_processing(sentence):
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        # print("---POS----");
-        # print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+        print("---POS----");
+        print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
@@ -1100,6 +1100,8 @@ def add_event(type, char, char_action, obj, obj_action, loc, world):
 
     #print("LEN OBJ", len(obj))
     for x in range(0, len(char)):
+        addObj = ""
+        addChar = ""
         new_eventframe = EventFrame()
 
         if len(type) > 0:
@@ -1107,12 +1109,44 @@ def add_event(type, char, char_action, obj, obj_action, loc, world):
         if len(loc) > 0:
             new_eventframe.setting = loc[x]
         if len(char) > 0:
-            new_eventframe.doer = char[x]
+            list_char = world.characters
+            list_obj = world.objects
+            isObj = False
+
+            #print("hello")
+            for k in list_obj:
+                #print("NOT A CHARACTER")
+                for j in list_obj:
+                    if list_obj[j].name == char[x]:
+                        #print(list_obj[j].name)
+                        addObj = char[x]
+                        char[x] = ""
+                        isObj = True
+
+            if isObj is False:
+                new_eventframe.doer = char[x]
+
         if len(char_action) > 0:
             new_eventframe.doer_actions = char[x] + ":" + char_action[x]
 
         if x < len(obj):
-            new_eventframe.receiver = obj[x]
+            list_char = world.characters
+            list_obj = world.objects
+            for k in list_char:
+                if list_char[k].name == obj[x]:
+                    addChar = obj[x]
+                    obj[x] = ""
+
+            if addObj != "":
+                obj[x] == addObj + "," + obj[x]
+                new_eventframe.receiver = obj[x]
+            else:
+                new_eventframe.receiver = obj[x]
+
+            if addChar != "":
+                new_eventframe.doer = new_eventframe.doer + "," + addChar
+                new_eventframe.doer_actions = new_eventframe.doer + ":" + new_eventframe.doer_actions
+            #new_eventframe.receiver = obj[x]
         if x < len(obj_action):
             new_eventframe.receiver_actions = obj[x] + ":" + obj_action[x]
 
