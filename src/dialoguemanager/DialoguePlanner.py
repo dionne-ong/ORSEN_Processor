@@ -68,7 +68,7 @@ def retrieve_output(coreferenced_text, world_id):
             else:
                 output = Move.Move(template=["I don't think I heard you. Can you say that last part again?"], type_num=MOVE_REQUESTION)
 
-        if world.empty_response == 2:
+        if world.empty_response >= 2 and world.empty_response <=4:
             print("2nd no response")
             if last_response_type_num == MOVE_GENERAL_PUMP:
                 output = generate_response(MOVE_SPECIFIC_PUMP, world, [], coreferenced_text)
@@ -79,7 +79,7 @@ def retrieve_output(coreferenced_text, world_id):
                 choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
                 output = generate_response(choice, world, [], coreferenced_text)
 
-        elif world.empty_response == 3:
+        elif world.empty_response > 5:
             print("3rd no response")
             choice = MOVE_REQUESTION
             output = Move.Move(template=["I don't think I can hear you, are you sure you want to continue?"], type_num=choice)
