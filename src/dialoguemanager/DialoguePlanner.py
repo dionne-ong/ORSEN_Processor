@@ -298,7 +298,7 @@ def generate_response(move_code, world, remove_index, text):
                     settings = world.settings
 
                     if len(settings) > 0:
-                        decided_concept = settings[ran.choice(list(settings.keys()))]
+                        decided_concept = settings[ran.choice(list(settings.keys()))].name
                         decided_node = NODE_END
                     else:
                         remove_index.append(move.move_id)
@@ -423,7 +423,7 @@ def generate_response(move_code, world, remove_index, text):
 
             if loop_back == -1:
                 remove_index.append(move.move_id)
-                return generate_response(move_code, world, remove_index)
+                return generate_response(move_code, world, remove_index, text)
 
 
     move.subject = subject

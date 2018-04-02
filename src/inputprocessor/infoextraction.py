@@ -305,10 +305,9 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_character.id = c
                 new_character.attributes = []
                 new_character.type = []
+                new_character.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 if sent.location:
                     new_character.inSetting = sent.location
-                else:
-                    new_character.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_character(new_character)
                 world.characters[new_character.id].timesMentioned = 1
                 print("ADDED", new_character.name)
@@ -319,10 +318,9 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 new_object.id = c
                 new_object.attributes = []
                 new_object.type = []
+                new_object.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 if sent.location:
                     new_object.inSetting = sent.location
-                else:
-                    new_object.inSetting = {'LOC': None, 'DATE': None, 'TIME': None}
                 world.add_object(new_object)
                 world.objects[new_object.id].timesMentioned = 1
                 print("ADDED", new_object.name)
@@ -356,8 +354,15 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
                 sent.finished_nodes[index] = 1
 
             elif sent.dep[index] in ["poss"]:
-                if sent.text_token[index] in world.characters or sent.text_token[index] in world.objects:
+                if sent.text_token[index] in world.characters:
                     add_attributes(sent, c, sent.text_token[index], world, "", DBO_Concept.HAS)
+                    char = world.characters[sent.text_token[index]]
+                    char.timesMentioned += 1
+                    sent.finished_nodes[index] = 1
+                elif sent.text_token[index] in world.objects:
+                    add_attributes(sent, c, sent.text_token[index], world, "", DBO_Concept.HAS)
+                    obj = world.objects[sent.text_token[index]]
+                    obj.timesMentioned += 1
                     sent.finished_nodes[index] = 1
                 else:
                     add_objects(sent, compound_extraction(sent, str(sent.text_token[index])), sent.dep[index], lemma,
@@ -415,7 +420,11 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
 
 
 def add_settings(sent, num, subject, negation, world):
-    current_location = sent.location
+
+    if sent.location:
+        current_location = sent.location
+    else:
+        current_location = {'LOC': None, 'DATE': None, 'TIME': None}
 
     list_of_char = []
     is_setting = False
@@ -777,7 +786,7 @@ def event_extraction(sentence, world, current_node):
     #print("xcomp", xcomp_count)
     #print("conj", conj_count)
 
-    print("TOKEN", sentence.text_token)
+    #print("TOKEN", sentence.text_token)
     for x in range(0, len(sentence.text_token)):
         isFound_char = False
         isFound_char_action = False
@@ -910,8 +919,8 @@ def event_extraction(sentence, world, current_node):
                 #isProceed = checkProceed(sentence.dep[x], xcomp_count, acomp_count, dobj_count, attr_count, pobj_count)
                 #if (sentence.dep[x] == 'xcomp') or (sentence.dep[x] == 'acomp') or (sentence.dep[x] == 'dobj') or \
                 #        (sentence.dep[x] == 'attr') or (sentence.dep[x] == 'pobj'):
-                print(sentence.dep[i])
-                print(sentence.dep)
+                #print(sentence.dep[i])
+                #print(sentence.dep)
                 #hold_obj = []
                 if sentence.dep[i] == 'xcomp':
                     xcomp_count -= 1
