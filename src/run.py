@@ -12,7 +12,6 @@ server.add_world(world)
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_core_web_sm')
 
-
 def new_world(hmm):
     worldid = hmm
     world = World(hmm)
@@ -89,7 +88,7 @@ def extract_info(text):
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
-'''
+
 output = "Hello, I am ORSEN. Let's start."
 retrieved = None
 while True:
@@ -105,4 +104,3 @@ while True:
 
     if retrieved.type_num == DialoguePlanner.MOVE_HINT:
         extract_info(retrieved.get_string_response())
-'''
