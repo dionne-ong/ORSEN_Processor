@@ -13,6 +13,11 @@ server.add_world(world)
 nlp = spacy.load('en_core_web_sm')
 
 
+def new_world(hmm):
+    worldid = hmm
+    world = World(hmm)
+    server.add_world(world)
+
 def extract_info(text):
     document = nlp(str(text))
     sentences = [sent.string.strip() for sent in document.sents]
