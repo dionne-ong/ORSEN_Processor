@@ -606,7 +606,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
                     world.add_character(new_character)
                     world.characters[new_character.id].timesMentioned += 1
 
-        elif len(scores.get('single_scores'))> 1:
+        elif len(scores.get('single_scores')) > 1:
             # extract scores
             single_mention = scores.get('single_scores')
             pair_mention = scores.get('pair_scores')
@@ -661,6 +661,27 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
                 #print("SENTENCE", sent_curr)
                 sent_curr = sent_curr.replace(str(prn[i]), str(noun[i]))
 
+        else:
+            print("OWN CODE")
+            print(s.text_token)
+            isThis = ""
+            changeThis = ""
+            for i in range(0, len(s.text_token)):
+                if s.dep[i] == 'nsubj' and (s.pos[i] == 'PROPN' or s.pos[i] == 'NOUN'):
+                    print(s.dep[i], "check prop or noun", s.pos[i])
+                    isThis = s.text_token[i]
+                    for j in range(0, len(s.text_token)):
+                        if s.dep[j] == 'nsubj' and s.pos[j] == 'PRON' or s.tag[j] =='PRP$' or s.tag[j] == 'PRP':
+                            print(s.dep[j], "check pron", s.pos[j])
+                            changeThis = s.text_token[j]
+
+                if len(isThis) > 0 and len(changeThis) > 0:
+                    if changeThis.lower() == 'her' or changeThis.lower() == 'his' or changeThis.lower() == 'our':
+                        isThis = isThis + "'s"
+                        sent_curr = sent_curr.replace(changeThis, isThis)
+                    else:
+                        sent_curr = sent_curr.replace(changeThis, isThis)
+
     return sent_curr
 
 
@@ -669,7 +690,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
 
 def isAction(sentence):
     isAction = False
-    be_forms = ["is", "are", "am", "were", "was"]
+    be_forms = ["is", "are", "am", "were", "was", "feels", "looks"]
     for k in range(0, len(be_forms)):
         for i in range(0, len(sentence.text_token)):
             if be_forms[k] == sentence.text_token[i]:
