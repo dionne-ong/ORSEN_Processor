@@ -589,7 +589,9 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
                        sent_curr = sent_curr.replace(str(key), str(value) + "'s")
 
             c += 1
-            sent_curr = sent_curr.replace(str(key), str(value))
+            hold_key = " " + str(key) + " "
+            hold_val = " " + str(value) + " "
+            sent_curr = sent_curr.replace(hold_key, hold_val)
 
             if (str(value) not in world.characters) and (str(value) not in world.objects):
                 if (str(key).lower() == "he") or (str(key).lower() == "his") or (str(key).lower() == "him"):
@@ -669,6 +671,13 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             for i in range(0, len(s.text_token)):
                 if s.dep[i] == 'nsubj' and (s.pos[i] == 'PROPN' or s.pos[i] == 'NOUN'):
                     print(s.dep[i], "check prop or noun", s.pos[i])
+                    isThis = s.text_token[i]
+                    for j in range(0, len(s.text_token)):
+                        if s.dep[j] == 'nsubj' and s.pos[j] == 'PRON' or s.tag[j] =='PRP$' or s.tag[j] == 'PRP':
+                            print(s.dep[j], "check pron", s.pos[j])
+                            changeThis = s.text_token[j]
+
+                elif s.pos[i] == 'NOUN' or s.pos[i] == 'PROPN':
                     isThis = s.text_token[i]
                     for j in range(0, len(s.text_token)):
                         if s.dep[j] == 'nsubj' and s.pos[j] == 'PRON' or s.tag[j] =='PRP$' or s.tag[j] == 'PRP':
