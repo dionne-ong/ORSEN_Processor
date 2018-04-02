@@ -546,9 +546,9 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         # print("mentions", mentions)
 
         rep = coref.get_most_representative()
-        # print("rep", rep)
+        print("rep", rep)
         scores = coref.get_scores()
-        # print("scores", scores)
+        print("scores", scores)
         propn_count = 0
         noun_count = 0
 
@@ -799,6 +799,7 @@ def event_extraction(sentence, world, current_node):
                 c = compound_extraction(sentence, sentence.text_token[x])
                 hold_char = [c]
                 head_char = c
+                print("head_char", c)
                 #head_char = compound_extraction(sentence, head_char)
 
                 #print("TOKEN", sentence.text_token)
@@ -885,13 +886,14 @@ def event_extraction(sentence, world, current_node):
                         event_type.append(FRAME_EVENT)
                     else:
                         event_type.append(FRAME_DESCRIPTIVE)
-                #print("HOLDCHAR", hold_char)
+                print("HOLDCHAR", hold_char)
                 #print("ISCOMP", isComp_char)
 
                 if isComp_char is True:
                     event_char.append(",".join(hold_char))
                 else:
                     event_char.append(hold_char[0])
+                    print("event_char", event_char)
             #End of Getting Character
 
         #print("TEXT TOKEN", sentence.text_token)
@@ -1109,39 +1111,39 @@ def add_event(type, char, char_action, obj, obj_action, loc, world):
         if len(loc) > 0:
             new_eventframe.setting = loc[x]
         if len(char) > 0:
-            list_char = world.characters
-            list_obj = world.objects
-            isObj = False
+            #list_char = world.characters
+            #list_obj = world.objects
+            #isObj = False
 
             #print("hello")
-            for k in list_obj:
+            #for k in list_obj:
                 #print("NOT A CHARACTER")
-                for j in list_obj:
-                    if list_obj[j].name == char[x]:
-                        #print(list_obj[j].name)
-                        addObj = char[x]
-                        char[x] = ""
-                        isObj = True
+            #    for j in list_obj:
+            #        if list_obj[j].name == char[x]:
+            #            #print(list_obj[j].name)
+            #            addObj = char[x]
+            #            char[x] = ""
+            #            isObj = True
 
-            if isObj is False:
-                new_eventframe.doer = char[x]
+            #if isObj is False:
+            new_eventframe.doer = char[x]
 
         if len(char_action) > 0:
             new_eventframe.doer_actions = char[x] + ":" + char_action[x]
 
         if x < len(obj):
-            list_char = world.characters
-            list_obj = world.objects
-            for k in list_char:
-                if list_char[k].name == obj[x]:
-                    addChar = obj[x]
-                    obj[x] = ""
+            #list_char = world.characters
+            #ist_obj = world.objects
+            #for k in list_char:
+            #    if list_char[k].name == obj[x]:
+            #        addChar = obj[x]
+            #        obj[x] = ""
 
-            if addObj != "":
-                obj[x] == addObj + "," + obj[x]
-                new_eventframe.receiver = obj[x]
-            else:
-                new_eventframe.receiver = obj[x]
+            #if addObj != "":
+            #    obj[x] == addObj + "," + obj[x]
+            #    new_eventframe.receiver = obj[x]
+            #else:
+            new_eventframe.receiver = obj[x]
 
             if addChar != "":
                 new_eventframe.doer = new_eventframe.doer + "," + addChar
