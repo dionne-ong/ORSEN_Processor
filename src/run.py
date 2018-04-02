@@ -90,6 +90,7 @@ retrieved = None
 while True:
     if retrieved is not None:
         output = retrieved.get_string_response()
+        print("I: "+text)
     text = input("O: " + output + "\n")
 
     extract_info(text)
