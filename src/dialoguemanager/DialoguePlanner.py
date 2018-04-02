@@ -69,7 +69,6 @@ def retrieve_output(coreferenced_text, world_id):
                 output = Move.Move(template=["I don't think I heard you. Can you say that last part again?"], type_num=MOVE_REQUESTION)
 
         if world.empty_response >= 2 and world.empty_response <=4:
-            print("2nd no response")
             if last_response_type_num == MOVE_GENERAL_PUMP:
                 output = generate_response(MOVE_SPECIFIC_PUMP, world, [], coreferenced_text)
             elif last_response_type_num == MOVE_SPECIFIC_PUMP:
@@ -80,7 +79,6 @@ def retrieve_output(coreferenced_text, world_id):
                 output = generate_response(choice, world, [], coreferenced_text)
 
         elif world.empty_response > 5:
-            print("3rd no response")
             choice = MOVE_REQUESTION
             output = Move.Move(template=["I don't think I can hear you, are you sure you want to continue?"], type_num=choice)
     else:
@@ -96,7 +94,6 @@ def retrieve_output(coreferenced_text, world_id):
             output = generate_response(choice, world, [], coreferenced_text)
 
         elif getCategory(coreferenced_text) == CAT_ANSWER:
-            print("check_answer")
             # TEMP TODO: idk how to answer this lmao / if "yes" or whatever, add to character data
             if last_response_type_num == MOVE_REQUESTION:
                 output = Move.Move(template=["Ok, let's keep going then!"], type_num=MOVE_UNKNOWN)
@@ -431,40 +428,4 @@ def generate_response(move_code, world, remove_index, text):
 
     move.subject = subject
     return move
-
-
-
-start_time = time.time()
-
-test_world = World()
-server.worlds[test_world.id] = test_world
-
-# test_world.characters["KAT"] = Character("KAT", "KAT", times=3)
-# test_world.characters["DAVE"] = Character("DAVE", "DAVE", times=5)
-# test_world.characters["JADE"] = Character("JADE", "JADE", times=0)
-# test_world.characters["ROSE"] = Character("ROSE", "ROSE", times=0)
-#
-# test_world.objects["bag"] = Object("bag", "bag", times=3)
-# test_world.objects["book"] = Object("book", "book", times=5)
-# test_world.objects["pen"] = Object("pen", "pen", times=0)
-
-# decided_item = None
-# decided_node = -1
-#
-# print(decided_item, decided_node)
-# get_random_subject(test_world, decided_item, decided_node)
-# print(decided_item, decided_node)
-
-
-# print(retrieve_output("Whatever.", test_world.id))
-# print(retrieve_output("Whatever.", test_world.id))
-# print(retrieve_output("Whatever.", test_world.id))
-# print(retrieve_output("Whatever.", test_world.id))
-#
-# print(retrieve_output("Whatever.", test_world.id))
-# print(retrieve_output("Whatever.", test_world.id))
-# print(retrieve_output("Whatever.", test_world.id))
-# print(retrieve_output("Whatever.", test_world.id))
-
-print("--- %s seconds ---" % (time.time() - start_time))
 
