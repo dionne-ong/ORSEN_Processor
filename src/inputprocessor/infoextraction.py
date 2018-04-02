@@ -669,7 +669,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
 
 def isAction(sentence):
     isAction = False
-    be_forms = ["is", "are", "am", "were", "was"]
+    be_forms = ["is", "are", "am", "were", "was", "feels", "looks"]
     for k in range(0, len(be_forms)):
         for i in range(0, len(sentence.text_token)):
             if be_forms[k] == sentence.text_token[i]:
