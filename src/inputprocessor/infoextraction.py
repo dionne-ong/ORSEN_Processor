@@ -94,10 +94,11 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
         i = current_index
         for j in range(0, len(sent.children[i])):
             num = find_text_index(sent, str(sent.children[i][j]))
+            print("CHILD-----", sent.dep[num], sent.children[i][j])
             if num != -1 and sent.finished_nodes[num] == 0 and\
                     sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos", "relcl",
                                       "npadvmod", "advmod"]:
-
+                print("CHILD", sent.dep[num])
                 # nominal subject
                 if sent.dep[num] == "nsubj":
                     subject = compound_extraction(sent, str(sent.children[i][j]))
@@ -147,7 +148,7 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
 
                 # open clausal compliment
                 elif sent.dep[num] == "xcomp":
-                    print("WHAT", sent.finished_nodes[num])
+                    print("ENTERING", sent.finished_nodes[num])
                     add_capability(sent, str(sent.lemma[num]), str(subject), world, num)
                     is_negated = False
 
@@ -200,6 +201,7 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
                     dative = compound_extraction(sent, str(sent.children[i][j]))
 
                 sent.finished_nodes[num] = 1
+
 
             # adverbial clause modifier
             # clausal complement
@@ -272,11 +274,9 @@ def add_capability(sent, attr, subject, world, num):
     head = attr.lower()
 
     for i in range(0, len(sent.words)):
-        if sent.dep[i] in ['conj', 'xcomp'] and (sent.head_text[i] == str(head)):
+        if sent.dep[i] in ['conj'] and (sent.head_text[i] == str(head)):
             list_of_capabilities.append(sent.text_token[i].lower())
             head = sent.text_token[i].lower()
-            sent.finished_nodes[i] = 1
-            print("HOW", sent.text_token[i], sent.finished_nodes[i])
 
     if sent.dep[num-1] == "neg":
         negation = True
