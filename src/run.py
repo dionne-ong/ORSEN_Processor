@@ -12,6 +12,10 @@ server.add_world(world)
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_core_web_sm')
 
+def new_world(hmm):
+    worldid = hmm
+    world = World(hmm)
+    server.add_world(world)
 
 def extract_info(text):
     document = nlp(str(text))
@@ -90,6 +94,7 @@ retrieved = None
 while True:
     if retrieved is not None:
         output = retrieved.get_string_response()
+        print("I: "+text)
     text = input("O: " + output + "\n")
 
     extract_info(text)
