@@ -12,7 +12,6 @@ server.add_world(world)
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_core_web_sm')
 
-
 def new_world(hmm):
     worldid = hmm
     world = World(hmm)

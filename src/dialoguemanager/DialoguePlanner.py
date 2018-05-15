@@ -352,7 +352,7 @@ def generate_response(move_code, world, remove_index, text):
                 objects = world.get_top_objects()
 
                 choice_index = random.randint(0, len(objects))
-                subject = objects [choice_index]
+                subject = objects[choice_index]
 
             move.template[move.template.index("item")] = subject.id
 

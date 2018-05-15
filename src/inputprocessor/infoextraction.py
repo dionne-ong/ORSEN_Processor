@@ -21,8 +21,8 @@ def pos_ner_nc_processing(sentence):
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        print("---POS----");
-        print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
+        #print("---POS----");
+        #print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
@@ -199,6 +199,14 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
 
                 sent.finished_nodes[num] = 1
 
+            elif num != -1 and sent.dep[num] == "agent":
+                for nc in range(0, len(sent.text_chunk)):
+                    if sent.dep_root_head[nc] == sent.text_token[num]:
+                        add_objects(sent, compound_extraction(sent, str(sent.text_chunk[nc])), sent.dep[num],
+                                    sent.lemma[i], world)
+                        add_capability(sent, str(sent.lemma[i]), str(sent.text_chunk[nc]), world, current_index)
+                        sent.finished_nodes[num] == 1
+                        break
 
             # adverbial clause modifier
             # clausal complement
@@ -207,7 +215,7 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
             # agent
             # adverbial modifier
             elif num != -1 \
-                    and sent.dep[num] in ["advcl","ccomp", "conj", "prep", "agent", "acl"]:
+                    and sent.dep[num] in ["advcl","ccomp", "conj", "prep", "acl"]:
                 details_extraction(sent, world, sent.dep[num], subject, is_negated)
 
             else:
@@ -299,7 +307,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) or
                     DBO_Concept.get_concept_specified("person", DBO_Concept.CAPABLE_OF, lemma) is not None)\
-                    and dep == "nsubj":
+                    and dep in ["nsubj", "agent"]:
                 new_character = Character()
                 new_character.name = c
                 new_character.id = c
@@ -669,18 +677,18 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             changeThis = ""
             for i in range(0, len(s.text_token)):
                 if s.dep[i] == 'nsubj' and (s.pos[i] == 'PROPN' or s.pos[i] == 'NOUN'):
-                    print(s.dep[i], "check prop or noun", s.pos[i])
+                    #print(s.dep[i], "check prop or noun", s.pos[i])
                     isThis = s.text_token[i]
                     for j in range(0, len(s.text_token)):
                         if s.dep[j] == 'nsubj' and s.pos[j] == 'PRON' or s.tag[j] =='PRP$' or s.tag[j] == 'PRP':
-                            print(s.dep[j], "check pron", s.pos[j])
+                            #print(s.dep[j], "check pron", s.pos[j])
                             changeThis = s.text_token[j]
 
                 elif s.pos[i] == 'NOUN' or s.pos[i] == 'PROPN':
                     isThis = s.text_token[i]
                     for j in range(0, len(s.text_token)):
                         if s.dep[j] == 'nsubj' and s.pos[j] == 'PRON' or s.tag[j] =='PRP$' or s.tag[j] == 'PRP':
-                            print(s.dep[j], "check pron", s.pos[j])
+                            #print(s.dep[j], "check pron", s.pos[j])
                             changeThis = s.text_token[j]
 
                 if len(isThis) > 0 and len(changeThis) > 0:
@@ -808,7 +816,7 @@ def event_extraction(sentence, world, current_node):
                 c = compound_extraction(sentence, sentence.text_token[x])
                 hold_char = [c]
                 head_char = c
-                print("head_char", c)
+                #print("head_char", c)
                 #head_char = compound_extraction(sentence, head_char)
 
                 #print("TOKEN", sentence.text_token)
@@ -895,7 +903,7 @@ def event_extraction(sentence, world, current_node):
                         event_type.append(FRAME_EVENT)
                     else:
                         event_type.append(FRAME_DESCRIPTIVE)
-                print("HOLDCHAR", hold_char)
+                #print("HOLDCHAR", hold_char)
                 #print("ISCOMP", isComp_char)
 
                 if isComp_char is True:
@@ -1103,8 +1111,8 @@ def event_extraction(sentence, world, current_node):
 
     add_event(event_type, event_char, event_char_action, event_obj, event_obj_action, event_loc, world)
 
-    print("---- EVENT FRAME ----")
-    print("Type", event_type, "Char", event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action, "LOC", event_loc)
+    #print("---- EVENT FRAME ----")
+    #print("Type", event_type, "Char", event_char, "Char_Action", event_char_action, "Obj", event_obj, "Obj_Action", event_obj_action, "LOC", event_loc)
 
 #Add event to the world
 def add_event(type, char, char_action, obj, obj_action, loc, world):
