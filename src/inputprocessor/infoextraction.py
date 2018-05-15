@@ -441,44 +441,30 @@ def add_settings(sent, num, subject, negation, world):
         ent_text = str(ent_text).lower()
 
         if ent_text not in world.settings:
-            if label in ["LOC", "GPE"]:
-                is_setting = True
-                new_setting = Setting()
-                new_setting.type = label
-                new_setting.id = ent_text
-                new_setting.name = ent_text
-                current_location[label] = ent_text
-                world.add_setting(new_setting)
 
-            elif label in ["DATE", "TIME"]:
-                is_setting = True
-                new_setting = Setting()
-                new_setting.type = label
-                new_setting.id = ent_text
-                new_setting.name = ent_text
-                current_location[label] = ent_text
-                world.add_setting(new_setting)
+            is_location = \
+                label in ["LOC", "GPE"] or \
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or \
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location") or\
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "site")
 
-            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or DBO_Concept.\
-                    get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location") or DBO_Concept.\
-                    get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "site"):
+            is_date_time = \
+                label in ["DATE", "TIME"] or \
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "time period")
+
+            if is_location or is_date_time:
+
+                if is_location:
+                    type_name = "LOC"
+                else:
+                    type_name = "TIME"
 
                 is_setting = True
                 new_setting = Setting()
-                new_setting.type = "LOC"
                 new_setting.id = ent_text
                 new_setting.name = ent_text
-                current_location["LOC"] = ent_text
-                world.add_setting(new_setting)
-
-            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "time period"):
-
-                is_setting = True
-                new_setting = Setting()
-                new_setting.type = "TIME"
-                new_setting.id = ent_text
-                new_setting.name = ent_text
-                current_location["TIME"] = ent_text
+                new_setting.type = type_name
+                current_location[type_name] = ent_text
                 world.add_setting(new_setting)
 
             sent.location = current_location
@@ -490,8 +476,6 @@ def add_settings(sent, num, subject, negation, world):
                 current_location["LOC"] = ent_text
             elif world.settings[str(sent.text_token[num])].type == "TIME":
                 current_location["TIME"] = ent_text
-            elif world.settings[str(sent.text_token[num])].type == "LOC":
-                current_location["LOC"] = ent_text
 
         for c in list_of_char:
             if str(c) in world.characters and current_location:
