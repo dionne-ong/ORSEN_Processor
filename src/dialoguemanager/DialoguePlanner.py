@@ -185,7 +185,9 @@ def generate_response(move_code, world, remove_index, text):
 
     for blank_type in move.blanks:
 
-        if ":" in blank_type:
+        has_a_specified_concept = ":" in blank_type
+
+        if has_a_specified_concept:
             split_relation = str(blank_type).split(":")
             relation_index = -1
             replacement_index = -1

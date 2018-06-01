@@ -295,8 +295,12 @@ def add_capability(sent, attr, subject, world, num):
             for c in list_of_char:
                 c = str(c).lower()
                 if c in world.characters:
+                    new_attribute = check_duplicate_attribute(world.characters[c].attributes, new_attribute)
+                    if new_attribute is not None:
                         world.characters[c].attributes.append(new_attribute)
                 elif c in world.objects:
+                    new_attribute = check_duplicate_attribute(world.objects[c].attributes, new_attribute)
+                    if new_attribute is not None:
                         world.objects[c].attributes.append(new_attribute)
 
 
@@ -384,6 +388,15 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
             add_attributes(sent, child, subject, world, "", DBO_Concept.HAS)
 
 
+def check_duplicate_attribute(obj_attributes, attribute):
+    for i in obj_attributes:
+        if i.name == attribute.name:
+            if i.isNegated is not attribute.isNegated:
+                i.isNegated = attribute.isNegated
+            return None
+    return attribute
+
+
 def add_attributes(sent, child, subject, world, negation="", relation=""):
     list_of_attributes = [child.lower()]
     list_of_char = char_conj_extractions(sent, subject)
@@ -408,11 +421,14 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
                 new_attribute = Attribute(relation, attr, negation)
                 char = world.characters[c]
                 print("ADD", attr, "TO", c)
-                char.attributes.append(new_attribute)
 
-                if relation == DBO_Concept.IS_A:
-                    print("RELATION", relation)
-                    char.type.append(attr)
+                new_attribute = check_duplicate_attribute(char.attributes, new_attribute)
+                if new_attribute is not None:
+                    char.attributes.append(new_attribute)
+
+                    if not relation == DBO_Concept.IS_A:
+                        print("RELATION", relation)
+                        char.type.append(attr)
 
         elif c in world.objects:
             for attr in list_of_attributes:
@@ -420,11 +436,15 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
                 new_attribute = Attribute(relation, attr, negation)
                 print("ADD", attr, "TO", c)
                 obj = world.objects[c]
-                obj.attributes.append(new_attribute)
 
-                if relation == DBO_Concept.IS_A:
-                    print("RELATION", relation)
-                    obj.type.append(attr)
+                new_attribute = check_duplicate_attribute(obj.attributes, new_attribute)
+                if new_attribute is not None:
+                    print(" ---------------------- ADDED IT ------------------------")
+                    obj.attributes.append(new_attribute)
+
+                    if relation == DBO_Concept.IS_A:
+                        print("RELATION", relation)
+                        obj.type.append(attr)
 
 
 def add_settings(sent, num, subject, negation, world):
@@ -450,44 +470,30 @@ def add_settings(sent, num, subject, negation, world):
         ent_text = str(ent_text).lower()
 
         if ent_text not in world.settings:
-            if label in ["LOC", "GPE"]:
-                is_setting = True
-                new_setting = Setting()
-                new_setting.type = label
-                new_setting.id = ent_text
-                new_setting.name = ent_text
-                current_location[label] = ent_text
-                world.add_setting(new_setting)
 
-            elif label in ["DATE", "TIME"]:
-                is_setting = True
-                new_setting = Setting()
-                new_setting.type = label
-                new_setting.id = ent_text
-                new_setting.name = ent_text
-                current_location[label] = ent_text
-                world.add_setting(new_setting)
+            is_location = \
+                label in ["LOC", "GPE"] or \
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or \
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location") or\
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "site")
 
-            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "place") or DBO_Concept.\
-                    get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "location") or DBO_Concept.\
-                    get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "site"):
+            is_date_time = \
+                label in ["DATE", "TIME"] or \
+                DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "time period")
+
+            if is_location or is_date_time:
+
+                if is_location:
+                    type_name = "LOC"
+                else:
+                    type_name = "TIME"
 
                 is_setting = True
                 new_setting = Setting()
-                new_setting.type = "LOC"
                 new_setting.id = ent_text
                 new_setting.name = ent_text
-                current_location["LOC"] = ent_text
-                world.add_setting(new_setting)
-
-            elif DBO_Concept.get_concept_specified(str(sent.text_token[num]), DBO_Concept.IS_A, "time period"):
-
-                is_setting = True
-                new_setting = Setting()
-                new_setting.type = "TIME"
-                new_setting.id = ent_text
-                new_setting.name = ent_text
-                current_location["TIME"] = ent_text
+                new_setting.type = type_name
+                current_location[type_name] = ent_text
                 world.add_setting(new_setting)
 
             sent.location = current_location
@@ -499,8 +505,6 @@ def add_settings(sent, num, subject, negation, world):
                 current_location["LOC"] = ent_text
             elif world.settings[str(sent.text_token[num])].type == "TIME":
                 current_location["TIME"] = ent_text
-            elif world.settings[str(sent.text_token[num])].type == "LOC":
-                current_location["LOC"] = ent_text
 
         for c in list_of_char:
             if str(c) in world.characters and current_location:
