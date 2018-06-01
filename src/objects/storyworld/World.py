@@ -1,24 +1,19 @@
 from operator import attrgetter
 class World:
 
-    # WORLD ELEMENTS
-
-    id = -1
-    characters = {}
-    objects = {}
-    relationships = {}
-    settings = {}
-    event_chain = []
-
-    # RESPONSE ELEMENTS
-
-    # stored as moves
-    reponses = []
-
-    empty_response = 0
-
     def __init__(self, id="-1"):
         self.id = id
+
+        # WORLD ELEMENTS
+        self.characters = {}
+        self.objects = {}
+        self.relationships = {}
+        self.settings = {}
+        self.event_chain = []
+
+        # RESPONSE ELEMENTS
+        self.reponses = []
+        self.empty_response = 0
 
     def add_character(self, char):
         if char.id not in self.objects and char.id not in self.characters:

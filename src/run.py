@@ -5,19 +5,18 @@ from src.inputprocessor import infoextraction
 from src.dialoguemanager import DialoguePlanner
 
 server = ServerInstance()
-worldid = "0"
-world = World(worldid)
-server.add_world(world)
+world_id = ""
 
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_core_web_sm')
 
-def new_world(hmm):
-    worldid = hmm
-    world = World(hmm)
-    server.add_world(world)
+def new_world(id):
+    global world_id
+    world_id = id
+    server.new_world(world_id)
 
 def extract_info(text):
+    world = server.get_world(world_id)
     document = nlp(str(text))
     sentences = [sent.string.strip() for sent in document.sents]
     list_of_sentences = []
