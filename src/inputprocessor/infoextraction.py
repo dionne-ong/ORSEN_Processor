@@ -744,53 +744,170 @@ def checkProceed(dep_root, xcomp_count, acomp_count, dobj_count, attr_count, pob
 
 #ie_event_extract
 def event_extraction(sentence, world, current_node):
-    print("-------------- Entering EVENT EXTRACTION -----------------")
+    print("----- Entering EVENT EXTRACTION -----")
     event_char = []
-    event_char_action = []
+    event_char_act = []
     event_obj = []
-    event_obj_action = []
+    event_obj_act = []
     event_type = []
     event_loc = []
 
+    #Getting the count of each annotation
+    nsubj_c = 0
+    comp_c = 0
+    poss_c = 0
+    acomp_c = 0
+    agent_c = 0
+    root_c = 0
+
+    print("dep", sentence.dep)
+
+    for i in range(0, len(sentence.dep)):
+        if sentence.dep[i] == 'nsubj' or sentence.dep[i] == 'nsubjpass':
+            nsubj_c += 1
+        elif sentence.dep[i] == 'compound':
+            comp_c += 1
+        elif sentence.dep[i] == 'poss':
+            poss_c += 1
+        elif sentence.dep[i] == 'acomp':
+            acomp_c += 1
+        elif sentence.dep[i] == 'agent':
+            agent_c += 1
+        elif sentence.dep[i] == 'ROOT':
+            root_c += 1
+
+    print("nsubj count: ", nsubj_c)
+    print("compound count: ", comp_c)
+    print("poss count: ", poss_c)
+    print("acomp count: ", acomp_c)
+    print("agent count: ", agent_c)
+    print("root count: ", root_c)
+
+    isFound_char = False
+    isFound_char_act = False
+    isFound_obj = False
+    for i in range(0, len(sentence.dep)):
+        #Adding the Character in the Event Frame
+        if sentence.dep[i] == 'nsubj' or sentence.dep[i] == 'nsubjpass' and nsubj_c > 0:
+            if i > 0:
+                #Compound Subj
+                if comp_c > 0 and poss_c == 0:
+                    c_char = sentence.text_token[i-1] + " " + sentence.head_text[i-1]
+                    event_char.append(c_char)
+                    print("Added Char: ", c_char)
+                    comp_c -= 1
+                    nsubj_c -= 1
+                    isFound_char = True
+
+                #Poss Subj
+                elif comp_c == 0 and poss_c > 0:
+                    if sentence.dep[i-1] == 'case':
+                        p_char = sentence.text_token[i-2] + sentence.text_token[i-1] + " " + sentence.text_token[i]
+                        event_char.append(p_char)
+                        print("Added Char: ", p_char)
+                        poss_c -= 1
+                        nsubj_c -= 1
+
+                        isFound_char = True
+
+                elif comp_c == 1 and poss_c == 1:
+                    cp_char = sentence.text_token[i-3] + " " + sentence.text_token[i-2] + sentence.text_token[i-1] + " " + sentence.text_token[i]
+                    event_char.append(cp_char)
+                    print("Added Char: ", cp_char)
+                    poss_c -= 1
+                    comp_c -= 1
+                    nsubj_c -= 1
+                    isFound_char = True
+
+            if isFound_char == False and nsubj_c > 0:
+                #Multiple Subj
+                if sentence.dep[i+1] == 'cc':
+                    if sentence.dep[i+2] == 'conj':
+                        m_char = sentence.text_token[i] + " " + sentence.text_token[i+1] + " " + sentence.text_token[i+2]
+                        event_char_act.append(m_char)
+                        nsubj_c -= 1
+                        print("Added Char: ", m_char)
+                        isFound_char = True
+
+                #Passive Subj
+                if agent_c == 1:
+                    for x in range(0, len(sentence.dep)):
+                        if sentence.dep[x] == 'agent':
+                            pa_char = sentence.text_token[x+1]
+                            obj = sentence.text_token[i]
+                            event_char.append(pa_char)
+                            event_obj.append(obj)
+                else:
+                    event_char.append(sentence.text_token[i])
+                    print("Added Char: ", sentence.text_token[i])
+                    nsubj_c -= 1
+                    isFound_char = True
+
+        if sentence.pos[i] == 'VERB' and sentence.dep[i] == 'ROOT':
+            event_char_act.append(sentence.text_token[i])
+            print("Added Char Action: ", sentence.text_token[i])
+            root_c -= 1
+
+        elif sentence.dep[i] == 'acomp' and acomp_c > 0:
+            event_obj.append(sentence.text_token[i])
+            acomp_c -= 1
+            print("Added Obj: ", sentence.text_token[i])
+
+    #for checking
+    for i in range(0, len(event_char)):
+        print("----Event Frame:----")
+        print("CHAR: ", event_char)
+        print("CHAR-ACT: ", event_char_act)
+        print("OBJ: ", event_obj)
+        print("OBJ-ACT: ", event_obj_act)
+        print("-------------------")
+#print("-------------- Entering EVENT EXTRACTION -----------------")
+#    event_char = []
+#    event_char_action = []
+#    event_obj = []
+#    event_obj_action = []
+#    event_type = []
+#    event_loc = []
+
     #get list of characters and objects from world
-    nsubj_count = 0
-    verb_count = 0
+#    nsubj_count = 0
+#    verb_count = 0
 
-    cc_count = 0
-    conj_count = 0
+#    cc_count = 0
+#    conj_count = 0
 
-    dobj_count = 0
-    acomp_count = 0
-    xcomp_count = 0
-    attr_count = 0
-    pobj_count = 0
-    advmod_count = 0
+#    dobj_count = 0
+#    acomp_count = 0
+#    xcomp_count = 0
+#    attr_count = 0
+#    pobj_count = 0
+#    advmod_count = 0
 
     #getting the subject count
-    for i in range(0, len(sentence.dep_root)):
-        if sentence.dep_root[i] == 'nsubj' or sentence.dep_root[i] == 'nsubjpass':
-            nsubj_count += 1
-        elif sentence.dep_root[i] == 'conj':
-            conj_count += 1
+#    for i in range(0, len(sentence.dep_root)):
+#        if sentence.dep_root[i] == 'nsubj' or sentence.dep_root[i] == 'nsubjpass':
+#            nsubj_count += 1
+#        elif sentence.dep_root[i] == 'conj':
+#            conj_count += 1
 
-    for i in range(0, len(sentence.pos)):
-        if sentence.pos[i] == 'VERB':
-            verb_count += 1
-    for i in range(0, len(sentence.dep)):
-        if sentence.dep[i] == 'acomp':
-            acomp_count += 1
-        elif sentence.dep[i] == 'xcomp':
-            xcomp_count += 1
-        elif sentence.dep[i] == 'attr':
-            attr_count += 1
-        elif sentence.dep[i] =='conj':
-            cc_count += 1
-        elif sentence.dep[i] == 'pobj':
-            pobj_count += 1
-        elif sentence.dep[i] == 'dobj':
-            dobj_count += 1
-        elif sentence.dep[i] == 'advmod':
-            advmod_count += 1
+#    for i in range(0, len(sentence.pos)):
+#        if sentence.pos[i] == 'VERB':
+#            verb_count += 1
+#    for i in range(0, len(sentence.dep)):
+#        if sentence.dep[i] == 'acomp':
+#            acomp_count += 1
+#        elif sentence.dep[i] == 'xcomp':
+#            xcomp_count += 1
+#        elif sentence.dep[i] == 'attr':
+#            attr_count += 1
+#        elif sentence.dep[i] =='conj':
+#            cc_count += 1
+#        elif sentence.dep[i] == 'pobj':
+#            pobj_count += 1
+#        elif sentence.dep[i] == 'dobj':
+#            dobj_count += 1
+#        elif sentence.dep[i] == 'advmod':
+#            advmod_count += 1
 
     #print("nsubj", nsubj_count)
     #print("dobj", dobj_count)
