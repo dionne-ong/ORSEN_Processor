@@ -788,10 +788,10 @@ def event_extraction(sentence, world, current_node):
     isFound_obj = False
     for i in range(0, len(sentence.dep)):
         #Adding the Character in the Event Frame
-        if sentence.dep[i] == 'nsubj' or sentence.dep[i] == 'nsubjpass' and nsubj_c > 0:
-            if i > 0:
+        if sentence.dep[i] == 'nsubj' or sentence.dep[i] == 'nsubjpass' and nsubj_c > 0 and isFound_char is False:
+            if i > 0 and isFound_char is False:
                 #Compound Subj
-                if comp_c > 0 and poss_c == 0:
+                if comp_c > 0 and poss_c == 0 and isFound_char is False:
                     c_char = sentence.text_token[i-1] + " " + sentence.head_text[i-1]
                     event_char.append(c_char)
                     print("Added Char: ", c_char)
@@ -800,7 +800,7 @@ def event_extraction(sentence, world, current_node):
                     isFound_char = True
 
                 #Poss Subj
-                elif comp_c == 0 and poss_c > 0:
+                elif comp_c == 0 and poss_c > 0 and isFound_char is False:
                     if sentence.dep[i-1] == 'case':
                         p_char = sentence.text_token[i-2] + sentence.text_token[i-1] + " " + sentence.text_token[i]
                         event_char.append(p_char)
@@ -810,7 +810,7 @@ def event_extraction(sentence, world, current_node):
 
                         isFound_char = True
 
-                elif comp_c == 1 and poss_c == 1:
+                elif comp_c == 1 and poss_c == 1 and isFound_char is False:
                     cp_char = sentence.text_token[i-3] + " " + sentence.text_token[i-2] + sentence.text_token[i-1] + " " + sentence.text_token[i]
                     event_char.append(cp_char)
                     print("Added Char: ", cp_char)
@@ -843,7 +843,7 @@ def event_extraction(sentence, world, current_node):
                     nsubj_c -= 1
                     isFound_char = True
 
-        if sentence.pos[i] == 'VERB' and sentence.dep[i] == 'ROOT':
+        if sentence.dep[i] == 'ROOT' and sentence.pos[i] == 'VERB':
             event_char_act.append(sentence.text_token[i])
             print("Added Char Action: ", sentence.text_token[i])
             root_c -= 1
@@ -861,6 +861,7 @@ def event_extraction(sentence, world, current_node):
         print("OBJ: ", event_obj)
         print("OBJ-ACT: ", event_obj_act)
         print("-------------------")
+
 #print("-------------- Entering EVENT EXTRACTION -----------------")
 #    event_char = []
 #    event_char_action = []
