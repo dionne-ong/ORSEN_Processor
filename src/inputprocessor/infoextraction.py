@@ -821,29 +821,89 @@ def event_extraction(sentence, world, current_node):
 
             if isFound_char == False and nsubj_c > 0:
                 #Multiple Subj
-                if sentence.dep[i+1] == 'cc':
-                    if sentence.dep[i+2] == 'conj':
-                        m_char = sentence.text_token[i] + " " + sentence.text_token[i+1] + " " + sentence.text_token[i+2]
-                        event_char_act.append(m_char)
-                        nsubj_c -= 1
-                        print("Added Char: ", m_char)
-                        isFound_char = True
+                test_char = sentence.text_token[i]
+                isAdded = False
+
+                for k in range(0, len(sentence.dep)):
+                    if (i+k) < len(sentence.dep):
+                        if sentence.dep[i+k] == 'conj':
+                            if isAdded is False:
+                                event_char.append(test_char)
+                                isAdded = True
+
+                            if sentence.head_text[i+k] == event_char[len(event_char)-1]:
+                                event_char.append(sentence.text_token[i+k])
+                                isFound_mchar = True
+                                isFound_char = True
+                                nsubj_c -= 1
+
+                if isFound_mchar is True:
+                    for l in range(1, len(event_char)):
+                        event_char[0] += "," + event_char.pop()
 
                 #Passive Subj
                 if agent_c == 1:
                     for x in range(0, len(sentence.dep)):
                         if sentence.dep[x] == 'agent':
-                            pa_char = sentence.text_token[x+1]
-                            obj = sentence.text_token[i]
-                            event_char.append(pa_char)
-                            event_obj.append(obj)
-                else:
+                            if comp_c > 0:
+                                pa_char = sentence.text_token[x + 1] + " " + sentence.head_text[x + 1]
+                                event_char.append(pa_char)
+                                print("Added Char: ", pa_char)
+                                obj = sentence.text_token[i]
+                                event_obj.append(obj)
+                                comp_c -= 1
+                                nsubj_c -= 1
+                                isFound_char = True
+                            elif sentence.dep[x+2] == 'punct' or sentence.dep[x+2] == 'cc':
+                                test_char = sentence.text_token[x+1]
+                                isAdded = False
+                                for k in range(0, len(sentence.dep)):
+                                    if (x+1 + k) < len(sentence.dep):
+                                        if sentence.dep[x+1 + k] == 'conj':
+                                            if isAdded is False:
+                                                event_char[0] = test_char
+                                                isAdded = True
+
+                                            if sentence.head_text[x+1+k] == event_char[len(event_char) - 1]:
+                                                event_char.append(sentence.text_token[x+1+k])
+                                                isFound_mchar = True
+                                                isFound_char = True
+                                                nsubj_c -= 1
+
+                                if isFound_mchar is True:
+                                    for l in range(1, len(event_char)):
+                                        event_char[0] += "," + event_char.pop()
+
+                                obj = sentence.text_token[i]
+                                event_obj.append(obj)
+                                comp_c -= 1
+                                nsubj_c -= 1
+                                isFound_char = True
+
+                            else:
+                                pa_char = sentence.text_token[x + 1]
+                                obj = sentence.text_token[i]
+                                event_char.append(pa_char)
+                                event_obj.append(obj)
+                                nsubj_c -= 1
+                                isFound_char = True
+
+
+                elif nsubj_c > 0 and isFound_char == False:
                     event_char.append(sentence.text_token[i])
                     print("Added Char: ", sentence.text_token[i])
                     nsubj_c -= 1
                     isFound_char = True
 
+<<<<<<< HEAD
         if sentence.dep[i] == 'ROOT' and sentence.pos[i] == 'VERB':
+=======
+        #print("event char", event_char)
+
+
+
+        if sentence.pos[i] == 'VERB' and sentence.dep[i] == 'ROOT':
+>>>>>>> 2f31c361162f702c24d77df7c95d515f9bd62415
             event_char_act.append(sentence.text_token[i])
             print("Added Char Action: ", sentence.text_token[i])
             root_c -= 1
