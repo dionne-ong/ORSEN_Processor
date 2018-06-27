@@ -770,6 +770,8 @@ def event_extraction(sentence, world, current_node):
     dative_c = 0
     oprd_c = 0
     xcomp_c = 0
+    advmod_c = 0
+    npadvmod_c = 0
 
     print("dep", sentence.dep)
 
@@ -808,14 +810,14 @@ def event_extraction(sentence, world, current_node):
             oprd_c += 1
         elif sentence.dep[i] == 'xcomp':
             xcomp_c += 1
+        elif sentence.dep[i] == 'advmod':
+            advmod_c += 1
+        elif sentence.dep[i] == 'npadvmod':
+            npadvmod_c += 1
 
     print("nsubj count: ", nsubj_c)
-    print("compound count: ", comp_c)
-    print("poss count: ", poss_c)
-    print("acomp count: ", acomp_c)
-    print("agent count: ", agent_c)
     print("root count: ", root_c)
-
+    print("advmod count: ", advmod_c)
 
     isFound_char = False
     isFound_char_act = False
@@ -823,6 +825,8 @@ def event_extraction(sentence, world, current_node):
     isFound_mchar = False
     isFound_mchar_act = False
     isFound_mobj = False
+    isFound_obj_act = False
+    isFound_mobj_act = False
     isPassive = False
 
     if agent_c > 0:
@@ -1078,7 +1082,7 @@ def event_extraction(sentence, world, current_node):
                 print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
 
-        elif sentence.dep[i] == 'dobj' and dobj_c > 0 and isFound_obj is False:
+        elif sentence.dep[i] == 'dobj' and dobj_c > 0:
             print("sentence pos ", sentence.pos[i-1])
 
             if (i+1) < len(sentence.dep):
@@ -1111,7 +1115,7 @@ def event_extraction(sentence, world, current_node):
                 print("Added Obj: ", sentence.text_token[i-1], sentence.text_token[i])
                 isFound_obj = True
 
-            else:
+            if dobj_c > 0:
                 event_obj.append(sentence.text_token[i])
                 dobj_c -= 1
                 print("Added Obj: ", sentence.text_token[i])
@@ -1186,7 +1190,36 @@ def event_extraction(sentence, world, current_node):
                 isFound_obj = True
 
         elif sentence.dep[i] == 'xcomp' and xcomp_c > 0 and isFound_obj is False:
-             if (i+1) < len(sentence.dep):
+            if (i + 1) < len(sentence.dep):
+                if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
+                    # Multiple Object
+                    test_obj = sentence.text_token[i]
+                    isAdded = False
+                    if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
+                        for k in range(0, len(sentence.dep)):
+                            if (i + k) < len(sentence.dep):
+                                if sentence.dep[i + k] == 'conj':
+                                    if isAdded is False:
+                                        event_obj.append(test_obj)
+                                        isAdded = True
+
+                                    if sentence.head_text[i + k] == event_obj[len(event_obj) - 1] or sentence.head_text[i + k] == ',':
+                                        event_obj.append(sentence.text_token[i + k])
+                                        isFound_mobj = True
+                                        isFound_obj = True
+                                        acomp_c -= 1
+
+                        if isFound_mobj is True:
+                            for l in range(1, len(event_obj)):
+                                event_obj[0] += "," + event_obj.pop()
+            else:
+                event_obj.append(sentence.text_token[i])
+                xcomp_c -= 1
+                print("Added Obj: ", sentence.text_token[i])
+                isFound_obj = True
+
+        elif sentence.dep[i] == 'npadvmod' and npadvmod_c > 0 and isFound_obj is False:
+            if (i + 1) < len(sentence.dep):
                 if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
                     # Multiple Object
                     test_obj = sentence.text_token[i]
@@ -1209,17 +1242,74 @@ def event_extraction(sentence, world, current_node):
                         if isFound_mobj is True:
                             for l in range(1, len(event_obj)):
                                 event_obj[0] += "," + event_obj.pop()
-             else:
+            else:
                 event_obj.append(sentence.text_token[i])
-                attr_c -= 1
+                npadvmod_c -= 1
                 print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
+        #----END OF OBJECT EXTRACTION----#
 
-        #---ADDITIONAL FOR CHARACTER ACTION EXTRACTION---#
+        #----START OF OBJECT ACTION EXTRACTION----#
+        elif sentence.dep[i] == 'npadvmod' and npadvmod_c > 0 and isFound_obj_act is False:
+            if (i + 1) < len(sentence.dep):
+                if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
+                    # Multiple Object
+                    test_obj = sentence.text_token[i]
+                    isAdded = False
+                    if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
+                        for k in range(0, len(sentence.dep)):
+                            if (i + k) < len(sentence.dep):
+                                if sentence.dep[i + k] == 'conj':
+                                    if isAdded is False:
+                                        event_obj_act.append(test_obj)
+                                        isAdded = True
+
+                                    if sentence.head_text[i + k] == event_obj_act[len(event_obj_act) - 1] or sentence.head_text[i + k] == ',':
+                                        event_obj_act.append(sentence.text_token[i + k])
+                                        isFound_mobj_act = True
+                                        isFound_obj_act = True
+                                        acomp_c -= 1
+
+                        if isFound_mobj_act is True:
+                            for l in range(1, len(event_obj_act)):
+                                event_obj_act[0] += "," + event_obj_act.pop()
+            else:
+                event_obj_act.append(sentence.text_token[i])
+                advmod_c -= 1
+                print("Added Obj Act: ", sentence.text_token[i])
+                isFound_obj_act = True
+        #----END OF OBJECT ACTION EXTRACTION----#
+        elif sentence.dep[i] == 'appos':
+            event_char.append(sentence.dep_root_head[len(sentence.dep_root_head)-1])
+            event_char_act.append("is")
+            event_obj.append(sentence.text_chunk[len(sentence.text_chunk)-1])
+        elif sentence.dep[i] == 'relcl' and relcl_c > 0:
+            event_char_act.append(sentence.text_token[i])
+            event_obj.append(sentence.head_text[i])
+
+        elif sentence.dep[i] == 'dative' and dative_c > 0:
+            event_char.append(sentence.text_token[i])
+            print("Added Char: ", sentence.text_token[i])
+            isFound_char = True
+            isFound_obj = False
+
+            hold = " "
+            for x in range(0, len(sentence.dep_root)):
+                if sentence.dep_root[x] == 'dative':
+                    hold = sentence.dep_root_head[x]
+                    x += 1
+
+                if sentence.dep_root_head[x] == hold and sentence.dep_root[x] != 'dative' and isFound_obj is False:
+                    event_char_act.append("has")
+                    event_obj.append(sentence.text_chunk[x])
+                    print("Added Obj: ", event_obj[len(event_obj)-1])
+                    isFound_obj = True
+
+                dative_c -= 1
+        # ---ADDITIONAL FOR CHARACTER ACTION EXTRACTION---#
         if sentence.dep[i] == 'advcl':
-            event_char_act[len(event_char_act) - 1] += "," + sentence.text_token[i]
-        #---END OF ADDITIONAL CHARACTER ACTION EXTRACTION---#
-
+            event_char_act.append(sentence.text_token[i])
+        # ---END OF ADDITIONAL CHARACTER ACTION EXTRACTION---#
     #for checking
     for i in range(0, len(event_char_act)):
         print("----Event Frame:----")
