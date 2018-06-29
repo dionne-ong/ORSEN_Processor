@@ -1,5 +1,7 @@
+import self as self
+
 from src.db.concepts import DBO_Concept
-from src.objects.eventchain.EventFrame import EventFrame, FRAME_DESCRIPTIVE, FRAME_EVENT
+from src.objects.eventchain.EventFrame import EventFrame, FRAME_DESCRIPTIVE, FRAME_EVENT, FRAME_CREATION
 from src.objects.nlp.Sentence import Sentence
 from src.objects.storyworld.Attribute import Attribute
 from src.objects.storyworld.Character import Character
@@ -1478,129 +1480,61 @@ def event_extraction(sentence, world, current_node):
 #Add event to the world
 def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, world):
     list_char = world.characters
-    subj_hold = ""
+    subj_hold = list()
+    dobj_hold = list()
+    print("list_char: ", list_char)
     list_obj = world.objects
+    print("list_obj: ", list_obj)
     for x in range(0, len(type)):
-        if type[x] == 0:
-            if subj:
-                hold = subj.pop(0)
-
-            subj_hold = hold.split(",")
+        if subj:
+            hold = subj.pop(0)
+            if ',' in hold:
+                subj_hold = hold.split(',')
+            else:
+                subj_hold.append(hold)
 
             for i in range(0, len(subj_hold)):
-                if subj_hold[i].lower() in list_char:
+                if list_obj[subj_hold[i].lower()] is not None:
                     new_eventframe = EventFrame()
-                    new_eventframe.type = 0
-                    new_eventframe.subj = subj_hold[i]
+                    new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                    isFound = True
+                elif list_obj[subj_hold[i].lower()] is not None:
+                    new_eventframe = EventFrame()
+                    new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                    isFound = True
+                else:
+                    isFound = False
 
+                if isFound is True:
+                    if type[x] == 0:
+                        new_eventframe.type = FRAME_EVENT
+                        new_eventframe.action = subj_act[x]
+                        if prep:
+                            new_eventframe.preposition = prep[x]
+                        if pobj:
+                            new_eventframe.obj_of_preposition = pobj[x]
+                        if dobj:
+                            hold_o = dobj[x]
+                            if ',' in hold_o:
+                                dobj_hold = hold_o.split(',')
+                            else:
+                                dobj_hold.append(hold_o)
+
+                            for y in range(0, len(dobj_hold)):
+                                if list_obj[dobj_hold[y].lower()] is not None:
+                                    new_eventframe.direct_object = list_obj[dobj_hold[y].lower()]
+
+                    elif type[x] == 1:
+                        new_eventframe.type = FRAME_DESCRIPTIVE
+                        new_eventframe.attr = attr[x]
+                    elif type[x] == 2:
+                        new_eventframe.type = FRAME_CREATION
+                        new_eventframe.attr = create[x]
+
+                    print(str(new_eventframe.direct_object))
                     world.add_eventframe(new_eventframe)
-        print("---- EVENT ADDED TO THE WORLD ----")
-def add_event(type, char, char_action, obj, obj_action, loc, world):
 
-    #print("LEN OBJ", len(obj))
-    for x in range(0, len(char)):
-        addObj = ""
-        addChar = ""
-        new_eventframe = EventFrame()
-
-        if len(type) > 0:
-            new_eventframe.type = type[x]
-        if len(loc) > 0:
-            new_eventframe.setting = loc[x]
-        if len(char) > 0:
-            #list_char = world.characters
-            #list_obj = world.objects
-            #isObj = False
-
-            #print("hello")
-            #for k in list_obj:
-                #print("NOT A CHARACTER")
-            #    for j in list_obj:
-            #        if list_obj[j].name == char[x]:
-            #            #print(list_obj[j].name)
-            #            addObj = char[x]
-            #            char[x] = ""
-            #            isObj = True
-
-            #if isObj is False:
-            new_eventframe.doer = char[x]
-
-        if len(char_action) > 0:
-            new_eventframe.doer_actions = char[x] + ":" + char_action[x]
-
-        if x < len(obj):
-            #list_char = world.characters
-            #ist_obj = world.objects
-            #for k in list_char:
-            #    if list_char[k].name == obj[x]:
-            #        addChar = obj[x]
-            #        obj[x] = ""
-
-            #if addObj != "":
-            #    obj[x] == addObj + "," + obj[x]
-            #    new_eventframe.receiver = obj[x]
-            #else:
-            new_eventframe.receiver = obj[x]
-
-            if addChar != "":
-                new_eventframe.doer = new_eventframe.doer + "," + addChar
-                new_eventframe.doer_actions = new_eventframe.doer + ":" + new_eventframe.doer_actions
-            #new_eventframe.receiver = obj[x]
-        if x < len(obj_action):
-            new_eventframe.receiver_actions = obj[x] + ":" + obj_action[x]
-
-        for i in range(0, len(char)):
-            loc_char = world.characters
-            for k in loc_char:
-                if loc_char[k].name in char[i]:
-                    new_eventframe.setting = loc_char[k].inSetting
-
-        world.add_eventframe(new_eventframe)
+    #print(str(self.new_eventframe))
     print(world.event_chain)
-    for item in world.event_chain:
-        print(item)
 
-        #    event_char.append(char + " and " + sentence.text_token[i])
-        #    print("headtext", sentence.head_text[x])
 
-        #    if sentence.head_text[x] != char:
-        #        char_action = sentence.head_text[x]
-        #        print("conj", conj_count, isFound_char_action )
-        #        if cc_count > 0 and isFound_char_action is False:
-        #            for i in range(0, len(sentence.text_token)):
-        #                print("ENTER COMBO CHAR ACT")
-        #                print("dep", sentence.dep[i], "head", sentence.head_text[i])
-
-        #               if sentence.dep[i] == 'conj' and sentence.head_text[i] == char_action:
-        #                    print("is this true")
-        #                    event_char_action.append(char_action + " and " + sentence.text_token[i])
-        #                    isFound_char_action = True
-
-        #        if isFound_char_action is False:
-        #            event_char_action.append(char_action)
-        #            isFound_char_action = True
-
-        #    isFound_char = True
-
-#    if isFound_char  is False:
-#        event_char.append(char)
-#        print("headtext", sentence.head_text[x])
-#        char_action = sentence.head_text[x]
-#        if cc_count > 0 and isFound_char_action is False:
-#            for i in range(0, len(sentence.text_token)):
-#                if sentence.dep[i] == 'conj' and sentence.head_text[i] == char_action:
-#                    # print("is this true")
-#                    event_char_action.append(char_action + " and " + sentence.text_token[i])
-#                    isFound_char_action = True
-
-#        if isFound_char_action is False:
-#            event_char_action.append(char_action)
-#            isFound_char_action = True
-
-#        if isAction(sentence) is False:
-#            print("HELLO I'M AN ACTION")
-#            event_type.append(FRAME_EVENT)
-#        else:
-#            event_type.append(FRAME_DESCRIPTIVE)
-
-#        isFound_char = True
