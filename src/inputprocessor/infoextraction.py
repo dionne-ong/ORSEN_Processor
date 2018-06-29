@@ -517,7 +517,7 @@ CAT_ANSWER = 3
 #ie_categorizing
 def getCategory(sentence):
     #checks if entry has "orsen"
-    if 'orsen' in sentence or 'orson' in sentence or 'Orson' in sentence or 'Orsen' in sentence:
+    if 'orsen' in sentence or 'orson' in sentence or 'Orson' in sentence or 'Orsen' in sentence or 'arson' in sentence:
         return CAT_COMMAND
     elif 'yes' in sentence or 'no' in sentence:
         return CAT_ANSWER
