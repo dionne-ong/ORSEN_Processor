@@ -8,9 +8,8 @@ class EventFrame:
     event_type = -1
     # descriptive, action, etc.
 
-    def __init__(self, seq_no=-1, type="", event_type=-1):
+    def __init__(self, seq_no=-1, event_type=-1):
         self.sequence_no        = seq_no
-        self.type               = type
         self.event_type         = event_type
 
         self.subject = []

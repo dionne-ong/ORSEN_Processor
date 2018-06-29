@@ -1495,19 +1495,32 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
 
             for i in range(0, len(subj_hold)):
                 if list_obj[subj_hold[i].lower()] is not None:
-                    new_eventframe = EventFrame()
-                    new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                    if type[x] == 0:
+                        new_eventframe = EventFrame(self,FRAME_EVENT)
+                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                    elif type[x] == 1:
+                        new_eventframe = EventFrame(self, FRAME_DESCRIPTIVE)
+                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                    elif type[x] == 2:
+                        new_eventframe = EventFrame(self, FRAME_CREATION)
+                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
                     isFound = True
-                elif list_obj[subj_hold[i].lower()] is not None:
-                    new_eventframe = EventFrame()
-                    new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                elif list_char[subj_hold[i].lower()] is not None:
+                    if type[x] == 0:
+                        new_eventframe = EventFrame(self,FRAME_EVENT)
+                        new_eventframe.subject.append(list_char[subj_hold[i].lower()])
+                    elif type[x] == 1:
+                        new_eventframe = EventFrame(self, FRAME_DESCRIPTIVE)
+                        new_eventframe.subject.append(list_char[subj_hold[i].lower()])
+                    elif type[x] == 2:
+                        new_eventframe = EventFrame(self, FRAME_CREATION)
+                        new_eventframe.subject.append(list_char[subj_hold[i].lower()])
                     isFound = True
                 else:
                     isFound = False
 
                 if isFound is True:
-                    if type[x] == 0:
-                        new_eventframe.type = FRAME_EVENT
+                    if new_eventframe.event_type is FRAME_EVENT:
                         new_eventframe.action = subj_act[x]
                         if prep:
                             new_eventframe.preposition = prep[x]
@@ -1523,15 +1536,19 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                             for y in range(0, len(dobj_hold)):
                                 if list_obj[dobj_hold[y].lower()] is not None:
                                     new_eventframe.direct_object.append(list_obj[dobj_hold[y].lower()])
-
+                        print(str(new_eventframe.direct_object))
                     elif type[x] == 1:
-                        new_eventframe.type = FRAME_DESCRIPTIVE
-                        new_eventframe.attr.append(attr[x])
+                        if ',' in attr:
+                            attr_hold = attr[x].split(',')
+                        else:
+                            attr_hold = attr[x]
+
+                        for y in range(0, len(attr_hold)):
+                            new_eventframe.attr.append(attr_hold[y])
                     elif type[x] == 2:
-                        new_eventframe.type = FRAME_CREATION
                         new_eventframe.attr.append(create[x])
 
-                    print(str(new_eventframe.direct_object))
+
                     world.add_eventframe(new_eventframe)
 
     #print(str(self.new_eventframe))
