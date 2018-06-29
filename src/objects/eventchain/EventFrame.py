@@ -1,7 +1,7 @@
+
 FRAME_EVENT = 0
 FRAME_DESCRIPTIVE = 1
 FRAME_CREATION = 2
-
 
 class EventFrame:
 
@@ -24,7 +24,3 @@ class EventFrame:
 
     def __str__(self):
         return self.__str__()
-
-    def to_sentence_string(self):
-        string = "<event sentence>"
-        return string

@@ -1,5 +1,6 @@
 from src.run import extract_info, new_world
 from src.dialoguemanager.DialoguePlanner import *
+from src.dialoguemanager.story_generation import generate_story
 from flask import Flask
 from flask import jsonify
 from flask import request
