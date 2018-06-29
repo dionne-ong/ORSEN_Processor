@@ -5,19 +5,19 @@ from src.inputprocessor import infoextraction
 from src.dialoguemanager import DialoguePlanner
 
 server = ServerInstance()
-worldid = "0"
-world = World(worldid)
-server.add_world(world)
+world_id = ""
 
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_core_web_sm')
 
-def new_world(hmm):
-    worldid = hmm
-    world = World(hmm)
-    server.add_world(world)
+def new_world(id):
+    global world_id
+    world_id = id
+    server.new_world(world_id)
 
 def extract_info(text):
+    world = server.get_world(world_id)
+    print(world)
     document = nlp(str(text))
     sentences = [sent.string.strip() for sent in document.sents]
     list_of_sentences = []
@@ -88,9 +88,10 @@ def extract_info(text):
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
-
+'''
 output = "Hello, I am ORSEN. Let's start."
 retrieved = None
+new_world("0")
 while True:
     if retrieved is not None:
         output = retrieved.get_string_response()
@@ -100,7 +101,8 @@ while True:
     extract_info(text)
 
     #dialogue
-    retrieved = DialoguePlanner.retrieve_output(text, worldid)
+    retrieved = DialoguePlanner.retrieve_output(text, world_id)
 
     if retrieved.type_num == DialoguePlanner.MOVE_HINT:
         extract_info(retrieved.get_string_response())
+'''
