@@ -7,11 +7,11 @@ from src.objects.eventchain.EventFrame import EventFrame, FRAME_EVENT, FRAME_DES
 
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
-from src.objects.storyworld.World import World
-import time
+
 import random as ran
 
 STORY_THRESHOLD = 3
+GENERAL_RESPONSE_THRESHOLD = 5
 
 MOVE_FEEDBACK = 1
 MOVE_GENERAL_PUMP = 2
@@ -42,17 +42,17 @@ server = ServerInstance()
 
 def retrieve_output(coreferenced_text, world_id):
     world = server.worlds[world_id]
-    if len(world.reponses) > 0:
-        last_response_type_num = world.reponses[len(world.reponses)-1].type_num
+    if len(world.responses) > 0:
+        last_response_type_num = world.responses[len(world.responses)-1].type_num
     else:
         last_response_type_num = -1
     output = ""
     choice = -1
 
-    if len(world.event_chain) <=  1 and ("my name is" in coreferenced_text or \
-            ("hello" in coreferenced_text and ("I am" in coreferenced_text or "I'm" in coreferenced_text))):
+    if len(world.event_chain) <=  1 and ("my name is" in coreferenced_text or
+            (("hello" in coreferenced_text or "hi" in coreferenced_text)
+                  and ("I am" in coreferenced_text or "I'm" in coreferenced_text)) ):
         return Move.Move(template=["Nice to meet you! So how does your story start?"], type_num=MOVE_REQUESTION)
-
 
     if coreferenced_text == "":  # if no input found
         world.empty_response += 1
@@ -78,22 +78,29 @@ def retrieve_output(coreferenced_text, world_id):
                 choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
                 output = generate_response(choice, world, [], coreferenced_text)
 
-        elif world.empty_response > 5:
+        elif world.empty_response > 4:
             choice = MOVE_REQUESTION
             output = Move.Move(template=["I don't think I can hear you, are you sure you want to continue?"], type_num=choice)
     else:
 
         world.empty_response = 0
+        category = getCategory(coreferenced_text)
 
-        if getCategory(coreferenced_text) == CAT_STORY:
-            if len(world.event_chain) > STORY_THRESHOLD:
-                choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
-            else:
+        if category == CAT_STORY:
+            print(len(world.event_chain))
+            if len(world.event_chain) <= STORY_THRESHOLD:
+                print("<< STILL IN GENERALIZED THRESHOLD >>")
                 choice = random.randint(MOVE_FEEDBACK, MOVE_GENERAL_PUMP+1)
+            elif world.general_response_count > GENERAL_RESPONSE_THRESHOLD:
+                print("<< GENERAL THRESHOLD REACHED - ATTEMPTING SPECIFIC RESPONSE >>")
+                choice = random.randint(MOVE_SPECIFIC_PUMP, MOVE_HINT+1)
+            else:
+                choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+
 
             output = generate_response(choice, world, [], coreferenced_text)
 
-        elif getCategory(coreferenced_text) == CAT_ANSWER:
+        elif category == CAT_ANSWER:
             # TEMP TODO: idk how to answer this lmao / if "yes" or whatever, add to character data
             if last_response_type_num == MOVE_REQUESTION:
                 output = Move.Move(template=["Ok, let's keep going then!"], type_num=MOVE_UNKNOWN)
@@ -101,14 +108,26 @@ def retrieve_output(coreferenced_text, world_id):
                 choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
                 output = generate_response(choice, world, [], coreferenced_text)
 
-        elif getCategory(coreferenced_text) == CAT_COMMAND:
+        elif category == CAT_COMMAND:
             # TEMP TODO: check for further commands
             choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
 
-            if "your turn" in coreferenced_text:
+            is_hint = "your turn" in coreferenced_text or \
+                        ("suggest" in coreferenced_text and "sentence" in coreferenced_text) or \
+                        ("give" in coreferenced_text and "hint" in coreferenced_text)
+
+            is_pump = ("what" in coreferenced_text and \
+                       ("say" in coreferenced_text or "next" in coreferenced_text or "talk" in coreferenced_text))
+
+            is_either = "help" in coreferenced_text or \
+                            "stuck" in coreferenced_text or \
+                            ("give" in coreferenced_text and "idea" in coreferenced_text)
+
+            if is_either:
+                choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
+            elif is_hint:
                 choice = MOVE_HINT
-            elif "what" in coreferenced_text \
-                    and ("say" in coreferenced_text or "next" in coreferenced_text):
+            elif is_pump:
                 choice = random.randint(MOVE_GENERAL_PUMP, MOVE_SPECIFIC_PUMP+1)
 
             output = generate_response(choice, world, [], coreferenced_text)
@@ -116,7 +135,7 @@ def retrieve_output(coreferenced_text, world_id):
         else:
             output = Move.Move(template=["I don't know what to say."], type_num=MOVE_UNKNOWN)
 
-    world.reponses.append(output)
+    world.add_response(output)
 
     return output
 
@@ -126,8 +145,8 @@ def generate_response(move_code, world, remove_index, text):
     choices = []
     subject = None
 
-    if len(world.reponses) > 0:
-        last_response_id = world.reponses[len(world.reponses)-1].move_id
+    if len(world.responses) > 0:
+        last_response_id = world.responses[len(world.responses)-1].move_id
     else:
         last_response_id = -1
 
@@ -183,6 +202,9 @@ def generate_response(move_code, world, remove_index, text):
             remove_index.append(move.move_id)
             return generate_response(MOVE_FEEDBACK, world, remove_index, text)
 
+    print("Generating fillable template...")
+    print(str(move))
+
     for blank_type in move.blanks:
 
         has_a_specified_concept = ":" in blank_type
@@ -204,11 +226,10 @@ def generate_response(move_code, world, remove_index, text):
 
             if to_replace in ["setting"]:
                 if to_replace == "setting":
-                    if subject is None:
+                    print("SETTING DECISION:")
+                    if subject is None or subject.inSetting['LOC'] is None:
                         remove_index.append(move.move_id)
-                        return generate_response(move_code, world, remove_index, text)
-                    elif subject.inSetting['LOC'] is None:
-                        remove_index.append(move.move_id)
+                        print("No viable SUBJECT or SUBJECT LOCATION... switching move.")
                         return generate_response(move_code, world, remove_index, text)
                     else:
                         txt_concept = subject.inSetting['LOC']
@@ -427,7 +448,8 @@ def generate_response(move_code, world, remove_index, text):
                 remove_index.append(move.move_id)
                 return generate_response(move_code, world, remove_index, text)
 
-
+    print("FINAL MOVE DECISION:")
+    print(str(move))
     move.subject = subject
     return move
 

@@ -21,8 +21,6 @@ def pos_ner_nc_processing(sentence):
     new_sentence.words = sentence
     for token in sentence:
         new_sentence.children.append([])
-        print("---POS----");
-        print(token.text, token.head.text, token.lemma_, token.pos_, token.tag_, token.dep_)
         new_sentence.text_token.append(token.text)
         new_sentence.head_text.append(token.head.text)
         new_sentence.lemma.append(token.lemma_)
@@ -32,19 +30,13 @@ def pos_ner_nc_processing(sentence):
 
         new_sentence.finished_nodes.append(0)
         for child in token.children:
-            # print("child", child)
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
     for ent in sentence.ents:
-         print("---NER---")
-         print(ent.text, ent.start_char, ent.end_char, ent.label_)
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
 
     for chunk in sentence.noun_chunks:
-        print("---NC---")
-        print(chunk.text, chunk.root.text, chunk.root.dep_, chunk.root.head.text)
-
         new_sentence.text_chunk.append(chunk.text)
         new_sentence.dep_root.append(chunk.root.dep_)
         new_sentence.dep_root_head.append(chunk.root.head.text)
@@ -97,7 +89,6 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
             if num != -1 and sent.finished_nodes[num] == 0 and\
                     sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos", "relcl",
                                       "npadvmod", "advmod", "pcomp"]:
-                print("CHILD", sent.dep[num])
                 # nominal subject
                 if sent.dep[num] == "nsubj":
                     subject = compound_extraction(sent, str(sent.children[i][j]))
@@ -145,7 +136,6 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
 
                 # open clausal compliment
                 elif sent.dep[num] in ["xcomp", "pcomp"]:
-                    print("ENTERING", sent.finished_nodes[num])
                     add_capability(sent, str(sent.lemma[num]), str(subject), world, num)
                     is_negated = False
 
@@ -218,8 +208,8 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
                     and sent.dep[num] in ["advcl","ccomp", "conj", "prep", "acl"]:
                 details_extraction(sent, world, sent.dep[num], subject, is_negated)
 
-            else:
-                print("WARNING: Dependecy ", sent.dep[num],  " not included in the list")
+            # else:
+            #     print("WARNING: Dependecy ", sent.dep[num],  " not included in the list")
     else:
         print("ERROR: Cannot find current index or node ", current_node,  " has been recorded")
 
@@ -426,7 +416,7 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
                 if new_attribute is not None:
                     char.attributes.append(new_attribute)
 
-                    if not relation == DBO_Concept.IS_A:
+                    if relation == DBO_Concept.IS_A:
                         print("RELATION", relation)
                         char.type.append(attr)
 
@@ -439,7 +429,6 @@ def add_attributes(sent, child, subject, world, negation="", relation=""):
 
                 new_attribute = check_duplicate_attribute(obj.attributes, new_attribute)
                 if new_attribute is not None:
-                    print(" ---------------------- ADDED IT ------------------------")
                     obj.attributes.append(new_attribute)
 
                     if relation == DBO_Concept.IS_A:
@@ -528,7 +517,7 @@ CAT_ANSWER = 3
 #ie_categorizing
 def getCategory(sentence):
     #checks if entry has "orsen"
-    if 'orsen' in sentence or 'orson' in sentence or 'Orson' in sentence or 'Orsen' in sentence:
+    if 'orsen' in sentence or 'orson' in sentence or 'Orson' in sentence or 'Orsen' in sentence or 'arson' in sentence:
         return CAT_COMMAND
     elif 'yes' in sentence or 'no' in sentence:
         return CAT_ANSWER
@@ -567,9 +556,7 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
         # print("mentions", mentions)
 
         rep = coref.get_most_representative()
-        print("rep", rep)
         scores = coref.get_scores()
-        print("scores", scores)
         propn_count = 0
         noun_count = 0
 
@@ -625,14 +612,9 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
             pair_mention = scores.get('pair_scores')
             single_sc_lib = []
             pair_sc_lib = []
-            #
-            # print("Single", single_mention)
-            # print("Pair", pair_mention)
-
             count = 0
             for i in range(0, len(single_mention)):
                 if single_mention.get(i) == none.get(0):
-                  # print("None here")
                   count += 1
                 else:
                   single_sc_lib.append(float(single_mention.get(i)))
@@ -707,10 +689,6 @@ def coref_resolution(s, sent_curr, sent_bef, world, isFirst):
 
     return sent_curr
 
-
-    #rep = coref.get_most_representative()
-    #print("rep", rep)
-
 def isAction(sentence):
     isAction = False
     be_forms = ["is", "are", "am", "were", "was", "feels", "looks"]
@@ -755,8 +733,6 @@ def event_extraction(sentence, world, current_node):
     npadvmod_c = 0
     prep_c = 0
     expl_c = 0
-
-    print("dep", sentence.dep)
 
     for i in range(0, len(sentence.dep)):
         if sentence.dep[i] == 'nsubj' or sentence.dep[i] == 'nsubjpass':
@@ -805,7 +781,6 @@ def event_extraction(sentence, world, current_node):
     print("root count: ", root_c)
     print("advmod count: ", advmod_c)
     print("dobj count: ", dobj_c)
-
     isFound_char = False
     isFound_char_act = False
     isFound_obj = False
@@ -822,6 +797,7 @@ def event_extraction(sentence, world, current_node):
     desc = ['being', 'be', 'been', 'is', 'are', 'was', 'were', 'am']
     for i in range(0, len(sentence.dep)):
         #----START OF CHARACTER EXTRACTION----#
+
         if nsubj_c == 0:
             if sentence.dep[i] == 'expl':
                 expl_c += 1
@@ -1180,7 +1156,6 @@ def event_extraction(sentence, world, current_node):
             else:
                 event_attr.append(sentence.text_token[i])
                 acomp_c -= 1
-                print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
 
         elif sentence.dep[i] == 'dobj' and dobj_c > 0 and isFound_obj is False:
@@ -1205,19 +1180,15 @@ def event_extraction(sentence, world, current_node):
                                         isFound_obj = True
                                         acomp_c -= 1
 
-
-
             if dobj_c > 0 and isFound_obj is False:
                 event_dobj.append(sentence.text_token[i])
                 dobj_c -= 1
-                print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
 
         elif sentence.dep[i] == 'attr' and attr_c > 0 and isFound_obj is False:
             if sentence.dep[i-2] == 'neg' and sentence.dep[i-1] == 'det':
                 event_attr.append("not " + sentence.text_token[i-1] + " " + sentence.text_token[i])
                 attr_c -= 1
-                print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
             elif (i+1) < len(sentence.dep):
                 if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
@@ -1244,7 +1215,6 @@ def event_extraction(sentence, world, current_node):
             else:
                 event_attr.append(sentence.text_token[i])
                 attr_c -= 1
-                print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
 
         elif sentence.dep[i] == 'ccomp' and ccomp_c > 0 and isFound_obj is False:
@@ -1281,7 +1251,6 @@ def event_extraction(sentence, world, current_node):
             else:
                 event_dobj.append(sentence.text_token[i])
                 attr_c -= 1
-                print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
 
         elif sentence.dep[i] == 'xcomp' and xcomp_c > 0 and isFound_obj is False:
@@ -1319,7 +1288,6 @@ def event_extraction(sentence, world, current_node):
 
                 event_pobj.append(sentence.text_token[i])
                 xcomp_c -= 1
-                print("Added Obj: ", sentence.text_token[i])
                 isFound_obj = True
         elif sentence.dep[i] == 'prep' and prep_c > 0:
             event_prep.append(sentence.text_token[i])
@@ -1407,7 +1375,6 @@ def event_extraction(sentence, world, current_node):
                 else:
                     event_detail.append(sentence.text_token[i])
                 advmod_c -= 1
-                print("Added Obj Act: ", sentence.text_token[i])
                 isFound_obj_act = True
         #----END OF OBJECT ACTION EXTRACTION----#
         #----START OF SPECIAL CASES----#
@@ -1464,7 +1431,6 @@ def event_extraction(sentence, world, current_node):
                             print("Added Obj: ", event_dobj[len(event_dobj)-1])
 
                     isFound_obj_dative = True
-
                 dative_c -= 1
         elif sentence.dep[i] == 'advcl':
             event_subj_act.append(sentence.text_token[i])
@@ -1529,7 +1495,67 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
 
                     world.add_eventframe(new_eventframe)
         print("---- EVENT ADDED TO THE WORLD ----")
+def add_event(type, char, char_action, obj, obj_action, loc, world):
 
+    #print("LEN OBJ", len(obj))
+    for x in range(0, len(char)):
+        addObj = ""
+        addChar = ""
+        new_eventframe = EventFrame()
+
+        if len(type) > 0:
+            new_eventframe.type = type[x]
+        if len(loc) > 0:
+            new_eventframe.setting = loc[x]
+        if len(char) > 0:
+            #list_char = world.characters
+            #list_obj = world.objects
+            #isObj = False
+
+            #print("hello")
+            #for k in list_obj:
+                #print("NOT A CHARACTER")
+            #    for j in list_obj:
+            #        if list_obj[j].name == char[x]:
+            #            #print(list_obj[j].name)
+            #            addObj = char[x]
+            #            char[x] = ""
+            #            isObj = True
+
+            #if isObj is False:
+            new_eventframe.doer = char[x]
+
+        if len(char_action) > 0:
+            new_eventframe.doer_actions = char[x] + ":" + char_action[x]
+
+        if x < len(obj):
+            #list_char = world.characters
+            #ist_obj = world.objects
+            #for k in list_char:
+            #    if list_char[k].name == obj[x]:
+            #        addChar = obj[x]
+            #        obj[x] = ""
+
+            #if addObj != "":
+            #    obj[x] == addObj + "," + obj[x]
+            #    new_eventframe.receiver = obj[x]
+            #else:
+            new_eventframe.receiver = obj[x]
+
+            if addChar != "":
+                new_eventframe.doer = new_eventframe.doer + "," + addChar
+                new_eventframe.doer_actions = new_eventframe.doer + ":" + new_eventframe.doer_actions
+            #new_eventframe.receiver = obj[x]
+        if x < len(obj_action):
+            new_eventframe.receiver_actions = obj[x] + ":" + obj_action[x]
+
+        for i in range(0, len(char)):
+            loc_char = world.characters
+            for k in loc_char:
+                if loc_char[k].name in char[i]:
+                    new_eventframe.setting = loc_char[k].inSetting
+
+        world.add_eventframe(new_eventframe)
     print(world.event_chain)
     for item in world.event_chain:
         print(item)
