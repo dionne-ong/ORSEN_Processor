@@ -14,9 +14,9 @@ class Character(Object):
         self.feeling = feeling
 
     def __str__(self):
-        return "CHARACTER: %s \nName: %s \nGender: %s \ndesire: %s \nType: %s \ninSetting: %s \nmentioned: %d \nfeeling: %s\n" \
+        return "CHARACTER ID \"%s\": \n\tName: %s \n\tGender: %s \n\tdesire: %s \n\tType: %s \n\tSetting: %s \n\tmentioned: %d \n\tfeeling: %s\n" \
                % (self.id, self.name, self.gender, self.desire, self.type, self.inSetting, self.timesMentioned, self.feeling)\
-               + "attributes: " + str(self.attributes)
+               + "\tattributes: " + str(self.attributes)
     
     @staticmethod
     def convert_from_object(object):
