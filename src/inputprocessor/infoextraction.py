@@ -1522,14 +1522,14 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
 
                             for y in range(0, len(dobj_hold)):
                                 if list_obj[dobj_hold[y].lower()] is not None:
-                                    new_eventframe.direct_object = list_obj[dobj_hold[y].lower()]
+                                    new_eventframe.direct_object.append(list_obj[dobj_hold[y].lower()])
 
                     elif type[x] == 1:
                         new_eventframe.type = FRAME_DESCRIPTIVE
-                        new_eventframe.attr = attr[x]
+                        new_eventframe.attr.append(attr[x])
                     elif type[x] == 2:
                         new_eventframe.type = FRAME_CREATION
-                        new_eventframe.attr = create[x]
+                        new_eventframe.attr.append(create[x])
 
                     print(str(new_eventframe.direct_object))
                     world.add_eventframe(new_eventframe)
