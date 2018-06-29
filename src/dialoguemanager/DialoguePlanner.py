@@ -183,6 +183,9 @@ def generate_response(move_code, world, remove_index, text):
             remove_index.append(move.move_id)
             return generate_response(MOVE_FEEDBACK, world, remove_index, text)
 
+    print("Generating fillable template...")
+    print(str(move))
+
     for blank_type in move.blanks:
 
         has_a_specified_concept = ":" in blank_type
@@ -204,11 +207,10 @@ def generate_response(move_code, world, remove_index, text):
 
             if to_replace in ["setting"]:
                 if to_replace == "setting":
-                    if subject is None:
+                    print("SETTING DECISION:")
+                    if subject is None or subject.inSetting['LOC'] is None:
                         remove_index.append(move.move_id)
-                        return generate_response(move_code, world, remove_index, text)
-                    elif subject.inSetting['LOC'] is None:
-                        remove_index.append(move.move_id)
+                        print("No viable SUBJECT or SUBJECT LOCATION... switching move.")
                         return generate_response(move_code, world, remove_index, text)
                     else:
                         txt_concept = subject.inSetting['LOC']
@@ -427,7 +429,8 @@ def generate_response(move_code, world, remove_index, text):
                 remove_index.append(move.move_id)
                 return generate_response(move_code, world, remove_index, text)
 
-
+    print("FINAL MOVE DECISION:")
+    print(str(move))
     move.subject = subject
     return move
 
