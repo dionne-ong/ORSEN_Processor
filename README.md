@@ -4,7 +4,7 @@ The python code for the input processing / output generator for ORSEN (Oral Stor
 ## Dependencies
 - PyMySQL
 - spaCy
-- neural Coref ( https://github.com/huggingface/neuralcoref )
+- neural Coref ( https://github.com/huggingface/neuralcoref ) V 0.2
   - Changes
     - data.py : line 338 
         ```
