@@ -801,15 +801,30 @@ def event_extraction(sentence, world, current_node):
         #----START OF CHARACTER EXTRACTION----#
 
         if nsubj_c == 0:
+            isFound_amod = False
+
             if sentence.dep[i] == 'expl':
                 expl_c += 1
                 print("EXPL", expl_c)
                 event_create.append(sentence.text_token[i].lower())
                 for y in range(0, len(sentence.dep)):
+                    if sentence.dep[y] == 'amod':
+                        isFound_amod = True
+                        event_type.append(1)
+                        event_attr.append(sentence.text_token[y])
+                        event_subj_act.append('was')
+                        for x in range(0, len(sentence.dep)):
+                            if (y+x) < len(sentence.dep):
+                                if sentence.dep[y+x] == 'cc' or sentence.dep[y+x] == 'punct':
+                                    event_attr[len(event_attr)-1] += ',' + sentence.text_token[y+x+1]
+
                     if sentence.dep[y] == 'attr':
                         event_subj.append(sentence.text_token[y])
-                        attr_c -= 1
+                        if isFound_amod is True:
+                            event_subj.append(sentence.text_token[y])
 
+                        hold_c = sentence.text_token[y]
+                        attr_c -= 1
 
         elif sentence.dep[i] == 'nsubj' or sentence.dep[i] == 'nsubjpass' and nsubj_c > 0 and isFound_char is False:
             print("CHECKING NSUB COUNT", nsubj_c)
@@ -817,12 +832,6 @@ def event_extraction(sentence, world, current_node):
                 #Compound Subj
                 if comp_c > 0 and poss_c == 0:
                     c_char = sentence.text_token[i-1] + " " + sentence.head_text[i-1]
-                    if (i-1) > -1:
-                        if sentence.dep[i-1] == 'amod':
-                            event_subj_act.append("is")
-                            event_type.append(1)
-                            event_attr.append(sentence.text_token[i-1])
-                            event_subj.append(c_char)
 
                     event_subj.append(c_char)
                     print("Added Char: ", c_char)
@@ -835,12 +844,6 @@ def event_extraction(sentence, world, current_node):
                 elif comp_c == 0 and poss_c > 0:
                     if sentence.dep[i-1] == 'case':
                         p_char = sentence.text_token[i-2] + sentence.text_token[i-1] + " " + sentence.text_token[i]
-                        if (i - 1) > -1:
-                            if sentence.dep[i - 1] == 'amod':
-                                event_subj_act.append("is")
-                                event_type.append(1)
-                                event_attr.append(sentence.text_token[i - 1])
-                                event_subj.append(p_char)
 
                         event_subj.append(p_char)
                         print("Added Char: ", p_char)
@@ -852,12 +855,6 @@ def event_extraction(sentence, world, current_node):
 
                 elif comp_c == 1 and poss_c == 1 and isFound_char is False:
                     cp_char = sentence.text_token[i-3] + " " + sentence.text_token[i-2] + sentence.text_token[i-1] + " " + sentence.text_token[i]
-                    if (i-1) > -1:
-                        if sentence.dep[i-1] == 'amod':
-                            event_subj_act.append("is")
-                            event_type.append(1)
-                            event_attr.append(sentence.text_token[i-1])
-                            event_subj.append(cp_char)
 
                     event_subj.append(cp_char)
                     print("Added Char: ", cp_char)
@@ -877,21 +874,10 @@ def event_extraction(sentence, world, current_node):
                         if (i+k) < len(sentence.dep):
                             if sentence.dep[i+k] == 'conj':
                                 if isAdded is False:
-                                    if sentence.dep[(i+k)-1] == 'amod':
-                                        event_subj_act.append("is")
-                                        event_type.append(1)
-                                        event_attr.append(sentence.text_token[(i+k)-1])
-                                        event_subj.append(test_char)
                                     event_subj.append(test_char)
                                     isAdded = True
 
                                 if sentence.head_text[i+k] == event_subj[len(event_subj)-1]:
-                                    if sentence.dep[(i + k) - 1] == 'amod':
-                                        event_subj_act.append("is")
-                                        event_type.append(1)
-                                        event_attr.append(sentence.text_token[(i + k) - 1])
-                                        event_subj.append(test_char)
-
                                     event_subj.append(sentence.text_token[i+k])
                                     isFound_mchar = True
 
@@ -957,11 +943,6 @@ def event_extraction(sentence, world, current_node):
                                             isFound_char = True
 
             if nsubj_c >0 and isFound_char is False:
-                if sentence.dep[i - 1] == 'amod':
-                    event_subj_act.append("is")
-                    event_type.append(1)
-                    event_attr.append(sentence.text_token[i - 1])
-                    event_subj.append(sentence.text_token[i])
 
                 event_subj.append(sentence.text_token[i])
                 print("Added Char: ", sentence.text_token[i])
@@ -1311,20 +1292,15 @@ def event_extraction(sentence, world, current_node):
                             if (i + k) < len(sentence.dep):
                                 if sentence.dep[i + k] == 'conj':
                                     if isAdded is False:
-                                        if sentence.dep[i-1] == 'amod':
-                                            event_detail.append(sentence.text_token[i-1] + " " + test_obj)
-                                        else:
-                                            event_detail.append(test_obj)
+                                        event_detail.append(test_obj)
 
 
                                         isAdded = True
 
                                     if sentence.head_text[i + k] == test_obj or sentence.head_text[i + k] == ',':
                                         test_obj = sentence.text_token[i + k]
-                                        if sentence.dep[(i+k)-1] == 'amod':
-                                            event_detail.append(sentence.text_token[i-1] + " " + test_obj)
-                                        else:
-                                            event_detail.append(test_obj)
+
+                                        event_detail.append(test_obj)
                                         isFound_mobj_act = True
                                         isFound_obj_act = True
                                         acomp_c -= 1
@@ -1333,10 +1309,8 @@ def event_extraction(sentence, world, current_node):
                             for l in range(1, len(event_detail)):
                                 event_detail[0] += "," + event_detail.pop()
             else:
-                if sentence.dep[i-1] == 'amod':
-                    event_detail.append(sentence.text_token[i-1] + " " + sentence.text_token[i])
-                else:
-                    event_detail.append(sentence.text_token[i])
+
+                event_detail.append(sentence.text_token[i])
                 npadvmod_c -= 1
                 print("Added Obj Act: ", sentence.text_token[i])
                 isFound_obj_act = True
@@ -1352,32 +1326,22 @@ def event_extraction(sentence, world, current_node):
                             if (i + k) < len(sentence.dep):
                                 if sentence.dep[i + k] == 'conj':
                                     if isAdded is False:
-                                        if sentence.dep[i - 1] == 'amod':
-                                            event_detail.append(sentence.text_token[i - 1] + " " + test_obj)
-                                        else:
-                                            event_detail.append(test_obj)
+
+                                        event_detail.append(test_obj)
                                         isAdded = True
 
                                     if sentence.head_text[i + k] == test_obj or sentence.head_text[i + k] == ',':
                                         test_obj = sentence.text_token[i + k]
-                                        if sentence.dep[(i + k) - 1] == 'amod':
-                                            event_detail.append(sentence.text_token[i - 1] + " " + test_obj)
-                                        else:
-                                            event_detail.append(test_obj)
+
+                                        event_detail.append(test_obj)
                                         isFound_mobj_act = True
                                         isFound_obj_act = True
-                                        acomp_c -= 1
 
                         if isFound_mobj_act is True:
                             for l in range(1, len(event_detail)):
                                 event_detail[0] += "," + event_detail.pop()
-            else:
-                if sentence.dep[i - 1] == 'amod':
-                    event_detail.append(sentence.text_token[i - 1] + " " + sentence.text_token[i])
-                else:
-                    event_detail.append(sentence.text_token[i])
-                advmod_c -= 1
-                isFound_obj_act = True
+            if advmod_c > 0:
+                event_detail.append(sentence.text_token[i])
         #----END OF OBJECT ACTION EXTRACTION----#
         #----START OF SPECIAL CASES----#
 
@@ -1434,6 +1398,18 @@ def event_extraction(sentence, world, current_node):
 
                     isFound_obj_dative = True
                 dative_c -= 1
+        elif sentence.dep[i] == 'amod':
+            event_type.append(1)
+            event_subj.append(sentence.head_text[i])
+            event_subj_act.append('is')
+            event_attr.append(sentence.text_token[i])
+            test_attr = sentence.text_token[i]
+            for x in range(0, len(sentence.dep)):
+                if (x+i) < len(sentence.dep):
+                    if sentence.dep[i+x] == 'cc' or sentence.dep[i+x] == 'punct' and test_attr == sentence.head_text[i+x+1]:
+                        event_attr[len(event_attr)-1] += ',' + sentence.text_token[i+x+1]
+                        x += 1
+
         elif sentence.dep[i] == 'advcl':
             event_subj_act.append(sentence.text_token[i])
         #----END OF SPECIAL CASES----#
@@ -1451,7 +1427,6 @@ def event_extraction(sentence, world, current_node):
         print("Object of Preposition: ", event_pobj)
         print("Attribute: ", event_attr)
         print("Detail: ", event_detail)
-        #print("EVENT-DETAIL: ", )
         print("-------------------")
 
     for x in range(0, len(event_type)):
@@ -1537,16 +1512,16 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                                 if list_obj[dobj_hold[y].lower()] is not None:
                                     new_eventframe.direct_object.append(list_obj[dobj_hold[y].lower()])
                         print(str(new_eventframe.direct_object))
-                    elif type[x] == 1:
-                        if ',' in attr:
-                            attr_hold = attr[x].split(',')
-                        else:
-                            attr_hold = attr[x]
+                    elif new_eventframe.event_type is FRAME_DESCRIPTIVE:
+                        if attr:
+                            hold_a = attr[x]
+                            if ',' in hold_a:
+                                attr_hold = hold_a.split(',')
+                            else:
+                                attr_hold.append(hold_a)
 
-                        for y in range(0, len(attr_hold)):
-                            new_eventframe.attr.append(attr_hold[y])
-                    elif type[x] == 2:
-                        new_eventframe.attr.append(create[x])
+                            for y in range(0, len(attr_hold)):
+                                new_eventframe.attributes.append(attr_hold[y].lower())
 
 
                     world.add_eventframe(new_eventframe)
