@@ -800,6 +800,7 @@ def event_extraction(sentence, world, current_node):
         isPassive = True
 
     desc = ['being', 'be', 'been', 'is', 'are', 'was', 'were', 'am', 'feels', 'feel', 'looks', 'look']
+    plural = ['we', 'they', 'them', 'our', 'them', 'us', 'you']
     for i in range(0, len(sentence.dep)):
         #----START OF CHARACTER EXTRACTION----#
 
@@ -863,14 +864,15 @@ def event_extraction(sentence, world, current_node):
                     for k in range(0, len(sentence.dep)):
                         if (i+k) < len(sentence.dep):
                             if sentence.dep[i+k] == 'conj':
-                                #print("event_subj: ", len(event_subj), event_subj)
+                                print("event_subj: ", len(event_subj), event_subj)
                                 if isAdded is False:
+                                    print("test", test_char)
                                     event_subj.append(test_char)
                                     isAdded = True
-                                #print("event_subj: ", len(event_subj), event_subj)
+                                print("event_subj: ", len(event_subj), event_subj)
                                 if sentence.head_text[i+k] == event_subj[len(event_subj)-1]:
                                     event_subj[len(event_subj)-1] += "," + sentence.text_token[i+k]
-                                    #print("event_subj: ", len(event_subj), event_subj)
+                                    print("event_subj: ", len(event_subj), event_subj)
                                     isFound_mchar = True
 
                                     nsubj_c -= 1
@@ -1567,7 +1569,8 @@ def event_extraction(sentence, world, current_node):
                     isFound_obj_dative = True
                 dative_c -= 1
         elif sentence.dep[i] == 'amod':
-            isFound_char = False
+            isFound_char_amod = False
+            test = ""
             index = len(event_subj)-1
             event_type.insert(index, 1)
             event_dobj.insert(index, '-')
@@ -1583,12 +1586,22 @@ def event_extraction(sentence, world, current_node):
                         elif sentence.dep[i+3] == 'amod':
                             print("not connected")
                         elif sentence.dep[i+3] == 'conj':
+                            print("I added it here")
                             event_subj.insert(index, sentence.head_text[i] + "," + sentence.text_token[i+3])
-                            isFound_char = True
-            if isFound_char is False:
-                event_subj.insert(index, sentence.head_text[i])
+                            test = sentence.head_text[i] + "," + sentence.text_token[i+3]
+                            isFound_char_amod = True
 
-            event_subj_act.insert(index, 'is')
+            if isFound_char_amod is False:
+                event_subj.insert(index, sentence.head_text[i])
+                test = sentence.head_text[i]
+
+            if test in plural:
+                event_subj_act.insert(index, 'are')
+            elif ',' in test:
+                event_subj_act.insert(index, 'are')
+            else:
+                event_subj_act.insert(index, 'is')
+
             event_attr.insert(index, sentence.text_token[i])
 
 
