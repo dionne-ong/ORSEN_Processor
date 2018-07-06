@@ -820,7 +820,7 @@ def event_extraction(sentence, world, current_node):
     if agent_c > 0:
         isPassive = True
 
-    desc = ['being', 'be', 'been', 'is', 'are', 'was', 'were', 'am', 'feels', 'feel', 'looks', 'look']
+    desc = ['being', 'be', 'been', 'is', 'are', 'was', 'were', 'am']
     plural = ['we', 'they', 'them', 'our', 'them', 'us', 'you']
     for i in range(0, len(sentence.dep)):
         #----START OF CHARACTER EXTRACTION----#
@@ -1744,12 +1744,6 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                             for y in range(0, len(attr_hold)):
                                 new_eventframe.attributes.append(attr_hold[y].lower())
 
-                        if prep[x] != '-':
-                            new_eventframe.preposition = prep[x]
-                        if pobj[x] != '-':
-                            new_eventframe.obj_of_preposition = pobj[x]
-                        if detail[x] != '-':
-                            new_eventframe.adverb = detail[x]
                     elif new_eventframe.event_type is FRAME_CREATION:
                         if create:
                             hold_c = create[x]

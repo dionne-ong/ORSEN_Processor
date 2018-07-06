@@ -21,9 +21,6 @@ class EventFrame:
             self.adverb = ""
         elif event_type == FRAME_DESCRIPTIVE:
             self.attributes = []
-            self.preposition = ""
-            self.obj_of_preposition = None
-            self.adverb = ""
         elif event_type == FRAME_CREATION:
             self.attributes = []
 
