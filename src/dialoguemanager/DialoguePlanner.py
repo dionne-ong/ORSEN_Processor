@@ -4,6 +4,7 @@ from src.inputprocessor.infoextraction import getCategory, CAT_STORY, CAT_COMMAN
 from src.dialoguemanager import DBO_Move, Move
 from src.db.concepts import DBO_Concept
 from src.objects.eventchain.EventFrame import EventFrame, FRAME_EVENT, FRAME_DESCRIPTIVE
+from src.dialoguemanager.story_generation import to_sentence_string, get_subject_string
 
 from src.objects.storyworld.Character import Character
 from src.objects.storyworld.Object import Object
@@ -163,7 +164,6 @@ def generate_response(move_code, world, remove_index, text):
                     choices.append(item)
         else:
             choices = pre_choices
-
 
     elif move_code == MOVE_GENERAL_PUMP:
         pre_choices = DBO_Move.get_templates_of_type(DBO_Move.TYPE_GENERAL_PUMP)
@@ -405,14 +405,13 @@ def generate_response(move_code, world, remove_index, text):
                 move.template[move.template.index("inSetting")] = subject.inSetting['LOC']
 
         elif blank_type == "Repeat":
-            move.template[move.template.index("repeat")] = text
-            # REPHRASING CODE
-            # if len(world.event_chain) > 0:
-            #     move.template[move.template.index("repeat")]\
-            #         = world.event_chain[len(world.event_chain)-1].to_sentence_string()
-            # else:
-            #     remove_index.append(move.move_id)
-            #     return generate_response(move_code, world, remove_index)
+
+            if len(world.event_chain) > 0:
+                move.template[move.template.index("repeat")]\
+                    = to_sentence_string(world.event_chain[len(world.event_chain)-1])
+            else:
+                remove_index.append(move.move_id)
+                return generate_response(move_code, world, remove_index, text)
 
         elif blank_type == "Pronoun":
             if subject is None:
@@ -431,20 +430,21 @@ def generate_response(move_code, world, remove_index, text):
 
         elif blank_type == "Event":
             loop_back = len(world.event_chain)-1
-
-            while loop_back >= 0:
+            loops = 0
+            while loop_back >= 0 and loops < 5:
                 event = world.event_chain[loop_back]
 
                 if event.event_type == FRAME_EVENT:
-                    if len(event.doer_actions) > 0:
-                        verb = event.doer_actions[0]
+                    if event.action != "":
                         if "eventverb" in move.template:
-                            move.template[move.template.index("eventverb")] = verb
-                        #TODO: subject = doer
+                            move.template[move.template.index("eventverb")] = event.action
+                        if "object" in move.template:
+                            move.template[move.template.index("object")] = get_subject_string(event)
 
                 loop_back -= 1
+                loops += 1
 
-            if loop_back == -1:
+            if loop_back == -1 or loops >= 5:
                 remove_index.append(move.move_id)
                 return generate_response(move_code, world, remove_index, text)
 
