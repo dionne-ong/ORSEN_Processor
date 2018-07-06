@@ -1403,7 +1403,10 @@ def event_extraction(sentence, world, current_node):
             else:
                 for x in range(0, len(event_subj_act)):
                     if event_subj_act[x] == head_hold and event_detail[x] == '-':
-                        event_detail[x] = sentence.text_token[i]
+                        if sentence.dep[i-1] == 'amod':
+                            event_detail[x] = sentence.text_token[i-1] + " " + sentence.text_token[i]
+                        else:
+                            event_detail[x] = sentence.text_token[i]
 
                     npadvmod_c -= 1
                 print("Added Obj Act: ", sentence.text_token[i])
@@ -1439,7 +1442,10 @@ def event_extraction(sentence, world, current_node):
             if advmod_c > 0:
                 for x in range(0, len(event_subj_act)):
                     if event_subj_act[x] == head_hold and event_detail[x] == '-':
-                        event_detail[x] = sentence.text_token[i]
+                        if sentence.dep[i - 1] == 'amod':
+                            event_detail[x] = sentence.text_token[i - 1] + " " + sentence.text_token[i]
+                        else:
+                            event_detail[x] = sentence.text_token[i]
                         advmod_c-=1
         #----END OF OBJECT ACTION EXTRACTION----#
         #----START OF SPECIAL CASES----#
