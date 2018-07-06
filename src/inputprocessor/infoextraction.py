@@ -1268,24 +1268,29 @@ def event_extraction(sentence, world, current_node):
                                 event_subj_act[x] += "," + sentence.text_token[i+2+k]
                                 test_xcomp = sentence.text_token[i+2+k]
 
-        elif sentence.dep[i] == 'prep' and sentence.text_token[i-1] != '-' and prep_c > 0:
+        if sentence.dep[i] == 'prep' and sentence.text_token[i-1] != '-' and prep_c > 0:
             head_hold = sentence.head_text[i]
-            saved_index = 0
-
-            for z in range(0, len(event_subj_act)):
-                if head_hold == event_subj_act[z]:
-                    if event_prep[z] == '-':
-                        event_prep[z] == sentence.text_token[i]
+            #print("found prep")
+            if sentence.head_text[i] in event_subj_act:
+                for z in range(0, len(event_subj_act)):
+                    if head_hold == event_subj_act[z] and event_prep[z] == '-':
+                        event_prep[z] = sentence.text_token[i]
                         prep_c -= 1
-        elif sentence.dep[i] == 'pobj' and sentence.text_token[i-1] == '-' and pobj_c > 0:
+            elif sentence.head_text[i] in event_attr:
+                for z in range(0, len(event_attr)):
+                    if head_hold == event_attr[z] and event_prep[z] == '-':
+                        event_prep[z] = sentence.text_token[i]
+                        prep_c -= 1
+
+        if sentence.dep[i] == 'pobj':
+            #print("found pobj")
             head_hold = sentence.head_text[i]
             saved_index = 0
             for z in range(0, len(event_prep)):
+                print(head_hold, event_prep[z])
                 if head_hold == event_prep[z] and event_pobj[z] == '-':
                     event_pobj[z] = sentence.text_token[i]
-
-
-            pobj_c -= 1
+                    pobj_c -= 1
         #----END OF OBJECT EXTRACTION----#
 
         #----START OF OBJECT ACTION EXTRACTION----#
@@ -1324,6 +1329,7 @@ def event_extraction(sentence, world, current_node):
                 isFound_obj_act = True
 
         elif sentence.dep[i] == 'advmod' and advmod_c > 0 and isFound_obj_act is False:
+            head_hold = sentence.head_text[i]
             if (i + 1) < len(sentence.dep):
                 if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
                     # Multiple Object
@@ -1334,14 +1340,15 @@ def event_extraction(sentence, world, current_node):
                             if (i + k) < len(sentence.dep):
                                 if sentence.dep[i + k] == 'conj':
                                     if isAdded is False:
-
-                                        event_detail.append(test_obj)
-                                        isAdded = True
+                                        for x in range(0, len(event_subj_act)):
+                                            if event_subj_act[x] == head_hold and event_detail[x] == '-':
+                                                event_detail[x] = test_obj
+                                                isAdded = True
 
                                     if sentence.head_text[i + k] == test_obj or sentence.head_text[i + k] == ',':
                                         test_obj = sentence.text_token[i + k]
 
-                                        event_detail.append(test_obj)
+                                        event_detail[x] += "," + test_obj
                                         isFound_mobj_act = True
                                         isFound_obj_act = True
 
@@ -1349,7 +1356,10 @@ def event_extraction(sentence, world, current_node):
                             for l in range(1, len(event_detail)):
                                 event_detail[0] += "," + event_detail.pop()
             if advmod_c > 0:
-                event_detail.append(sentence.text_token[i])
+                for x in range(0, len(event_subj_act)):
+                    if event_subj_act[x] == head_hold and event_detail[x] == '-':
+                        event_detail[x] = sentence.text_token[i]
+                        advmod_c-=1
         #----END OF OBJECT ACTION EXTRACTION----#
         #----START OF SPECIAL CASES----#
 
