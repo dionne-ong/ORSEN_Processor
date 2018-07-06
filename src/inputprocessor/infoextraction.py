@@ -70,17 +70,26 @@ def find_ent_index(sent, ent):
     return None
 
 
-def details_extraction(sent, world, current_node, subj="", neg=""):
+def details_extraction(sent, world, current_node, subj="", neg="", text=""):
     num = -1
     subject = subj
     current_index = -1
     dative = ""
     direct_object = ""
     for i in range(0, len(sent.dep)):
-        if (sent.dep[i] == current_node) and (sent.finished_nodes[i] == 0):
-            current_index = i
-            sent.finished_nodes[i] = 1
-            break
+        if not text:
+            if (sent.dep[i] == current_node) and (sent.finished_nodes[i] == 0):
+                current_index = i
+                sent.finished_nodes[i] = 1
+                break
+        else:
+            if (sent.dep[i] == current_node) and (sent.finished_nodes[i] == 0) and (sent.text_token[i] == text):
+                current_index = i
+                sent.finished_nodes[i] = 1
+                break
+
+    if (current_node == "ROOT") and (sent.pos[i] in ["NOUN", "PROPN"]):
+        add_objects(sent, sent.text_token[i], sent.dep[i], sent.lemma[i], world)
 
     if neg =="":
         is_negated = False
@@ -213,8 +222,18 @@ def details_extraction(sent, world, current_node, subj="", neg=""):
                     and sent.dep[num] in ["advcl","ccomp", "conj", "prep", "acl"]:
                 details_extraction(sent, world, sent.dep[num], subject, is_negated)
 
-            # else:
-            #     print("WARNING: Dependecy ", sent.dep[num],  " not included in the list")
+            #compound
+            elif num !=-1 and sent.dep[num] == "compound":
+                if sent.pos[num] == "VERB":
+                    details_extraction(sent, world, sent.dep[num], subject, is_negated, str(sent.children[i][j]))
+                elif sent.pos[num] in ["NOUN", "PROPN"]:
+                    subject = compound_extraction(sent, str(sent.children[i][j]))
+                    add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
+                    add_capability(sent, str(sent.lemma[i]), str(subject), world, current_index)
+                    sent.finished_nodes[num] = 1
+
+            else:
+                print("WARNING: Dependecy ", sent.dep[num],  " not included in the list")
     else:
         print("ERROR: Cannot find current index or node ", current_node,  " has been recorded")
 
@@ -306,7 +325,7 @@ def add_objects(sent, child, dep, lemma, world, subject=""):
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) or
                     DBO_Concept.get_concept_specified("person", DBO_Concept.CAPABLE_OF, lemma) is not None)\
-                    and dep in ["nsubj", "agent"]:
+                    and dep in ["nsubj", "agent", "compound"]:
                 new_character = Character()
                 new_character.name = c
                 new_character.id = c
