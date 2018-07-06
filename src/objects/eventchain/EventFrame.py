@@ -18,7 +18,13 @@ class EventFrame:
             self.direct_object = []
             self.preposition = ""
             self.obj_of_preposition = None
-        elif event_type == FRAME_DESCRIPTIVE or event_type == FRAME_CREATION:
+            self.adverb = []
+        elif event_type == FRAME_DESCRIPTIVE:
+            self.attributes = []
+            self.preposition = ""
+            self.obj_of_preposition = None
+            self.adverb = []
+        elif event_type == FRAME_CREATION:
             self.attributes = []
 
     def __str__(self):
