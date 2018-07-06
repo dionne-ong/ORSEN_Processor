@@ -922,6 +922,7 @@ def event_extraction(sentence, world, current_node):
                                                 event_dobj.append('-')
                                                 event_prep.append('-')
                                                 event_pobj.append('-')
+                                                event_attr.append('-')
                                                 event_detail.append('-')
                                                 expl_c -= 1
                                             else:
@@ -929,12 +930,14 @@ def event_extraction(sentence, world, current_node):
                                                 event_dobj.append('-')
                                                 event_prep.append('-')
                                                 event_pobj.append('-')
+                                                event_attr.append('-')
                                                 event_detail.append('-')
                                         else:
                                             event_type.append(0)
                                             event_dobj.append('-')
                                             event_pobj.append('-')
                                             event_prep.append('-')
+                                            event_attr.append('-')
                                             event_detail.append('-')
                                         print("Added Char Action: " + test_char_act)
                                         isFound_char_act = True
@@ -964,16 +967,19 @@ def event_extraction(sentence, world, current_node):
                                     event_dobj.append('-')
                                     event_prep.append('-')
                                     event_pobj.append('-')
+                                    event_attr.append('-')
                                     event_detail.append('-')
                                     expl_c -= 1
                                 else:
                                     event_type.append(1)
                                     event_dobj.append('-')
+                                    event_attr.append('-')
                                     event_prep.append('-')
                                     event_pobj.append('-')
                                     event_detail.append('-')
                             else:
                                 event_type.append(0)
+                                event_attr.append('-')
                                 event_dobj.append('-')
                                 event_pobj.append('-')
                                 event_prep.append('-')
@@ -998,6 +1004,7 @@ def event_extraction(sentence, world, current_node):
                                                     event_dobj.append('-')
                                                     event_prep.append('-')
                                                     event_pobj.append('-')
+                                                    event_attr.append('-')
                                                     event_detail.append('-')
                                                     expl_c -= 1
                                                 else:
@@ -1005,11 +1012,13 @@ def event_extraction(sentence, world, current_node):
                                                     event_dobj.append('-')
                                                     event_prep.append('-')
                                                     event_pobj.append('-')
+                                                    event_attr.append('-')
                                                     event_detail.append('-')
                                             else:
                                                 event_type.append(0)
                                                 event_dobj.append('-')
                                                 event_pobj.append('-')
+                                                event_attr.append('-')
                                                 event_prep.append('-')
                                                 event_detail.append('-')
                                             print("@Added Char Action: ", test_char_act)
@@ -1034,6 +1043,7 @@ def event_extraction(sentence, world, current_node):
                             event_dobj.append('-')
                             event_prep.append('-')
                             event_pobj.append('-')
+                            event_attr.append('-')
                             event_detail.append('-')
                             expl_c -= 1
                         else:
@@ -1041,12 +1051,14 @@ def event_extraction(sentence, world, current_node):
                             event_dobj.append('-')
                             event_prep.append('-')
                             event_pobj.append('-')
+                            event_attr.append('-')
                             event_detail.append('-')
                     else:
                         event_type.append(0)
                         event_dobj.append('-')
                         event_pobj.append('-')
                         event_prep.append('-')
+                        event_attr.append('-')
                         event_detail.append('-')
 
                     head_hold = sentence.text_token[i-1] + " " + sentence.text_token[i]
@@ -1072,6 +1084,7 @@ def event_extraction(sentence, world, current_node):
                         event_dobj.append('-')
                         event_prep.append('-')
                         event_pobj.append('-')
+                        event_attr.append('-')
                         event_detail.append('-')
                         expl_c -= 1
                     else:
@@ -1086,6 +1099,8 @@ def event_extraction(sentence, world, current_node):
                         if isFound_agent is False:
                             event_dobj.append('-')
                             event_prep.append('-')
+
+                        event_attr.append('-')
                         event_pobj.append('-')
                         event_detail.append('-')
                 else:
@@ -1093,6 +1108,7 @@ def event_extraction(sentence, world, current_node):
                     event_dobj.append('-')
                     event_prep.append('-')
                     event_pobj.append('-')
+                    event_attr.append('-')
                     event_detail.append('-')
 
                 print("Added Char Action: ", sentence.text_token[i])
@@ -1103,7 +1119,8 @@ def event_extraction(sentence, world, current_node):
 
         #----START OF OBJECT EXTRACTION----#
         elif sentence.dep[i] == 'acomp' and acomp_c > 0:
-            print("found an acomp")
+            #print("found an acomp")
+            head_hold = sentence.head_text[i]
             if (i+1) < len(sentence.dep):
                 if sentence.dep[i+1] == 'cc' or sentence.dep[i + 1] == 'punct':
                     # Multiple Object
@@ -1114,24 +1131,48 @@ def event_extraction(sentence, world, current_node):
                             if (i + k) < len(sentence.dep):
                                 if sentence.dep[i + k] == 'conj':
                                     if isAdded is False:
-                                        event_attr.append(test_obj)
-                                        isAdded = True
+                                        if head_hold in event_dobj:
+                                            for x in range(0, len(event_dobj)):
+                                                if event_dobj[x] == head_hold and event_attr[x] == '-':
+                                                    event_attr[x] = test_obj
+                                                    isAdded = True
+                                        elif head_hold in event_subj_act:
+                                            for x in range(0, len(event_subj_act)):
+                                                if event_subj_act[x] == head_hold and event_attr[x] == '-':
+                                                    event_attr[x] = test_obj
+                                                    isAdded = True
 
                                     if sentence.head_text[i + k] == test_obj or sentence.head_text[i + k] == ',':
                                         test_obj = sentence.text_token[i+k]
-                                        event_attr[len(event_attr)-1] += ',' + test_obj
+                                        event_attr[x] += ',' + test_obj
 
                                         isFound_obj = True
                                         acomp_c -= 1
 
             if acomp_c > 0:
                 if sentence.dep[i-1] == 'neg':
-                    event_attr.append(sentence.text_token[i-1] + " " + sentence.text_token[i])
-                    acomp_c -= 1
+                    if head_hold in event_dobj:
+                        for x in range(0, len(event_dobj)):
+                            if event_dobj[x] == head_hold and event_attr[x] == '-':
+                                event_attr[x] = sentence.text_token[i-1] + " " + sentence.text_token[i]
+                                acomp_c -=1
+                    elif head_hold in event_subj_act:
+                        for x in range(0, len(event_subj_act)):
+                            if event_subj_act[x] == head_hold and event_attr[x] == '-':
+                                event_attr[x] = sentence.text_token[i-1] + " " + sentence.text_token[i]
+                                acomp_c -= 1
                 else:
-                    #print("WHY")
-                    event_attr.append(sentence.text_token[i])
-                    acomp_c -= 1
+                    if head_hold in event_dobj:
+                        for x in range(0, len(event_dobj)):
+                            if event_dobj[x] == head_hold and event_attr[x] == '-':
+                                event_attr[x] = sentence.text_token[i]
+                                acomp_c -=1
+                    elif head_hold in event_subj_act:
+                        print(event_subj_act)
+                        for x in range(0, len(event_subj_act)):
+                            if event_subj_act[x] == head_hold and event_attr[x] == '-':
+                                event_attr[x] = sentence.text_token[i]
+                                acomp_c -= 1
                 isFound_obj = True
 
         elif sentence.dep[i] == 'dobj' and dobj_c > 0 and isFound_obj is False:
@@ -1186,12 +1227,18 @@ def event_extraction(sentence, world, current_node):
                 isFound_obj = True
 
         if sentence.dep[i] == 'attr' and attr_c > 0:
+            head_hold = sentence.head_text[i]
             if sentence.dep[i-2] == 'neg' and sentence.dep[i-1] == 'det':
-                event_attr.append("not " + sentence.text_token[i-1] + " " + sentence.text_token[i])
-                attr_c -= 1
-                isFound_obj = True
+                for x in range(0, len(event_subj_act)):
+                    if event_subj_act[x] == head_hold and event_attr[x] == '-':
+                        event_attr[x] = "not " + sentence.text_token[i-1] + " " + sentence.text_token[i]
+                        attr_c -= 1
+                        isFound_obj = True
             elif sentence.dep[i-1] == 'compound':
-                event_attr.append(sentence.text_token[i-1] + " " + sentence.text_token[i])
+                for x in range(0, len(event_subj_act)):
+                    if event_subj_act[x] == head_hold and event_attr[x] == '-':
+                        event_attr[x] = sentence.text_token[i-1] + " " + sentence.text_token[i]
+                        attr_c -= 1
             elif (i+1) < len(sentence.dep):
                 if sentence.dep[i + 1] == 'cc' or sentence.dep[i + 1] == 'punct':
                     # Multiple Object
@@ -1202,20 +1249,25 @@ def event_extraction(sentence, world, current_node):
                             if (i + k) < len(sentence.dep):
                                 if sentence.dep[i + k] == 'conj':
                                     if isAdded is False:
-                                        event_attr.append(test_obj)
+                                        for x in range(0, len(event_subj_act)):
+                                            if event_subj_act[x] == head_hold and event_attr[x] == '-':
+                                                event_attr[x] = test_obj
+                                                attr_c -= 1
                                         isAdded = True
 
                                     if sentence.head_text[i + k] == test_obj or sentence.head_text[i + k] == ',':
-                                        event_attr.append(sentence.text_token[i + k])
-                                        isFound_mobj = True
-                                        isFound_obj = True
-                                        acomp_c -= 1
+                                        event_attr[x] += "," + sentence.text_token[i + k]
 
-                        if isFound_mobj is True:
-                            for l in range(1, len(event_attr)):
-                                event_attr[0] += "," + event_attr.pop()
+                                        isFound_obj = True
+                                        attr_c -= 1
+
+
             else:
-                event_attr.append(sentence.text_token[i])
+                for x in range(0, len(event_subj_act)):
+                    if event_subj_act[x] == head_hold and event_attr[x] == '-':
+                        event_attr[x] = sentence.text_token[i]
+                        attr_c -= 1
+
                 attr_c -= 1
                 isFound_obj = True
 
@@ -1236,6 +1288,7 @@ def event_extraction(sentence, world, current_node):
                             event_prep.append('-')
                             event_pobj.append('-')
                             event_detail.append('-')
+                            event_attr.append('-')
                             ccomp_c -= 1
                 if (i+1) < len(sentence.dep):
                     if sentence.dep[i+1] == 'cc' or sentence.dep[i+1] == 'punct':
@@ -1374,22 +1427,41 @@ def event_extraction(sentence, world, current_node):
         if sentence.dep[i] == 'appos':
             event_subj.insert(0, sentence.head_text[i])
             event_subj_act.insert(0, "is")
-            event_type.append(1)
+            event_type.insert(0,1)
             event_dobj.insert(0, '-')
             event_prep.insert(0, '-')
             event_pobj.insert(0, '-')
+            event_detail.insert(0, '-')
             event_attr.insert(0, sentence.text_token[i])
-        #elif sentence.dep[i] == 'poss':
-        #    event_subj.append(sentence.text_token[i])
-        #   event_subj_act.append("has")
-        #    event_dobj.append(sentence.head_text[i])
-        #    event_type.append(0)
-        #    if (i+2) < len(sentence.dep):
-        #        if sentence.dep[i+2] == 'amod':
-        #            event_subj.append(sentence.head_text[i+2])
-        #            event_subj_act.append("is")
-        #            event_type.append(1)
-        #            event_attr.append(sentence.text_token[i+2])
+        elif sentence.dep[i] == 'poss':
+            if (i-1) > 0:
+                if sentence.pos[i-1] != 'ADJ':
+                    event_subj.insert(0, sentence.text_token[i])
+                    if sentence.text_token[i] in plural:
+                        event_subj_act.insert(0, "have")
+                    else:
+                        event_subj_act.insert(0, "has")
+
+                    event_dobj.insert(0, sentence.head_text[i])
+                    event_type.insert(0, 0)
+                    event_prep.insert(0, '-')
+                    event_pobj.insert(0, '-')
+                    event_detail.insert(0, '-')
+                    event_attr.insert(0, '-')
+            else:
+                event_subj.insert(0, sentence.text_token[i])
+                if sentence.text_token[i] in plural:
+                    event_subj_act.insert(0, "have")
+                else:
+                    event_subj_act.insert(0, "has")
+
+                event_dobj.insert(0, sentence.head_text[i])
+                event_type.insert(0, 0)
+                event_detail.insert(0, '-')
+                event_prep.insert(0, '-')
+                event_pobj.insert(0, '-')
+                event_attr.insert(0, '-')
+
         elif sentence.dep[i] == 'relcl' and relcl_c > 0:
             event_subj_act.append(sentence.text_token[i])
             if sentence.text_token[i] in desc:
@@ -1397,11 +1469,14 @@ def event_extraction(sentence, world, current_node):
                 event_prep.append('-')
                 event_pobj.append('-')
                 event_detail.append('-')
+                event_attr.append('-')
             else:
                 event_type.append(0)
                 event_prep.append('-')
                 event_pobj.append('-')
+                event_attr.append('-')
                 event_detail.append('-')
+
             event_dobj.append(sentence.head_text[i])
 
         elif sentence.dep[i] == 'dative' and dative_c > 0:
@@ -1428,6 +1503,7 @@ def event_extraction(sentence, world, current_node):
                     event_detail.append('-')
                     event_prep.append('-')
                     event_pobj.append('-')
+                    event_attr.append('-')
                     hold = sentence.text_chunk[x]
                     if (x+1) < len(sentence.dep_root):
                         if sentence.dep_root[x+1] == 'conj':
@@ -1492,6 +1568,8 @@ def event_extraction(sentence, world, current_node):
                 event_dobj.append('-')
                 event_pobj.append('-')
                 event_prep.append('-')
+                event_attr.append('-')
+                event_detail.append('-')
         elif sentence.dep[i] == 'oprd':
             #print("found an oprd", sentence.head_text[i])
             #print(event_subj_act)
