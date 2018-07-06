@@ -1,24 +1,78 @@
 import inflect
-from src.objects.eventchain.EventFrame import FRAME_DESCRIPTIVE, FRAME_EVENT, FRAME_CREATION
+from src.objects.eventchain.EventFrame import FRAME_DESCRIPTIVE, FRAME_EVENT, FRAME_CREATION, EventFrame
 inflect_engine = inflect.engine()
 
 
-def generate_story(world):
+def generate_basic_story(world):
     final_story = ""
     for event in world.event_chain:
         final_story += to_sentence_string(event) + " "
     return final_story
 
 
+def generate_collated_story(world):
+    chain_index = 0
+    event_chain = world.event_chain
+    final_story = ""
+
+    while chain_index < len(event_chain):
+        print("STORY START")
+        default = False
+        current_event = event_chain[chain_index]
+        if chain_index == len(event_chain) - 1:
+            next_event = None
+        else:
+            next_event = event_chain[chain_index+1]
+
+        if next_event is not None:
+            print("FOUND NEXT EVENT")
+            current_string = to_sentence_string(current_event)
+            next_string = to_sentence_string(next_event)
+
+            print(str(current_event.subject))
+            print(str(next_event.subject))
+            print(current_event.subject == next_event.subject)
+            if current_event.subject == next_event.subject:
+                print("FOUND SAME SUBJECT")
+                if current_event.event_type == FRAME_EVENT and next_event.event_type == FRAME_EVENT:
+                    print("FOUND SAME EVENT")
+                    pronoun = get_possible_pronoun(current_event, next_event, world)
+
+                    if pronoun is not None:
+                        next_string.replace(get_subject_string(current_event), pronoun)
+
+                    final_story += current_string + ", then " + next_string
+                    chain_index += 1
+
+                elif current_event.event_type == FRAME_DESCRIPTIVE and next_event.event_type == FRAME_DESCRIPTIVE:
+                    print("SAME DESCRIPTIVE")
+                    combined_frame = EventFrame(-1, FRAME_DESCRIPTIVE)
+                    combined_frame.subject = current_event.subject
+                    combined_frame.attributes = current_event.attributes + next_event.attributes
+
+                    final_story += to_sentence_string(combined_frame)
+                    chain_index += 1
+                else:
+                    default = True
+            else:
+                default = True
+        else:
+            default = True
+
+        if default:
+            final_story += to_sentence_string(current_event)
+
+        chain_index += 1
+
+    return final_story
+
+
 def to_sentence_string(event):
     string = ""
-    subject_names = []
-    for item in event.subject:
-        subject_names.append(item.id)
-    subject_string = inflect_engine.join(tuple(subject_names))
-
     verb_string = ""
-    if len(event.subject) > 1 or (inflect_engine.singular_noun(event.subject[0].id) is True):
+    subject_string = get_subject_string(event)
+
+    if len(event.subject) > 1 or (inflect_engine.singular_noun(event.subject[0]) is True):
         verb_string += " were "
     else:
         verb_string += " was "
@@ -27,12 +81,12 @@ def to_sentence_string(event):
         string = subject_string + " " + str(event.action) + " "
 
         do_names = []
-        for item in event.direct_item:
-            do_names.append(item.id)
+        for item in event.direct_object:
+            do_names.append(item)
         string += inflect_engine.join(tuple(do_names))
 
         if event.preposition != "" :
-            string += " "+ str(event.preposition) + " " + str(event.obj_of_preposition.id)
+            string += " "+ str(event.preposition) + " " + str(event.obj_of_preposition)
 
     else:
         attr_string = inflect_engine.join(tuple(event.attributes))
@@ -43,7 +97,30 @@ def to_sentence_string(event):
             article = ""
             if inflect_engine.singular_noun(event.subject[0].id) is False:
                 article = inflect_engine.a(event.subject[0].id)
-            string = "There" + verb_string + article.split()[0] +" "+ attr_string + " " + subject_string
+            string = "There" + verb_string + article.split()[0] + " " + attr_string + " " + subject_string
 
     string += "."
     return string
+
+
+def get_subject_string(event):
+    subject_names = []
+    for item in event.subject:
+        subject_names.append(item)
+    return inflect_engine.join(tuple(subject_names))
+
+
+def get_possible_pronoun(current_event, next_event, world):
+    subject = current_event.get_subject(0, world)
+    if len(current_event.subject) > 1 or (inflect_engine.singular_noun(current_event.subject[0]) is True):
+        return "they"
+    elif subject.gender is not None and subject.gender != "":
+        gender = subject.gender
+        if gender == "F":
+            return "she"
+        elif gender == "M":
+            return "he"
+        else:
+            return None
+    else:
+        return None

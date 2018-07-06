@@ -19,3 +19,6 @@ class Object:
         return "OBJECT ID \"%s\": \n\tName: %s \n\tType: %s \n\tSetting: %s \n\tmentioned: %s\n" \
                % (str(self.id), self.name, self.type, self.inSetting, str(self.timesMentioned))\
                + "\tattributes: " + str(self.attributes)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__

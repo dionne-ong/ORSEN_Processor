@@ -23,28 +23,31 @@ class EventFrame:
             self.attributes = []
             self.preposition = ""
             self.obj_of_preposition = None
-            self.adverb = ""
         elif event_type == FRAME_CREATION:
             self.attributes = []
 
     def __str__(self):
         subject_string = "\tSubject = [ "
         for object in self.subject:
-            subject_string += object.id + ","
+            subject_string += object + ","
         subject_string += " ]\n"
 
-        string = "EVENT #" + self.sequence_no + " - "
+        string = "EVENT #" + str(self.sequence_no) + " - "
         if self.event_type == FRAME_EVENT:
             string += "ACTION EVENT\n"
             string += subject_string
             string += "\tD.O. = [ "
             for object in self.direct_object:
-                string += object.id + ","
+                string += object + ","
             string += " ]\n"
+            if self.action != "":
+                string += "\tVERB = " + self.action + "\n"
             if self.preposition != "":
                 string += "\tPREP = " + self.preposition + "\n"
             if self.obj_of_preposition is not None:
-                string += "\tOBJ PREP = " + self.obj_of_preposition.id + "\n"
+                string += "\tOBJ PREP = " + self.obj_of_preposition + "\n"
+            if self.adverb != "":
+                string += "\tADVERB = " + self.adverb + "\n"
 
         elif self.event_type == FRAME_DESCRIPTIVE:
             string += "DESCRIPTIVE\n"
@@ -64,4 +67,35 @@ class EventFrame:
 
         else:
             string += "UNKNOWN"
-        return self.__str__()
+        return string
+
+    def get_subject(self, index, world):
+        chars = world.characters
+        obj = world.objects
+
+        if index > len(self.subject) - 1:
+            return None
+
+        if self.subject[index] in chars:
+            return chars[self.subject[index]]
+
+        if self.subject[index] in obj:
+            return obj[self.subject[index]]
+
+        return None
+
+    def get_direct_object(self, index, world):
+        chars = world.characters
+        obj = world.objects
+
+        if index > len(self.direct_object) - 1:
+            return None
+
+        if self.direct_object[index] in chars:
+            return chars[self.direct_object[index]]
+
+        if self.subject[index] in obj:
+            return obj[self.direct_object[index]]
+
+        return None
+

@@ -1,5 +1,3 @@
-import self as self
-
 from src.db.concepts import DBO_Concept
 from src.objects.eventchain.EventFrame import EventFrame, FRAME_DESCRIPTIVE, FRAME_EVENT, FRAME_CREATION
 from src.objects.nlp.Sentence import Sentence
@@ -105,6 +103,7 @@ def details_extraction(sent, world, current_node, subj="", neg="", text=""):
                                       "npadvmod", "advmod", "pcomp"]:
                 # nominal subject
                 if sent.dep[num] == "nsubj":
+                    print("ENTERED")
                     subject = compound_extraction(sent, str(sent.children[i][j]))
                     add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
                     add_capability(sent, str(sent.lemma[i]), str(subject), world, current_index)
@@ -219,7 +218,7 @@ def details_extraction(sent, world, current_node, subj="", neg="", text=""):
             # agent
             # adverbial modifier
             elif num != -1 \
-                    and sent.dep[num] in ["advcl","ccomp", "conj", "prep", "acl"]:
+                    and sent.dep[num] in ["advcl","ccomp", "conj", "prep", "acl", "aux"]:
                 details_extraction(sent, world, sent.dep[num], subject, is_negated)
 
             #compound
@@ -1550,7 +1549,6 @@ def event_extraction(sentence, world, current_node):
                         elif sentence.dep[i+3] == 'amod':
                             print("not connected")
                         elif sentence.dep[i+3] == 'conj':
-                            #print("I added it here")
                             event_subj.insert(index, sentence.head_text[i] + "," + sentence.text_token[i+3])
                             test = sentence.head_text[i] + "," + sentence.text_token[i+3]
                             isFound_char_amod = True
@@ -1590,8 +1588,6 @@ def event_extraction(sentence, world, current_node):
                 event_attr.append('-')
                 event_detail.append('-')
         elif sentence.dep[i] == 'oprd':
-            #print("found an oprd", sentence.head_text[i])
-            #print(event_subj_act)
             head_hold = sentence.head_text[i]
             for z in range(0, len(event_subj_act)):
                 if head_hold == event_subj_act[z] and event_detail[z] == '-':
@@ -1638,7 +1634,7 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                 subj_hold = hold.split(',')
             else:
                 subj_hold.append(hold)
-            #print(subj_hold)
+            print(subj_hold)
             for i in range(0, len(subj_hold)):
                 if subj_hold[i].lower().find("'s") != -1:
                     text_hold = subj_hold[i].lower().split(" ")
@@ -1660,40 +1656,39 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                         if type[x] == 0:
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_EVENT)
 
-                            new_eventframe.subject.append(list_obj[text_hold[1].lower()])
+                            new_eventframe.subject.append(text_hold[1].lower())
                         elif type[x] == 1:
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_DESCRIPTIVE)
-                            new_eventframe.subject.append(list_obj[text_hold[1].lower()])
+                            new_eventframe.subject.append(text_hold[1].lower())
                         elif type[x] == 2:
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_CREATION)
-                            new_eventframe.subject.append(list_char[text_hold[1].lower()])
+                            new_eventframe.subject.append(text_hold[1].lower())
                         isFound = True
                     else:
                         isFound = False
-                elif list_obj[subj_hold[i].lower()] is not None:
+                elif subj_hold[i].lower() in list_obj:
                     if type[x] == 0:
                         new_eventframe = EventFrame(len(world.event_chain),FRAME_EVENT)
-                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                        new_eventframe.subject.append(subj_hold[i].lower())
                     elif type[x] == 1:
                         new_eventframe = EventFrame(len(world.event_chain), FRAME_DESCRIPTIVE)
 
-                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                        new_eventframe.subject.append(subj_hold[i].lower())
                     elif type[x] == 2:
                         new_eventframe = EventFrame(len(world.event_chain), FRAME_CREATION)
 
-                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                        new_eventframe.subject.append(subj_hold[i].lower())
                     isFound = True
-                elif list_char[subj_hold[i].lower()] is not None:
+                elif subj_hold[i].lower() in list_char:
                     if type[x] == 0:
                         new_eventframe = EventFrame(len(world.event_chain),FRAME_EVENT)
-
-                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                        new_eventframe.subject.append(subj_hold[i].lower())
                     elif type[x] == 1:
                         new_eventframe = EventFrame(len(world.event_chain), FRAME_DESCRIPTIVE)
-                        new_eventframe.subject.append(list_obj[subj_hold[i].lower()])
+                        new_eventframe.subject.append(subj_hold[i].lower())
                     elif type[x] == 2:
                         new_eventframe = EventFrame(len(world.event_chain), FRAME_CREATION)
-                        new_eventframe.subject.append(list_char[subj_hold[i].lower()])
+                        new_eventframe.subject.append(subj_hold[i].lower())
                     isFound = True
                 else:
                     isFound = False
@@ -1714,10 +1709,9 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
 
                             for y in range(0, len(dobj_hold)):
                                 if list_obj[dobj_hold[y].lower()] is not None:
-                                    new_eventframe.direct_object.append(list_obj[dobj_hold[y].lower()])
+                                    new_eventframe.direct_object.append(dobj_hold[y].lower())
                         if detail[x] != '-':
                             new_eventframe.adverb = detail[x]
-                        #print(str(new_eventframe.direct_object))
                     elif new_eventframe.event_type is FRAME_DESCRIPTIVE:
                         if attr:
                             hold_a = attr[x]
@@ -1727,7 +1721,8 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                                 attr_hold.append(hold_a)
 
                             for y in range(0, len(attr_hold)):
-                                new_eventframe.attributes.append(attr_hold[y].lower())
+                                if attr_hold[y] != '-':
+                                    new_eventframe.attributes.append(attr_hold[y].lower())
 
                         if prep[x] != '-':
                             new_eventframe.preposition = prep[x]
@@ -1736,16 +1731,6 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                         if detail[x] != '-':
                             new_eventframe.adverb = detail[x]
                     elif new_eventframe.event_type is FRAME_CREATION:
-                        if create:
-                            hold_c = create[x]
-                            if ',' in hold_c:
-                                crt_hold = hold_c.split(',')
-                            else:
-                                crt_hold.append(hold_c)
-
-                            for y in range(0, len(crt_hold)):
-                                new_eventframe.attributes.append(crt_hold[y].lower())
-
                         if attr:
                             hold_a = attr[x]
                             if ',' in hold_a:
@@ -1754,7 +1739,9 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                                 attr_hold.append(hold_a)
 
                             for y in range(0, len(attr_hold)):
-                                new_eventframe.attributes.append(attr_hold[y].lower())
+                                if attr_hold[y] != '-':
+                                    new_eventframe.attributes.append(attr_hold[y].lower())
+
 
                     world.add_eventframe(new_eventframe)
 
