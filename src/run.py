@@ -80,7 +80,6 @@ def extract_info(text):
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
-'''
 output = "Hello, I am ORSEN. Let's start."
 retrieved = None
 new_world("0")
@@ -97,4 +96,3 @@ while True:
 
     if retrieved.type_num == DialoguePlanner.MOVE_HINT:
         extract_info(retrieved.get_string_response())
-'''
