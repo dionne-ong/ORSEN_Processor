@@ -1,7 +1,6 @@
 from src.run import extract_info, new_world
 from src.dialoguemanager.DialoguePlanner import *
-from src.inputprocessor.infoextraction import CAT_STORY, getCategory
-from src.dialoguemanager.story_generation import generate_collated_story
+from src.dialoguemanager.story_generation import generate_basic_story, generate_collated_story
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -22,114 +21,134 @@ retrieved = None
 nIR = {"I can't hear you", "Sorry. What did you say again?", "Okay"}
 tts = "Sorry. What did you say again?"
 dt = "Sorry. What did you say again?"
-
 focus = None
 
 manwal_kawnt = 0
 MAKSIMUM_KAWNT = 5
 endstory = False
+endstorygen = False
+endconvo = False
 
 def main_intent():
-    return None
+	return None
 
 
 @app.route('/', methods=["GET","POST"])
 def home():
-    print("HOME")
-    return jsonify({"Page":"Home"})
-
+	print("HOME")
+	return jsonify({"Page":"Home"})
+	
 @app.route('/orsen', methods=["POST"])
 def orsen():
-    global manwal_kawnt, storyId, endstory
+	global manwal_kawnt, storyId, endstory, endstorygen, endconvo
+	
+	#print(json.dumps(request.get_json()))
+	requestJson = request.get_json()
+	
+	focus = requestJson["inputs"][0]#["rawInputs"][0]["query"]
+	#print(focus["intent"])
+	
+	#When the app invocation starts, create storyid and greet the user and reset reprompt count
+	if focus["intent"] == "actions.intent.MAIN":
+		storyId = storyId + 1
+		endstorygen = False
+		print("STORY ID ",storyId)
+		new_world(storyId)
+		#reset reprompt count
+		manwal_kawnt = 0
+		#greet user (app.ask)
+		data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Hi! Let's create a story. You start"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+	
+	elif focus["intent"] == "actions.intent.GIVE_IDEA_ORSEN":
+		data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Okay, I will give you a hint"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+	
+	
+	#When there is no input: ask the user (prompt from model) until maximum count is reached 
+	elif focus["intent"] == "actions.intent.NO_INPUT":
+		#increment reprompt count
+		manwal_kawnt = manwal_kawnt + 1
+		#app termination when maximum reprompt count is reached
+		if manwal_kawnt == MAKSIMUM_KAWNT:
+			data = {"expectUserResponse": False, "finalResponse": {"speechResponse": {"textToSpeech": "Okay. Goodbye"}}}
+		#reprompt user
+		else:
+			#get the reprompt
+			retrieved = retrieve_output("", storyId)
+			
+			if retrieved.type_num == MOVE_HINT:
+				extract_info(retrieved.get_string_response())
+	
+			output_reply = retrieved.get_string_response()
+			#reprompt user
+			data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+	#When there is input, simply pass to model and get reply
+	else:
+		rawTextQuery = requestJson["inputs"][0]["rawInputs"][0]["query"]
+	
+		manwal_kawnt =0
+		userId = requestJson["user"]["userId"]
+		data = {}
+		genstory = ""
+	
+		#print(rawTextQuery + " ["+userId+"]")
 
-    #print(json.dumps(request.get_json()))
-    requestJson = request.get_json()
+		if endstory:
+			print('123456789098765432123456798765432'+str(endstorygen))
+			rawTextQuery = requestJson["inputs"][0]["rawInputs"][0]["query"]
+			#If user wants to create another story, create new story and reset reprompt counts
+			if (not endstorygen) and (rawTextQuery == "yes" or rawTextQuery == "yes." or rawTextQuery == "sure" or rawTextQuery == "sure." or rawTextQuery == "yeah" or rawTextQuery == "yeah."):
+				data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Okay then, Let's create a story. You start"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+				manwal_kawnt = 0
+				storyId = storyId + 1
+				print("STORY ID ",storyId)
+				new_world(storyId)
+			
+			elif not endstorygen:
+				endstorygen = True
+				output_reply = generate_collated_story(server.get_world(storyId))
+				#data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":False,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Here is the full story."+output_reply+"."}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+				data = {"expectUserResponse": False, "finalResponse": {"speechResponse": {"textToSpeech": "Here is the full story."+output_reply+""}}}
+				print("-----------dfihsajkhbdshbdasjdas"+str(endstorygen))
+				
+			#generate story
+			elif endstorygen and (rawTextQuery == "yes" or rawTextQuery == "yes." or rawTextQuery == "sure" or rawTextQuery == "sure." or rawTextQuery == "yeah" or rawTextQuery == "yeah."):
+				print('-------------------------------generating story')
+				output_reply = generate_collated_story(server.get_world(storyId))
+				print(output_reply)
+				#generate_collated_story(server.get_world(world_id))
+				data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""+"Do you want to hear it again?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+				endconvo = True
+				
+			#If the user wants to end anyway, 
+			else:
+				#inserted, generatestory
+				data = {"expectUserResponse": False, "finalResponse": {"speechResponse": {"textToSpeech": "Thank you. Goodbye"}}}
+			endstory = False
+				
+		#the user may end the conversation
+		elif rawTextQuery == "bye" or rawTextQuery == "the end" or rawTextQuery == "the end.":
+			data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Wow. Thanks for the story. Do you want to create another one?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+			endstory = True
+		else:
+	
+			extract_info(rawTextQuery)
 
-    focus = requestJson["inputs"][0]#["rawInputs"][0]["query"]
-    #print(focus["intent"])
+			#dialogue
+			retrieved = retrieve_output(rawTextQuery, storyId)
 
-    #When the app invocation starts, create storyid and greet the user and reset reprompt count
-    if focus["intent"] == "actions.intent.MAIN":
-        storyId = storyId + 1
-        print("STORY ID ",storyId)
-        new_world(storyId)
-        #reset reprompt count
-        manwal_kawnt = 0
-        #greet user (app.ask)
-        data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Hi! Let's create a story. You start"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+			if retrieved.type_num == MOVE_HINT:
+				extract_info(retrieved.get_string_response())
+	
+			output_reply = retrieved.get_string_response()
+			data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+	
+			print("I: ", rawTextQuery)
+			print("O: ", output_reply)
+	
 
-    elif focus["intent"] == "actions.intent.GIVE_IDEA_ORSEN":
-        data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Okay, I will give you a hint"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
-
-
-    #When there is no input: ask the user (prompt from model) until maximum count is reached
-    elif focus["intent"] == "actions.intent.NO_INPUT":
-        #increment reprompt count
-        manwal_kawnt = manwal_kawnt + 1
-        #app termination when maximum reprompt count is reached
-        if manwal_kawnt == MAKSIMUM_KAWNT:
-            data = {"expectUserResponse": False, "finalResponse": {"speechResponse": {"textToSpeech": "Okay. Goodbye"}}}
-        #reprompt user
-        else:
-            #get the reprompt
-            retrieved = retrieve_output("", storyId)
-
-            if retrieved.type_num == MOVE_HINT:
-                extract_info(retrieved.get_string_response())
-
-            output_reply = retrieved.get_string_response()
-            #reprompt user
-            data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
-    #When there is input, simply pass to model and get reply
-    else:
-        rawTextQuery = requestJson["inputs"][0]["rawInputs"][0]["query"]
-
-        manwal_kawnt =0
-        userId = requestJson["user"]["userId"]
-        data = {}
-
-        #print(rawTextQuery + " ["+userId+"]")
-
-        if endstory:
-            rawTextQuery = requestJson["inputs"][0]["rawInputs"][0]["query"]
-            #If user wants to create another story, create new story and reset reprompt counts
-            if rawTextQuery == "yes" or rawTextQuery == "yes." or rawTextQuery == "sure" or rawTextQuery == "sure." or rawTextQuery == "yeah" or rawTextQuery == "yeah.":
-                data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Okay then, Let's create a story. You start"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
-                manwal_kawnt = 0
-                storyId = storyId + 1
-                print("STORY ID ",storyId)
-                new_world(storyId)
-
-            #If the user wants to end anyway,
-            else:
-                data = {"expectUserResponse": False, "finalResponse": {"speechResponse": {"textToSpeech": "Thank you. Goodbye"}}}
-            endstory = False
-
-        #the user may end the conversation
-        elif rawTextQuery == "bye" or rawTextQuery == "the end" or rawTextQuery == "the end.":
-            data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Wow. Thanks for the story. Do you want to create another one?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
-            endstory = True
-        else:
-
-            if getCategory(rawTextQuery) == CAT_STORY:
-                extract_info(rawTextQuery)
-
-            #dialogue
-            retrieved = retrieve_output(rawTextQuery, storyId)
-
-            if retrieved.type_num == MOVE_HINT:
-                extract_info(retrieved.get_string_response())
-
-            output_reply = retrieved.get_string_response()
-            data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
-
-            print("I: ", rawTextQuery)
-            print("O: ", output_reply)
-
-
-    #if expectedUserResponse is false, change storyId
-
-    return jsonify(data)
+	#if expectedUserResponse is false, change storyId
+	
+	return jsonify(data)
 
 if __name__ == '__main__':
     app.run(debug = True)

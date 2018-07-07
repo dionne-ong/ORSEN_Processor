@@ -95,9 +95,13 @@ def to_sentence_string(event):
             string = subject_string + verb_string + attr_string
         elif event.event_type == FRAME_CREATION:
             article = ""
-            if inflect_engine.singular_noun(event.subject[0].id) is False:
-                article = inflect_engine.a(event.subject[0].id)
-            string = "There" + verb_string + article.split()[0] + " " + attr_string + " " + subject_string
+            if inflect_engine.singular_noun(event.subject[0]) is False:
+                article = inflect_engine.a(event.subject[0])
+            if len(article.split()) > 0:
+                article_string = article.split()[0]
+            else:
+                article_string = ""
+            string = "There" + verb_string + article_string + " " + attr_string + " " + subject_string
 
     string += "."
     return string
