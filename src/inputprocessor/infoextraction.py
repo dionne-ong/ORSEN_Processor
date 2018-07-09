@@ -33,7 +33,7 @@ def pos_ner_nc_processing(sentence):
             new_sentence.children[len(new_sentence.children)-1].append(child)
 
        # print("------POS------")
-        print("text_token: " + token.text, "dep: " + token.dep_, "head_text: " + token.head.text)
+        print("text_token: " + token.text, "pos: " + token.pos_ , "dep: " + token.dep_, "head_text: " + token.head.text)
     for ent in sentence.ents:
          new_sentence.text_ent.append(ent.text)
          new_sentence.label.append(ent.label_)
@@ -972,20 +972,23 @@ def event_extraction(sentence, world, current_node):
                                 event_subj_act[len(event_subj_act) - 1] += "," + sentence.text_token[x]
                                 print("Added Char Action: ", sentence.text_token[x])
 
-            elif sentence.pos[i] == 'VERB' and sentence.dep[i] != 'advcl':
+            elif sentence.pos[i] == 'VERB' and sentence.dep[i] != 'advcl' and sentence.dep[i] != 'acomp':
                 if sentence.dep[i-1] != 'neg' or sentence.dep[i-2] != 'aux':
                     if sentence.dep[i-1] != 'aux':
                         isFound = False
                         if sentence.dep[i] == 'punct':
                             event_subj_act.append(sentence.text_token[i])
                             print("Added Char Action: ", sentence.text_token[i])
-                        elif sentence.dep[i-1] == 'punct':
-                            event_subj_act[len(event_subj_act)-1] += ' ' + sentence.text_token[i]
-                            print("Added Char Action: ", sentence.text_token[i])
                         elif sentence.dep[i] == 'ccomp':
                             event_subj_act.append(sentence.text_token[i])
                             print("Added Char Action: ", sentence.text_token[i])
                         elif sentence.dep[i-1] != 'punct':
+                            event_subj_act.append(sentence.text_token[i])
+                            print("Added Char Action: ", sentence.text_token[i])
+                        elif sentence.dep[i-1] == 'punct' and sentence.pos[i-1] == 'VERB':
+                            event_subj_act[len(event_subj_act)-1] += " " + sentence.text_token[i]
+                            print("Added Char Action: ", sentence.text_token[i])
+                        else:
                             event_subj_act.append(sentence.text_token[i])
                             print("Added Char Action: ", sentence.text_token[i])
                         head_hold = sentence.text_token[i]
@@ -1511,6 +1514,7 @@ def event_extraction(sentence, world, current_node):
         if sentence.dep[i] == 'appos':
             event_subj.insert(0, sentence.head_text[i])
             event_subj_act.insert(0, "is")
+            #print("Added Char Action: is/")
             event_type.insert(0,1)
             event_dobj.insert(0, '-')
             event_prep.insert(0, '-')
@@ -1518,27 +1522,30 @@ def event_extraction(sentence, world, current_node):
             event_detail.insert(0, '-')
             event_attr.insert(0, sentence.text_token[i])
         elif sentence.dep[i] == 'poss':
-            if (i-1) > 0:
-                if sentence.pos[i-1] != 'ADJ':
-                    event_subj.insert(0, sentence.text_token[i])
-                    if sentence.text_token[i] in plural:
-                        event_subj_act.insert(0, "have")
-                    else:
-                        event_subj_act.insert(0, "has")
 
-                    event_dobj.insert(0, sentence.head_text[i])
-                    event_type.insert(0, 0)
-                    event_prep.insert(0, '-')
-                    event_pobj.insert(0, '-')
-                    event_detail.insert(0, '-')
-                    event_attr.insert(0, '-')
-            else:
+            if sentence.pos[i-1] != 'ADJ':
+                print("MERRR")
+                print("a", event_subj)
                 event_subj.insert(0, sentence.text_token[i])
                 if sentence.text_token[i] in plural:
                     event_subj_act.insert(0, "have")
                 else:
                     event_subj_act.insert(0, "has")
 
+                event_dobj.insert(0, sentence.head_text[i])
+                event_type.insert(0, 0)
+                event_prep.insert(0, '-')
+                event_pobj.insert(0, '-')
+                event_detail.insert(0, '-')
+                event_attr.insert(0, '-')
+            else:
+                print("HUHU")
+                event_subj.insert(0, sentence.text_token[i])
+                if sentence.text_token[i] in plural:
+                    event_subj_act.insert(0, "have")
+                else:
+                    event_subj_act.insert(0, "has")
+                    #print("this is it")
                 event_dobj.insert(0, sentence.head_text[i])
                 event_type.insert(0, 0)
                 event_detail.insert(0, '-')
@@ -1607,12 +1614,11 @@ def event_extraction(sentence, world, current_node):
             if isadv is False:
                 isFound_char_amod = False
                 test = ""
-                index = len(event_subj)-1
-                event_type.insert(index, 1)
-                event_dobj.insert(index, '-')
-                event_prep.insert(index, '-')
-                event_pobj.insert(index, '-')
-                event_detail.insert(index, '-')
+                event_type.insert(0, 1)
+                event_dobj.insert(0, '-')
+                event_prep.insert(0, '-')
+                event_pobj.insert(0, '-')
+                event_detail.insert(0, '-')
                 if (i+2) < len(sentence.dep):
                     if sentence.dep[i+2] == 'cc':
                         if (i+3) < len(sentence.dep):
@@ -1624,29 +1630,30 @@ def event_extraction(sentence, world, current_node):
                                 print("not connected")
                             elif sentence.dep[i+3] == 'conj':
                                 #print("I added it here")
-                                event_subj.insert(index, sentence.head_text[i] + "," + sentence.text_token[i+3])
+                                event_subj.insert(0, sentence.head_text[i] + "," + sentence.text_token[i+3])
                                 test = sentence.head_text[i] + "," + sentence.text_token[i+3]
                                 isFound_char_amod = True
 
                 if isFound_char_amod is False:
-                    event_subj.insert(index, sentence.head_text[i])
+                    print("HEEEERE")
+                    event_subj.insert(0, sentence.head_text[i])
                     test = sentence.head_text[i]
 
                 if test in plural:
-                    event_subj_act.insert(index, 'are')
+                    event_subj_act.insert(0, 'are')
                 elif ',' in test:
-                    event_subj_act.insert(index, 'are')
+                    event_subj_act.insert(0, 'are')
                 else:
-                    event_attr.insert(index, sentence.text_token[i])
-
-                if (i+1) < len(sentence.dep) and (i+2) < len(sentence.dep):
-                    if sentence.dep[i+1] == 'cc' or sentence.dep[i+1] == 'punct' and sentence.dep[i+2] == 'conj':
+                    event_subj_act.insert(0, 'is')
+                    event_attr.insert(0, sentence.text_token[i])
+                head_hold = sentence.text_token[i]
+                if (i+2) < len(sentence.dep):
+                    if sentence.dep[i+1] == 'cc' or sentence.dep[i+1] == 'punct':
                         test_attr = sentence.text_token[i+2]
-                        for x in range(1, len(sentence.dep)):
-                            if (x+i+1) < len(sentence.dep):
-                                if sentence.dep[x+i+1] == 'cc' or sentence.dep[i+1+x] == 'punct' and sentence.head_text[i+2+x] == test_attr:
-                                    test_attr = sentence.text_token[i+x+2]
-                                    event_attr[index] += ',' + sentence.text_token[i+x+2]
+                        for x in range(0, len(sentence.dep)):
+                            if sentence.dep[x] == 'conj' and head_hold == sentence.head_text[x]:
+                                    head_hold = sentence.head_text[x]
+                                    event_attr[0] += ',' + sentence.text_token[x]
 
         elif sentence.dep[i] == 'advcl':
             if sentence.dep[i-1] != 'nsubj':
@@ -1704,6 +1711,8 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
     for x in range(0, len(type)):
         while len(dobj_hold) > 0:
             dobj_hold.pop()
+        while len(attr_hold) > 0:
+            attr_hold.pop()
 
         if subj:
             hold = subj.pop(0)
