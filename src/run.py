@@ -20,6 +20,7 @@ def new_world(id):
     server.new_world(world_id)
 
 def extract_info(text):
+    print("EXTRACTING........")
     world = server.get_world(world_id)
     document = nlp(str(text))
     sentences = [sent.string.strip() for sent in document.sents]
@@ -87,7 +88,7 @@ def extract_info(text):
     rec_act = []
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
-'''
+
 output = "Hello, I am ORSEN. Let's start."
 retrieved = None
 world_id = "0"
@@ -98,7 +99,7 @@ while True:
         print("I: "+text)
     text = input("O: " + output + "\n")
 
-    if infoextraction.getCategory(text) == infoextraction.CAT_COMMAND:
+    if infoextraction.getCategory(text) == infoextraction.CAT_STORY:
         extract_info(text)
 
     #dialogue
@@ -111,4 +112,3 @@ while True:
         print("FINAL STORY -----------------")
         print(generate_collated_story(server.get_world(world_id)))
         print("-----------------------------")
-'''
