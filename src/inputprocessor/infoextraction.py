@@ -540,7 +540,7 @@ CAT_ANSWER = 3
 #ie_categorizing
 def getCategory(sentence):
     #checks if entry has "orsen"
-    if 'orsen' in sentence or 'orson' in sentence or 'Orson' in sentence or 'Orsen' in sentence or 'arson' in sentence:
+    if 'orsen' in sentence or 'im stuck' in sentence or "i'm stuck" in sentence or 'your turn' in sentence or 'help me' in sentence:
         return CAT_COMMAND
     elif 'yes' in sentence or 'no' in sentence:
         return CAT_ANSWER
@@ -1235,9 +1235,9 @@ def event_extraction(sentence, world, current_node):
                 for z in range(0, len(event_subj_act)):
                     if head_hold == event_subj_act[z] and event_dobj[z] == '-':
                         saved_index = z
-                if event_dobj[saved_index] == '-':
+                if len(event_dobj) > saved_index and event_dobj[saved_index] == '-':
                     event_dobj[saved_index] = sentence.text_token[i]
-                else:
+                elif len(sentence.text_token) > i and len(event_dobj) > saved_index + 1:
                     saved_index += 1
                     event_dobj[saved_index] = sentence.text_token[i]
 
@@ -1651,21 +1651,20 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
             for i in range(0, len(subj_hold)):
                 if subj_hold[i].lower().find("'s") != -1:
                     text_hold = subj_hold[i].lower().split(" ")
-                    if list_obj[text_hold[1].lower()] is not None:
+                    if text_hold[1].lower() in list_obj:
                         if type[x] == 0:
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_EVENT)
-                            new_eventframe.subject.append(list_obj[text_hold[1].lower()])
+                            new_eventframe.subject.append(text_hold[1].lower())
                         elif type[x] == 1:
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_DESCRIPTIVE)
 
-                            new_eventframe.subject.append(list_obj[text_hold[1].lower()])
+                            new_eventframe.subject.append(text_hold[1].lower())
                         elif type[x] == 2:
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_CREATION)
-
-                            new_eventframe.subject.append(list_obj[text_hold[1].lower()])
+                            new_eventframe.subject.append(text_hold[1].lower())
 
                         isFound = True
-                    elif list_char[subj_hold[i].lower()] is not None:
+                    elif subj_hold[i].lower() in list_char:
                         if type[x] == 0:
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_EVENT)
 
@@ -1708,7 +1707,8 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
 
                 if isFound is True:
                     if new_eventframe.event_type is FRAME_EVENT:
-                        new_eventframe.action = subj_act[x]
+                        if len(subj_act) > x:
+                            new_eventframe.action = subj_act[x]
                         if prep[x] != '-':
                             new_eventframe.preposition = prep[x]
                         if pobj[x] != '-':
@@ -1721,7 +1721,7 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                                 dobj_hold.append(hold_o)
 
                             for y in range(0, len(dobj_hold)):
-                                if list_obj[dobj_hold[y].lower()] is not None:
+                                if dobj_hold[y].lower() in list_obj:
                                     new_eventframe.direct_object.append(dobj_hold[y].lower())
                         if detail[x] != '-':
                             new_eventframe.adverb = detail[x]

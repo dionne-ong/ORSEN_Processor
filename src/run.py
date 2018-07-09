@@ -3,12 +3,16 @@ from src.objects.ServerInstance import ServerInstance
 from src.objects.storyworld.World import World
 from src.inputprocessor import infoextraction
 from src.dialoguemanager import DialoguePlanner
+from src.dialoguemanager.story_generation import generate_basic_story, generate_collated_story
 
 server = ServerInstance()
-world_id = ""
-
+print('1sefrfdergvdr')
 #Loading of text and segmentation of sentences
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load('en_coref_sm')
+print('2sdfdbgfgngh')
+doc = nlp(u'My sister has a dog. She loves him.')
+print(' rtghrthgrthrr')
+print(doc._.coref_clusters)
 
 def new_world(id):
     global world_id
@@ -70,6 +74,10 @@ def extract_info(text):
     for s in world.settings:
         print(world.settings[s])
 
+    print("-------- EVENT CHAIN")
+    for e in world.event_chain:
+        print(str(e))
+
     # For Event Extraction
     seq_no = []
     event_type = []
@@ -79,20 +87,28 @@ def extract_info(text):
     rec_act = []
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
-
+'''
 output = "Hello, I am ORSEN. Let's start."
 retrieved = None
-new_world("0")
+world_id = "0"
+new_world(world_id)
 while True:
     if retrieved is not None:
         output = retrieved.get_string_response()
         print("I: "+text)
     text = input("O: " + output + "\n")
 
-    extract_info(text)
+    if infoextraction.getCategory(text) == infoextraction.CAT_COMMAND:
+        extract_info(text)
 
     #dialogue
     retrieved = DialoguePlanner.retrieve_output(text, world_id)
 
     if retrieved.type_num == DialoguePlanner.MOVE_HINT:
         extract_info(retrieved.get_string_response())
+
+    if text == "The end":
+        print("FINAL STORY -----------------")
+        print(generate_collated_story(server.get_world(world_id)))
+        print("-----------------------------")
+'''

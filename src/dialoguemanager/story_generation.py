@@ -103,7 +103,6 @@ def to_sentence_string(event):
                 article_string = ""
             string = "There" + verb_string + article_string + " " + attr_string + " " + subject_string
 
-    string += "."
     return string
 
 

@@ -42,7 +42,7 @@ CONVERT_PAPART = "ppart"
 server = ServerInstance()
 
 def retrieve_output(coreferenced_text, world_id):
-    world = server.worlds[world_id]
+    world = server.get_world(world_id)
     if len(world.responses) > 0:
         last_response_type_num = world.responses[len(world.responses)-1].type_num
     else:
@@ -76,7 +76,7 @@ def retrieve_output(coreferenced_text, world_id):
                 output = generate_response(MOVE_HINT, world, [], coreferenced_text)
                 output.template = ["What if "] + output.template
             else:
-                choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
+                choice = random.randint(MOVE_GENERAL_PUMP, MOVE_SPECIFIC_PUMP+1)
                 output = generate_response(choice, world, [], coreferenced_text)
 
         elif world.empty_response > 4:
@@ -92,11 +92,11 @@ def retrieve_output(coreferenced_text, world_id):
             if len(world.event_chain) <= STORY_THRESHOLD:
                 print("<< STILL IN GENERALIZED THRESHOLD >>")
                 choice = random.randint(MOVE_FEEDBACK, MOVE_GENERAL_PUMP+1)
-            elif world.general_response_count > GENERAL_RESPONSE_THRESHOLD:
+            elif world.general_response_count == GENERAL_RESPONSE_THRESHOLD:
                 print("<< GENERAL THRESHOLD REACHED - ATTEMPTING SPECIFIC RESPONSE >>")
-                choice = random.randint(MOVE_SPECIFIC_PUMP, MOVE_HINT+1)
+                choice = random.randint(MOVE_SPECIFIC_PUMP, MOVE_SPECIFIC_PUMP+1)
             else:
-                choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+                choice = random.randint(MOVE_FEEDBACK, MOVE_SPECIFIC_PUMP+1)
 
 
             output = generate_response(choice, world, [], coreferenced_text)
@@ -111,7 +111,7 @@ def retrieve_output(coreferenced_text, world_id):
 
         elif category == CAT_COMMAND:
             # TEMP TODO: check for further commands
-            choice = random.randint(MOVE_FEEDBACK, MOVE_HINT+1)
+            choice = random.randint(MOVE_FEEDBACK, MOVE_SPECIFIC_PUMP+1)
 
             is_hint = "your turn" in coreferenced_text or \
                         ("suggest" in coreferenced_text and "sentence" in coreferenced_text) or \

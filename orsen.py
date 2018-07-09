@@ -1,12 +1,12 @@
 from src.run import extract_info, new_world
 from src.dialoguemanager.DialoguePlanner import *
-from src.dialoguemanager.story_generation import generate_basic_story, generate_collated_story
 from flask import Flask
 from flask import jsonify
 from flask import request
 from flask import json
 import requests
 import re
+from src.dialoguemanager.story_generation import generate_basic_story, generate_collated_story
 #import logging
 app = Flask(__name__)
 
@@ -21,6 +21,7 @@ retrieved = None
 nIR = {"I can't hear you", "Sorry. What did you say again?", "Okay"}
 tts = "Sorry. What did you say again?"
 dt = "Sorry. What did you say again?"
+
 focus = None
 
 manwal_kawnt = 0
@@ -40,7 +41,7 @@ def home():
 	
 @app.route('/orsen', methods=["POST"])
 def orsen():
-	global manwal_kawnt, storyId, endstory, endstorygen, endconvo
+	global manwal_kawnt, storyId, endstory, endstorygen
 	
 	#print(json.dumps(request.get_json()))
 	requestJson = request.get_json()
@@ -51,7 +52,6 @@ def orsen():
 	#When the app invocation starts, create storyid and greet the user and reset reprompt count
 	if focus["intent"] == "actions.intent.MAIN":
 		storyId = storyId + 1
-		endstorygen = False
 		print("STORY ID ",storyId)
 		new_world(storyId)
 		#reset reprompt count
@@ -93,41 +93,41 @@ def orsen():
 		#print(rawTextQuery + " ["+userId+"]")
 
 		if endstory:
-			print('123456789098765432123456798765432'+str(endstorygen))
 			rawTextQuery = requestJson["inputs"][0]["rawInputs"][0]["query"]
 			#If user wants to create another story, create new story and reset reprompt counts
 			if (not endstorygen) and (rawTextQuery == "yes" or rawTextQuery == "yes." or rawTextQuery == "sure" or rawTextQuery == "sure." or rawTextQuery == "yeah" or rawTextQuery == "yeah."):
+				#(edit-addhearstory-p2)swapped the contents of first and this condition
+				output_reply = generate_collated_story(server.get_world(storyId))
+				data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""+". Do you want to create another story?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+				endstorygen = True
+			
+			elif not endstorygen:
+				#(edit-addhearstory-p1) changed prompt from 'hear story' to 'create story'
+				data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Okay. Do you want to create another story?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+				endstorygen = True
+				
+			#generate story
+			elif endstorygen and (rawTextQuery == "yes" or rawTextQuery == "yes." or rawTextQuery == "sure" or rawTextQuery == "sure." or rawTextQuery == "yeah" or rawTextQuery == "yeah."):
+				#(edit-addhearstory-p2) swapped the contents of first and this condition
 				data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Okay then, Let's create a story. You start"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
 				manwal_kawnt = 0
 				storyId = storyId + 1
 				print("STORY ID ",storyId)
 				new_world(storyId)
-			
-			elif not endstorygen:
-				endstorygen = True
-				output_reply = generate_collated_story(server.get_world(storyId))
-				#data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":False,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Here is the full story."+output_reply+"."}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
-				data = {"expectUserResponse": False, "finalResponse": {"speechResponse": {"textToSpeech": "Here is the full story."+output_reply+""}}}
-				print("-----------dfihsajkhbdshbdasjdas"+str(endstorygen))
-				
-			#generate story
-			elif endstorygen and (rawTextQuery == "yes" or rawTextQuery == "yes." or rawTextQuery == "sure" or rawTextQuery == "sure." or rawTextQuery == "yeah" or rawTextQuery == "yeah."):
-				print('-------------------------------generating story')
-				output_reply = generate_collated_story(server.get_world(storyId))
-				print(output_reply)
-				#generate_collated_story(server.get_world(world_id))
-				data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""+"Do you want to hear it again?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
-				endconvo = True
+				endstorygen = False
+				endstory = False
 				
 			#If the user wants to end anyway, 
 			else:
 				#inserted, generatestory
 				data = {"expectUserResponse": False, "finalResponse": {"speechResponse": {"textToSpeech": "Thank you. Goodbye"}}}
-			endstory = False
+				endstorygen = False
+				endstory = False
 				
 		#the user may end the conversation
 		elif rawTextQuery == "bye" or rawTextQuery == "the end" or rawTextQuery == "the end.":
-			data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Wow. Thanks for the story. Do you want to create another one?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
+			#(edit-addhearstory-p1) changed the prompt from 'create another story' to 'hear full story'
+			data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Wow. Thanks for the story. Do you want to hear the full story?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
 			endstory = True
 		else:
 	
@@ -145,7 +145,7 @@ def orsen():
 			print("I: ", rawTextQuery)
 			print("O: ", output_reply)
 	
-
+	
 	#if expectedUserResponse is false, change storyId
 	
 	return jsonify(data)
