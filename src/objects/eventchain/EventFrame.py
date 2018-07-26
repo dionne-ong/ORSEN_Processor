@@ -16,6 +16,7 @@ class EventFrame:
         if event_type == FRAME_EVENT:
             self.action = ""
             self.direct_object = []
+            self.indirect_object = []
             self.preposition = ""
             self.obj_of_preposition = None
             self.adverb = ""
@@ -36,6 +37,10 @@ class EventFrame:
             string += subject_string
             string += "\tD.O. = [ "
             for object in self.direct_object:
+                string += object + ","
+            string += " ]\n"
+            string += "\tI.O. = [ "
+            for object in self.indirect_object:
                 string += object + ","
             string += " ]\n"
             if self.action != "":
@@ -96,4 +101,20 @@ class EventFrame:
             return obj[self.direct_object[index]]
 
         return None
+
+    def get_indirect_object(self, index, world):
+        chars = world.characters
+        obj = world.objects
+
+        if index > len(self.indirect_object) - 1:
+            return None
+
+        if self.direct_object[index] in chars:
+            return chars[self.indirect_object[index]]
+
+        if self.subject[index] in obj:
+            return obj[self.indirect_object[index]]
+
+        return None
+
 

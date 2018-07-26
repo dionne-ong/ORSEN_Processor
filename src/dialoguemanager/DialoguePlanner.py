@@ -20,6 +20,7 @@ MOVE_SPECIFIC_PUMP = 3
 MOVE_HINT = 4
 MOVE_REQUESTION = 5
 MOVE_UNKNOWN = 6
+MOVE_PROMPT = 7
 
 NODE_START = 0
 NODE_END = 1
@@ -67,7 +68,7 @@ def retrieve_output(coreferenced_text, world_id):
                 output = generate_response(MOVE_HINT, world, [], coreferenced_text)
                 output.template = ["What if "]+output.template
             else:
-                output = Move.Move(template=["I don't think I heard you. Can you say that last part again?"], type_num=MOVE_REQUESTION)
+                output = Move.Move(template=["I'm not sure I heard you?"], type_num=MOVE_REQUESTION)
 
         if world.empty_response >= 2 and world.empty_response <=4:
             if last_response_type_num == MOVE_GENERAL_PUMP:
@@ -124,6 +125,13 @@ def retrieve_output(coreferenced_text, world_id):
                             "stuck" in coreferenced_text or \
                             ("give" in coreferenced_text and "idea" in coreferenced_text)
 
+            if "help me start" in coreferenced_text:
+                output = generate_response(MOVE_PROMPT, world, [], coreferenced_text)
+                world.add_response(output)
+                return output
+
+            # if len(world.responses) == 0:
+            #     concepts = DBO_Concept.get_concept_like(txt_relation, second=txt_concept)
             if is_either:
                 choice = random.randint(MOVE_GENERAL_PUMP, MOVE_HINT+1)
             elif is_hint:
@@ -187,6 +195,21 @@ def generate_response(move_code, world, remove_index, text):
     elif move_code == MOVE_REQUESTION:
         # TODO: requestioning decisions to be made
         choices = ["requestioning..."]
+    elif move_code == MOVE_PROMPT:
+        choices = DBO_Move.get_templates_of_type("prompt")
+        usable_concepts = DBO_Concept.get_concept_like("IsA", second="role")
+        choice = random.randint(0, len(choices))
+        choice2 = random.randint(0, len(usable_concepts))
+        if len(usable_concepts) > 0:
+            move = choices[choice]
+            a = []
+            a.append(usable_concepts[choice2].first)
+            move.fill_blank(a)
+
+            print("FINAL MOVE DECISION:")
+            print(str(move))
+            move.subject = subject
+            return move
 
     index_loop = 0
     while True:
@@ -275,6 +298,7 @@ def generate_response(move_code, world, remove_index, text):
                         choice_index = random.randint(0, len(list_choices))
                         decided_item = list_choices[choice_index]
                     else:
+                        print("AAAAaAA")
                         break
 
                     subject = decided_item
@@ -293,7 +317,7 @@ def generate_response(move_code, world, remove_index, text):
                             # get... something... relationship??
                             # TODO: use relationship or something to get a concept
                             found_attr = DBO_Concept.HAS_PROPERTY
-                            decided_concept = ""
+                            decided_concept = decided_item.name
                             subject = decided_item
 
                             if blank_type == DBO_Concept.HAS_PREREQ or blank_type == DBO_Concept.CAUSES:
@@ -320,6 +344,7 @@ def generate_response(move_code, world, remove_index, text):
 
                     settings = world.settings
 
+                    print(len(settings))
                     if len(settings) > 0:
                         decided_concept = settings[ran.choice(list(settings.keys()))].name
                         decided_node = NODE_END
@@ -340,13 +365,13 @@ def generate_response(move_code, world, remove_index, text):
                 remove_index.append(move.move_id)
                 return generate_response(move_code, world, remove_index, text)
 
-            loop_total = 0
-            while len(usable_concepts) > 0:
+            while len(usable_concepts) == 0:
                 loop_total += 1
                 usable_concepts = DBO_Concept.get_concept_like(blank_type)
                 if loop_total > 10:
                     break
-
+            print("DECIDED CONCEPT: "+decided_concept)
+            print(str(usable_concepts))
             if len(usable_concepts) > 0:
                 concept_index = random.randint(0,len(usable_concepts))
                 concept = usable_concepts[concept_index]
@@ -374,8 +399,12 @@ def generate_response(move_code, world, remove_index, text):
             if subject is None:
                 objects = world.get_top_objects()
 
-                choice_index = random.randint(0, len(objects))
-                subject = objects[choice_index]
+                if len(objects) > 0:
+                    choice_index = random.randint(0, len(objects))
+                    subject = objects[choice_index]
+                else:
+                    remove_index.append(move.move_id)
+                    return generate_response(move_code, world, remove_index, text)
 
             move.template[move.template.index("item")] = subject.id
 
