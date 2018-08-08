@@ -1430,7 +1430,7 @@ def event_extraction(sentence, world, current_node):
                         isConnected = True
 
                 if isConnected is False:
-                    if len(event_subj_act)-1 == 0:
+                    if len(event_subj_act)-1 <= 0:
                         print("it is zero")
                     elif len(event_subj_act)-1 < len(event_dobj):
                         event_dobj[len(event_subj_act)-1] = sentence.text_token[i]

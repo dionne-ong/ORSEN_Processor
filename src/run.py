@@ -6,12 +6,9 @@ from src.dialoguemanager import DialoguePlanner
 from src.dialoguemanager.story_generation import generate_basic_story, generate_collated_story
 
 server = ServerInstance()
-print('1sefrfdergvdr')
 #Loading of text and segmentation of sentences
 nlp = spacy.load('en_coref_sm')
-print('2sdfdbgfgngh')
 doc = nlp(u'My sister has a dog. She loves him.')
-print(' rtghrthgrthrr')
 print(doc._.coref_clusters)
 
 def new_world(id):
@@ -89,6 +86,7 @@ def extract_info(text):
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
 
+'''
 output = "Hello, I am ORSEN. Let's start."
 retrieved = None
 world_id = "0"
@@ -96,8 +94,8 @@ new_world(world_id)
 while True:
     if retrieved is not None:
         output = retrieved.get_string_response()
-        print("I: "+text)
-    text = input("O: " + output + "\n")
+        print("IN: "+text)
+    text = input("OUT: " + output + "\n")
 
     if infoextraction.getCategory(text) == infoextraction.CAT_STORY:
         extract_info(text)
@@ -112,3 +110,4 @@ while True:
         print("FINAL STORY -----------------")
         print(generate_collated_story(server.get_world(world_id)))
         print("-----------------------------")
+'''

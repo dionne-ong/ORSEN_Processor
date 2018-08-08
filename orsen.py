@@ -7,6 +7,7 @@ from flask import json
 import requests
 import re
 from src.dialoguemanager.story_generation import generate_basic_story, generate_collated_story
+from src.inputprocessor.infoextraction import getCategory, CAT_STORY
 #import logging
 app = Flask(__name__)
 
@@ -98,6 +99,8 @@ def orsen():
 			if (not endstorygen) and (rawTextQuery == "yes" or rawTextQuery == "yes." or rawTextQuery == "sure" or rawTextQuery == "sure." or rawTextQuery == "yeah" or rawTextQuery == "yeah."):
 				#(edit-addhearstory-p2)swapped the contents of first and this condition
 				output_reply = generate_collated_story(server.get_world(storyId))
+				print("-----======= GENERATED STORY =======------")
+				print(output_reply)
 				data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":""+output_reply+""+". Do you want to create another story?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
 				endstorygen = True
 			
@@ -130,8 +133,8 @@ def orsen():
 			data = {"conversationToken":"{\"state\":null,\"data\":{}}","expectUserResponse":True,"expectedInputs":[{"inputPrompt":{"initialPrompts":[{"textToSpeech":"Wow. Thanks for the story. Do you want to hear the full story?"}],"noInputPrompts":[{"textToSpeech":tts,"displayText":dt}]},"possibleIntents":[{"intent":"actions.intent.TEXT"}]}]}
 			endstory = True
 		else:
-	
-			extract_info(rawTextQuery)
+			if getCategory(rawTextQuery) == CAT_STORY:
+				extract_info(rawTextQuery)
 
 			#dialogue
 			retrieved = retrieve_output(rawTextQuery, storyId)
