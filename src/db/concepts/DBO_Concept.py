@@ -195,7 +195,7 @@ def get_concept_like(relation, first="", second=""):
           "second " \
           "FROM concepts " \
           "WHERE first LIKE '%"+first+"%' AND second LIKE '%"+second+"%' AND relation = '"+relation+"'"
-
+    print(sql)
     conn = SqlConnConcepts.get_connection()
     cursor = conn.cursor()
 

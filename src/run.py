@@ -88,7 +88,7 @@ def extract_info(text):
     rec_act = []
     location = []
     event_frame = [seq_no, event_type, doer, doer_act, rec, rec_act, location]
-
+'''
 output = "Hello, I am ORSEN. Let's start."
 retrieved = None
 world_id = "0"
@@ -112,3 +112,4 @@ while True:
         print("FINAL STORY -----------------")
         print(generate_collated_story(server.get_world(world_id)))
         print("-----------------------------")
+'''

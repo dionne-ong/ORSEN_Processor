@@ -60,7 +60,7 @@ def orsen():
 		output_reply = 'Okay. Let us create a story, you start!' #generate_collated_story(server.get_world(storyId))
 		storyId = storyId + 1
 		print("STORY ID ",storyId)
-		#new_world(storyId)
+		new_world(storyId)
 		startconvo = True
 		endstory = False
 		endstorygen = False
@@ -81,7 +81,7 @@ def orsen():
 		output_reply = 'Okay. Let us create a story, you start!'
 		storyId = storyId + 1
 		print("STORY ID ",storyId)
-		#new_world(storyId)
+		new_world(storyId)
 		endstory = False
 		endstorygen = False
 	
