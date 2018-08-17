@@ -100,9 +100,10 @@ def details_extraction(sent, world, current_node, subj="", neg="", text=""):
             num = find_text_index(sent, str(sent.children[i][j]))
             if num != -1 and sent.finished_nodes[num] == 0 and\
                     sent.dep[num] in ["nsubj", "acomp", "attr", "nsubjpass", "dobj", "xcomp", "appos", "relcl",
-                                      "npadvmod", "advmod", "pcomp"]:
+                                      "npadvmod", "advmod", "pcomp", "poss"]:
+
                 # nominal subject
-                if sent.dep[num] == "nsubj":
+                if sent.dep[num] == "nsubj" or sent.dep[num] == "poss":
                     print("ENTERED")
                     subject = compound_extraction(sent, str(sent.children[i][j]))
                     add_objects(sent, str(subject), sent.dep[num], sent.lemma[i], world)
@@ -319,7 +320,9 @@ def add_capability(sent, attr, subject, world, num):
 
 def add_objects(sent, child, dep, lemma, world, subject=""):
     list_of_char = char_conj_extractions(sent, child)
+    print("LIST_OF_CHAR:", )
     for c in list_of_char:
+        print("LIST_OF_CHAR:",c )
         c = c.lower()
         if (c not in world.characters) and (c not in world.objects):
             if (DBO_Concept.get_concept_specified("character", DBO_Concept.CAPABLE_OF, lemma) or
@@ -1317,14 +1320,16 @@ def event_extraction(sentence, world, current_node):
                                         isFound_obj = True
 
 
-            if dobj_c > 0 and isFound_obj is False:
-                #print('add it here')
+            if isFound_obj is False:
+                print('add it here')
                 head_hold = sentence.head_text[i]
                 isConnected = False
                 for z in range(0, len(event_subj_act)):
                     if head_hold == event_subj_act[z] and event_dobj[z] == '-':
                         saved_index = z
+                        event_dobj[saved_index] = sentence.text_token[i]
                         isConnected = True
+                        break;
 
                 if isConnected is False:
                     event_dobj[len(event_subj_act)-1] = sentence.text_token[i]
@@ -1706,6 +1711,8 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
     print("list_char: ", list_char)
     list_obj = world.objects
     print("list_obj: ", list_obj)
+    list_set = world.settings
+    print("list_set: ", list_set)
     isHere = False
 
     for x in range(0, len(type)):
@@ -1749,6 +1756,18 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                             new_eventframe = EventFrame(len(world.event_chain), FRAME_CREATION)
                             new_eventframe.subject.append(text_hold[1].lower())
                         isHere = True
+                    elif subj_hold[i].lower() in list_set:
+                        if type[x] == 0:
+                            new_eventframe = EventFrame(len(world.event_chain), FRAME_EVENT)
+
+                            new_eventframe.subject.append(text_hold[1].lower())
+                        elif type[x] == 1:
+                            new_eventframe = EventFrame(len(world.event_chain), FRAME_DESCRIPTIVE)
+                            new_eventframe.subject.append(text_hold[1].lower())
+                        elif type[x] == 2:
+                            new_eventframe = EventFrame(len(world.event_chain), FRAME_CREATION)
+                            new_eventframe.subject.append(text_hold[1].lower())
+                        isHere = True
                     else:
                         isHere = False
                 elif subj_hold[i].lower() in list_obj:
@@ -1767,6 +1786,18 @@ def add_event(type, subj, subj_act, prep, pobj, detail, dobj, attr, create, worl
                 elif subj_hold[i].lower() in list_char:
                     if type[x] == 0:
                         new_eventframe = EventFrame(len(world.event_chain),FRAME_EVENT)
+                        new_eventframe.subject.append(subj_hold[i].lower())
+                    elif type[x] == 1:
+                        new_eventframe = EventFrame(len(world.event_chain), FRAME_DESCRIPTIVE)
+                        new_eventframe.subject.append(subj_hold[i].lower())
+                    elif type[x] == 2:
+                        new_eventframe = EventFrame(len(world.event_chain), FRAME_CREATION)
+                        new_eventframe.subject.append(subj_hold[i].lower())
+                    isHere = True
+                elif subj_hold[i].lower() in list_set:
+                    if type[x] == 0:
+                        new_eventframe = EventFrame(len(world.event_chain), FRAME_EVENT)
+
                         new_eventframe.subject.append(subj_hold[i].lower())
                     elif type[x] == 1:
                         new_eventframe = EventFrame(len(world.event_chain), FRAME_DESCRIPTIVE)
