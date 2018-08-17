@@ -341,7 +341,7 @@ def generate_response(move_code, world, remove_index, text):
                 return generate_response(move_code, world, remove_index, text)
 
             loop_total = 0
-            while len(usable_concepts) > 0:
+            while len(usable_concepts) <= 0:
                 loop_total += 1
                 usable_concepts = DBO_Concept.get_concept_like(blank_type)
                 if loop_total > 10:

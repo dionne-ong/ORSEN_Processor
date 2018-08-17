@@ -997,7 +997,7 @@ def event_extraction(sentence, world, current_node):
                         head_hold = sentence.text_token[i]
                         isFound = True
                         if sentence.dep[i+1] == 'cc' or sentence.dep[i+1] == 'punct':
-                            event_subj_act.append(sentence.sentence.text_token[i])
+                            event_subj_act.append(sentence.text_token[i])
                             head_hold = sentence.text_token[i]
                             for x in range(0, len(sentence.dep)):
                                 if sentence.dep[x] == 'conj' and sentence.head_text[x] == head_hold:
@@ -1325,13 +1325,17 @@ def event_extraction(sentence, world, current_node):
                 head_hold = sentence.head_text[i]
                 isConnected = False
                 for z in range(0, len(event_subj_act)):
-                    if head_hold == event_subj_act[z] and event_dobj[z] == '-':
+                    if head_hold == event_subj_act[z] and z < len(event_dobj) and event_dobj[z] == '-':
                         saved_index = z
                         event_dobj[saved_index] = sentence.text_token[i]
                         isConnected = True
                         break;
 
-                if isConnected is False:
+                if isConnected is False and len(event_subj_act)-1 >= 0 and len(event_subj_act)-1 < len(event_dobj) and i < len(sentence.text_token):
+                    print(len(event_subj_act)-1)
+                    print(len(event_dobj))
+                    print(i)
+                    print(len(sentence.text_token))
                     event_dobj[len(event_subj_act)-1] = sentence.text_token[i]
                 dobj_c -= 1
                 isFound_obj = True

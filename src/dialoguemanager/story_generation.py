@@ -41,7 +41,7 @@ def generate_collated_story(world):
                     if pronoun is not None:
                         next_string.replace(get_subject_string(current_event), pronoun)
 
-                    final_story += current_string + ", then " + next_string
+                    final_story += current_string + ", then " + next_string + ". "
                     chain_index += 1
 
                 elif current_event.event_type == FRAME_DESCRIPTIVE and next_event.event_type == FRAME_DESCRIPTIVE:
@@ -50,7 +50,7 @@ def generate_collated_story(world):
                     combined_frame.subject = current_event.subject
                     combined_frame.attributes = current_event.attributes + next_event.attributes
 
-                    final_story += to_sentence_string(combined_frame)
+                    final_story += to_sentence_string(combined_frame) + ". "
                     chain_index += 1
                 else:
                     default = True
@@ -60,7 +60,7 @@ def generate_collated_story(world):
             default = True
 
         if default:
-            final_story += to_sentence_string(current_event)
+            final_story += to_sentence_string(current_event) + ". "
 
         chain_index += 1
 
@@ -115,15 +115,15 @@ def get_subject_string(event):
 
 def get_possible_pronoun(current_event, next_event, world):
     subject = current_event.get_subject(0, world)
-    if len(current_event.subject) > 1 or (inflect_engine.singular_noun(current_event.subject[0]) is True):
-        return "they"
-    elif subject.gender is not None and subject.gender != "":
-        gender = subject.gender
-        if gender == "F":
-            return "she"
-        elif gender == "M":
-            return "he"
-        else:
-            return None
-    else:
-        return None
+
+    if subject is not None:
+        if len(current_event.subject) > 1 or (inflect_engine.singular_noun(current_event.subject[0]) is True):
+            return "they"
+        elif subject.gender is not None and subject.gender != "":
+            gender = subject.gender
+            if gender == "F":
+                return "she"
+            elif gender == "M":
+                return "he"
+
+    return None
