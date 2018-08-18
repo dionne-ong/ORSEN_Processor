@@ -19,12 +19,11 @@ The python code for the input processing / output generator for ORSEN (Oral Stor
 
 ## Modules
 - Text Understanding
-  - Preprocessing ( DONE )
-  - Character Extraction ( 90% )
-    - Passive voice, after prepostition
-  - Character Detail Extraction ( DONE )
-  - Setting Detail Extraction ( 85% )
-  - Event Extraction ( TO-REDO )
+  - Preprocessing
+  - Character/Object Extraction
+  - Character/Object Attribute Extraction 
+  - Setting Detail Extraction
+  - Event Extraction
   
 - Dialogue Manager
   - Dialogue Planner
