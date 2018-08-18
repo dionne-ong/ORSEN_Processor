@@ -14,5 +14,5 @@ class Relationship:
         self.score = score
 
     def __str__(self):
-        return "Relationship #%d: \nObjectA: %d \nObjectB: %d \nrelation: %s \nscore: %d"\
+        return "Relationship ID %d: \n\tObjectA: %d \n\tObjectB: %d \n\trelation: %s \n\tscore: %d"\
                % (self.id, self.idObjectA, self.idObjectB, self.relation, self.score)

@@ -16,6 +16,9 @@ class Object:
         self.attributes = attr
 
     def __str__(self):
-        return "OBJECT %s: \nName: %s \nType: %s \ninSetting: %s \nmentioned: %s\n" \
+        return "OBJECT ID \"%s\": \n\tName: %s \n\tType: %s \n\tSetting: %s \n\tmentioned: %s\n" \
                % (str(self.id), self.name, self.type, self.inSetting, str(self.timesMentioned))\
-               + " attributes: %s" + str(self.attributes)
+               + "\tattributes: " + str(self.attributes)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__

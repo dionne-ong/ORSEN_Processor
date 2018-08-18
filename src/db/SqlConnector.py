@@ -25,7 +25,7 @@ class SqlConnector:
 class SqlConnConcepts(SqlConnector):
     'Connector for ORSEN\'s event chain database'
 
-    schema = "orsen_kb"
+    schema = "orsen_domain_kb"
 
     @staticmethod
     def get_connection():

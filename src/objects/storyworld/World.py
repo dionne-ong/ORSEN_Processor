@@ -1,24 +1,24 @@
 from operator import attrgetter
+
+MOVE_FEEDBACK = 1
+MOVE_GENERAL_PUMP = 2
+
 class World:
-
-    # WORLD ELEMENTS
-
-    id = -1
-    characters = {}
-    objects = {}
-    relationships = {}
-    settings = {}
-    event_chain = []
-
-    # RESPONSE ELEMENTS
-
-    # stored as moves
-    reponses = []
-
-    empty_response = 0
 
     def __init__(self, id="-1"):
         self.id = id
+
+        # WORLD ELEMENTS
+        self.characters = {}
+        self.objects = {}
+        self.relationships = {}
+        self.settings = {}
+        self.event_chain = []
+
+        # RESPONSE ELEMENTS
+        self.responses = []
+        self.empty_response = 0
+        self.general_response_count = 0
 
     def add_character(self, char):
         if char.id not in self.objects and char.id not in self.characters:
@@ -53,7 +53,6 @@ class World:
             return False
 
     def add_eventframe(self, event):
-        print("EHST THR FUCK")
         event.seq_no = len(self.event_chain)
         self.event_chain.append(event)
 
@@ -92,3 +91,10 @@ class World:
             num_of_charas = len(sorted_list)
 
         return sorted_list[:num_of_charas]
+
+    def add_response(self, response):
+        self.responses.append(response)
+        if response.type == MOVE_FEEDBACK or response.type == MOVE_GENERAL_PUMP:
+            self.general_response_count += 1
+        else:
+            self.general_response_count = 0
