@@ -16,6 +16,7 @@ The python code for the input processing / output generator for ORSEN (Oral Stor
         mention.mention_type == MENTION_TYPE["LIST"]: #EDITED: added List to show They/Them pronouns
         ```
 - Flask
+- inflect
 
 ## Modules
 - Text Understanding
