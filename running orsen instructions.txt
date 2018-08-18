@@ -29,7 +29,7 @@ paste to 2 "url" keys under "conversations"
 
 second cmd run:
 
-gactions update --action_package orsen_actions.json --project eliza-e81d0
+gactions update --action_package D:\orsen\orsen_processor\orsen_actions.json --project eliza-e81d0
 
 expected output:
 
